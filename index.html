@@ -7,6 +7,13 @@
 <section id="left" class="panel"><div class="eyebrow">Объект исследования</div><h2 id="planetName">Пепельная грань</h2><div class="muted" id="planetDesc">Сектор 01 · первичная поверхность</div><div class="divider"></div><div class="row"><span>Состояние сектора</span><b id="sectorState">Не изучен</b></div><div class="row"><span>Открыто клеток</span><b id="explored">3 / 37</b></div><div class="row"><span>Ресурс в клетке</span><b id="cellResource">Не определён</b></div><button class="primary" id="scan">⌁ Сканировать клетку · 120 энергии</button><button class="primary" id="build">＋ Развернуть экстрактор · 20 железа</button><button class="primary" id="reset">↺ Сбросить тестовую сцену</button><div class="warning">Режим прототипа: действия изменяют только локальное тестовое состояние и НЕ затрагивают сейв исходной игры.</div></section>
 <section id="right" class="panel"><div class="eyebrow">Секторная карта</div><h2>Поле Вороного</h2><div class="muted">Выберите шестигранник на поверхности. Перетаскивание вращает камеру, колесо меняет масштаб.</div><div class="divider"></div><div class="row"><span>Выбранная клетка</span><b id="cellId">A-01</b></div><div class="row"><span>Тип поверхности</span><b id="cellType">Базальт</b></div><div class="row"><span>Уровень</span><b id="cellLevel">0</b></div><div class="tile-info"><b id="cellTitle">Кристаллический уступ</b><small id="cellDetail">Слабый сигнал из-под коры.</small></div><div class="divider"></div><div class="eyebrow">Слой рендера</div><span class="tag">WebGL</span><span class="tag">Instanced geometry</span><span class="tag">Orbit controls</span><span class="tag">Mock game state</span></section>
 <nav id="bottom" class="panel"><button data-cam="surface">◈ Поверхность</button><button data-cam="orbit">◎ Орбита</button><button data-cam="top">▦ Схема</button><button id="wire">◇ Контуры клеток</button><button id="fx">✧ Эффекты: вкл.</button><button id="hud">▤ Интерфейс</button></nav><div id="hint">ЛКМ/палец — выбрать клетку · перетаскивание — вращать · колесо/щипок — масштаб</div><div id="status">3D TEST BUILD · v0.0.27.1 BASELINE<br><span id="fps">FPS: —</span> · <span id="renderer">инициализация WebGL…</span></div><div id="toast"></div>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js"
+  }
+}
+</script>
 <script type="module">
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js';
 import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/controls/OrbitControls.js';
