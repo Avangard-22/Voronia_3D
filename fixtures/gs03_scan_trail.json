@@ -1,0 +1,293 @@
+{
+ "scenario": "GS-03: trail 1→2→3; ожидаемо цены 9,9,10; дельты −9,−9,+990 (type4 +1000); currentCost 10→13",
+ "before": {
+  "energy": 1000,
+  "iron": 0,
+  "kriogen": 0,
+  "crystals": 0,
+  "research": 0.000504,
+  "dust": 0,
+  "essence": 0,
+  "shards": 0,
+  "currentCost": 10,
+  "baseCost": 10,
+  "MAX_LEVEL": 100,
+  "extraResources": {
+   "carbon": 0,
+   "silicon": 0,
+   "titanium": 0,
+   "uranium": 0,
+   "helium3": 0,
+   "biomass": 0,
+   "platinum": 0,
+   "darkMatter": 0
+  },
+  "compoundResources": {
+   "steel": 0,
+   "alloy": 0,
+   "chip": 0,
+   "core": 0,
+   "relic": 0
+  },
+  "energyPerSec": 1,
+  "ironPerSec": 0,
+  "kriogenPerSec": 0,
+  "crystalsPerSec": 0,
+  "warehouseLevel": 0,
+  "activePlanetId": "ferrum",
+  "unlockedPlanets": [
+   "ferrum"
+  ],
+  "gameStartSeed": 2301356963,
+  "extraResourcesPerSec": {
+   "carbon": 0,
+   "silicon": 0,
+   "titanium": 0,
+   "uranium": 0,
+   "helium3": 0,
+   "biomass": 0,
+   "platinum": 0,
+   "darkMatter": 0
+  }
+ },
+ "steps": [
+  {
+   "cellId": 1,
+   "charge": 9,
+   "currentCostBefore": 10,
+   "currentCostAfter": 11,
+   "energyBefore": 1000,
+   "energyAfter": 991,
+   "energyDelta": -9,
+   "researchBefore": 0.000504,
+   "researchAfter": 1.000504,
+   "researchDelta": 1,
+   "result": {
+    "ok": true,
+    "id": 1,
+    "cost": 9
+   },
+   "cellType": 3,
+   "anomalyType": null,
+   "mutantAfter": null,
+   "exploredAfter": [
+    0,
+    1
+   ],
+   "revealedAfter": [
+    0,
+    2,
+    1,
+    3,
+    6,
+    7,
+    5,
+    8
+   ],
+   "sessionScanned": 1,
+   "events": [
+    {
+     "type": "cell:scanned",
+     "at": 1793603911151,
+     "detail": {
+      "pid": "ferrum",
+      "cellId": 1,
+      "type": 3
+     }
+    }
+   ]
+  },
+  {
+   "cellId": 2,
+   "charge": 9,
+   "currentCostBefore": 11,
+   "currentCostAfter": 12,
+   "energyBefore": 991,
+   "energyAfter": 982,
+   "energyDelta": -9,
+   "researchBefore": 1.000504,
+   "researchAfter": 2.0005040000000003,
+   "researchDelta": 1.0000000000000002,
+   "result": {
+    "ok": true,
+    "id": 2,
+    "cost": 9
+   },
+   "cellType": 0,
+   "anomalyType": null,
+   "mutantAfter": null,
+   "exploredAfter": [
+    0,
+    1,
+    2
+   ],
+   "revealedAfter": [
+    0,
+    2,
+    1,
+    3,
+    6,
+    7,
+    5,
+    8,
+    4
+   ],
+   "sessionScanned": 2,
+   "events": [
+    {
+     "type": "cell:scanned",
+     "at": 1793603911151,
+     "detail": {
+      "pid": "ferrum",
+      "cellId": 1,
+      "type": 3
+     }
+    },
+    {
+     "type": "cell:scanned",
+     "at": 1793603911152,
+     "detail": {
+      "pid": "ferrum",
+      "cellId": 2,
+      "type": 0
+     }
+    }
+   ]
+  },
+  {
+   "cellId": 3,
+   "charge": 10,
+   "currentCostBefore": 12,
+   "currentCostAfter": 13,
+   "energyBefore": 982,
+   "energyAfter": 1972,
+   "energyDelta": 990,
+   "researchBefore": 2.0005040000000003,
+   "researchAfter": 20.000504,
+   "researchDelta": 18,
+   "result": {
+    "ok": true,
+    "id": 3,
+    "cost": 10
+   },
+   "cellType": 4,
+   "anomalyType": null,
+   "mutantAfter": null,
+   "exploredAfter": [
+    0,
+    1,
+    2,
+    3
+   ],
+   "revealedAfter": [
+    0,
+    2,
+    1,
+    3,
+    6,
+    7,
+    5,
+    8,
+    4,
+    10
+   ],
+   "sessionScanned": 3,
+   "events": [
+    {
+     "type": "cell:scanned",
+     "at": 1793603911151,
+     "detail": {
+      "pid": "ferrum",
+      "cellId": 1,
+      "type": 3
+     }
+    },
+    {
+     "type": "cell:scanned",
+     "at": 1793603911152,
+     "detail": {
+      "pid": "ferrum",
+      "cellId": 2,
+      "type": 0
+     }
+    },
+    {
+     "type": "cell:scanned",
+     "at": 1793603911153,
+     "detail": {
+      "pid": "ferrum",
+      "cellId": 3,
+      "type": 4
+     }
+    }
+   ]
+  }
+ ],
+ "after": {
+  "energy": 1972,
+  "iron": 50,
+  "kriogen": 0,
+  "crystals": 0,
+  "research": 20.000504,
+  "dust": 0,
+  "essence": 0,
+  "shards": 0,
+  "currentCost": 13,
+  "baseCost": 10,
+  "MAX_LEVEL": 100,
+  "extraResources": {
+   "carbon": 0,
+   "silicon": 0,
+   "titanium": 0,
+   "uranium": 0,
+   "helium3": 0,
+   "biomass": 0,
+   "platinum": 0,
+   "darkMatter": 0
+  },
+  "compoundResources": {
+   "steel": 0,
+   "alloy": 0,
+   "chip": 0,
+   "core": 0,
+   "relic": 0
+  },
+  "energyPerSec": 2,
+  "ironPerSec": 0.11499999999999999,
+  "kriogenPerSec": 0,
+  "crystalsPerSec": 0,
+  "warehouseLevel": 0,
+  "activePlanetId": "ferrum",
+  "unlockedPlanets": [
+   "ferrum"
+  ],
+  "gameStartSeed": 2301356963,
+  "extraResourcesPerSec": {
+   "carbon": 0,
+   "silicon": 0,
+   "titanium": 0,
+   "uranium": 0,
+   "helium3": 0,
+   "biomass": 0,
+   "platinum": 0,
+   "darkMatter": 0
+  }
+ },
+ "scanGrowthLive": 1.15,
+ "costComponents": {
+  "perksScanMult": 1,
+  "Co_scan": 1,
+  "xt_scan": 0.9,
+  "mt_scan": 1,
+  "fn_scan": 1,
+  "nw": 1,
+  "iw": 1,
+  "fv": 1,
+  "js": 1,
+  "armId": null,
+  "Ap_arm": 1,
+  "sleeping": false,
+  "biomeMult": 1
+ },
+ "scienceFormula": "min(10, 1+floor(charge/1000)) для не-аномалий"
+}

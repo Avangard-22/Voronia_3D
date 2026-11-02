@@ -1,0 +1,149 @@
+{
+ "note": "Td(L)={alloy:ceil(2(L+1)²/2·ov), energy:ceil(800·1.6^L·ov)}; Vi=10+5L; Gi=1+0.05L; Hf=explored×Vi×mt; Ey=Σ storage×dn",
+ "rows": [
+  {
+   "L": 0,
+   "Td": {
+    "alloy": 1,
+    "energy": 800
+   },
+   "Vi": 10,
+   "Gi": 1,
+   "Hf_ferrum": 10,
+   "warehouseLevelBonus": 1
+  },
+  {
+   "L": 1,
+   "Td": {
+    "alloy": 4,
+    "energy": 1280
+   },
+   "Vi": 15,
+   "Gi": 1.05,
+   "Hf_ferrum": 15,
+   "warehouseLevelBonus": 1.05
+  },
+  {
+   "L": 2,
+   "Td": {
+    "alloy": 9,
+    "energy": 2049
+   },
+   "Vi": 20,
+   "Gi": 1.1,
+   "Hf_ferrum": 20,
+   "warehouseLevelBonus": 1.1
+  },
+  {
+   "L": 3,
+   "Td": {
+    "alloy": 16,
+    "energy": 3277
+   },
+   "Vi": 25,
+   "Gi": 1.15,
+   "Hf_ferrum": 25,
+   "warehouseLevelBonus": 1.15
+  },
+  {
+   "L": 4,
+   "Td": {
+    "alloy": 25,
+    "energy": 5243
+   },
+   "Vi": 30,
+   "Gi": 1.2,
+   "Hf_ferrum": 30,
+   "warehouseLevelBonus": 1.2
+  },
+  {
+   "L": 5,
+   "Td": {
+    "alloy": 36,
+    "energy": 8389
+   },
+   "Vi": 35,
+   "Gi": 1.25,
+   "Hf_ferrum": 35,
+   "warehouseLevelBonus": 1.25
+  },
+  {
+   "L": 6,
+   "Td": {
+    "alloy": 49,
+    "energy": 13422
+   },
+   "Vi": 40,
+   "Gi": 1.3,
+   "Hf_ferrum": 40,
+   "warehouseLevelBonus": 1.3
+  },
+  {
+   "L": 7,
+   "Td": {
+    "alloy": 64,
+    "energy": 21475
+   },
+   "Vi": 45,
+   "Gi": 1.35,
+   "Hf_ferrum": 45,
+   "warehouseLevelBonus": 1.35
+  },
+  {
+   "L": 8,
+   "Td": {
+    "alloy": 81,
+    "energy": 34360
+   },
+   "Vi": 50,
+   "Gi": 1.4,
+   "Hf_ferrum": 50,
+   "warehouseLevelBonus": 1.4
+  },
+  {
+   "L": 9,
+   "Td": {
+    "alloy": 100,
+    "energy": 54976
+   },
+   "Vi": 55,
+   "Gi": 1.45,
+   "Hf_ferrum": 55,
+   "warehouseLevelBonus": 1.45
+  },
+  {
+   "L": 10,
+   "Td": {
+    "alloy": 121,
+    "energy": 87961
+   },
+   "Vi": 60,
+   "Gi": 1.5,
+   "Hf_ferrum": 60,
+   "warehouseLevelBonus": 1.5
+  }
+ ],
+ "cargoWeights": {
+  "iron": 1,
+  "kriogen": 1,
+  "carbon": 3,
+  "silicon": 3,
+  "titanium": 4,
+  "uranium": 7,
+  "darkMatter": 25,
+  "helium3": 1,
+  "biomass": 1,
+  "platinum": 1
+ },
+ "registry": {
+  "alloyCostFactor": 2,
+  "baseTons": 10,
+  "bonusPerLevel": 0.05,
+  "energyCostBase": 800,
+  "energyCostGrowth": 1.6,
+  "tonsPerLevel": 5,
+  "upgradeMax": 10
+ },
+ "ov": 1,
+ "Ls": 10
+}

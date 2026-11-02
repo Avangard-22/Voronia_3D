@@ -1,0 +1,21 @@
+{
+ "Ho": {
+  "synth": {
+   "name": "Синтез",
+   "icon": "🌌",
+   "color": "#5cf2b0"
+  },
+  "power": {
+   "name": "Питание",
+   "icon": "⚡",
+   "color": "#4ddcff"
+  },
+  "resonance": {
+   "name": "Резонанс",
+   "icon": "💎",
+   "color": "#c084fc"
+  }
+ },
+ "rw_perkAnomalyMult": 1,
+ "fm_sleepMult_ferrum": 1
+}

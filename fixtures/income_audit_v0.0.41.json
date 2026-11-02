@@ -1,0 +1,631 @@
+{
+ "scenario": "midgame-ferrum: все 12 клеток исследованы, уровни 0; ожидаемо 42⚡/с (=7×6), 0.69⛏/с (=0.115×6), 0.002🔬/с",
+ "scanLog": [
+  {
+   "cid": 1,
+   "type": 3,
+   "ok": true,
+   "reason": null,
+   "energyDelta": -9,
+   "charge": 9
+  },
+  {
+   "cid": 2,
+   "type": 0,
+   "ok": true,
+   "reason": null,
+   "energyDelta": -9,
+   "charge": 9
+  },
+  {
+   "cid": 3,
+   "type": 4,
+   "ok": true,
+   "reason": null,
+   "energyDelta": 990,
+   "charge": -990
+  },
+  {
+   "cid": 4,
+   "type": 0,
+   "ok": true,
+   "reason": null,
+   "energyDelta": -11,
+   "charge": 11
+  },
+  {
+   "cid": 5,
+   "type": 1,
+   "ok": true,
+   "reason": null,
+   "energyDelta": -12,
+   "charge": 12
+  },
+  {
+   "cid": 6,
+   "type": 0,
+   "ok": true,
+   "reason": null,
+   "energyDelta": -14,
+   "charge": 14
+  },
+  {
+   "cid": 7,
+   "type": 2,
+   "ok": true,
+   "reason": null,
+   "energyDelta": -16,
+   "charge": 16
+  },
+  {
+   "cid": 8,
+   "type": 0,
+   "ok": true,
+   "reason": null,
+   "energyDelta": -18,
+   "charge": 18
+  },
+  {
+   "cid": 9,
+   "type": 0,
+   "ok": true,
+   "reason": null,
+   "energyDelta": -20,
+   "charge": 20
+  },
+  {
+   "cid": 10,
+   "type": 3,
+   "ok": true,
+   "reason": null,
+   "energyDelta": -23,
+   "charge": 23
+  },
+  {
+   "cid": 11,
+   "type": 0,
+   "ok": true,
+   "reason": null,
+   "energyDelta": -26,
+   "charge": 26
+  }
+ ],
+ "income": {
+  "energyPerSec": 20,
+  "ironPerSec": 0.22999999999999998,
+  "kriogenPerSec": 0,
+  "crystalsPerSec": 0,
+  "extraResourcesPerSec": {
+   "carbon": 0,
+   "silicon": 0,
+   "titanium": 0,
+   "uranium": 0,
+   "helium3": 0,
+   "biomass": 0,
+   "platinum": 0,
+   "darkMatter": 0
+  },
+  "planetIncome": {
+   "ferrum": {
+    "energy": 20,
+    "iron": 0.22999999999999998,
+    "kriogen": 0,
+    "crystals": 0,
+    "extra": {},
+    "energyByType": {
+     "0": 7,
+     "1": 3,
+     "2": 10,
+     "3": 0
+    }
+   },
+   "krios": {
+    "energy": 0,
+    "iron": 0,
+    "kriogen": 0,
+    "crystals": 0,
+    "extra": {},
+    "energyByType": {}
+   }
+  }
+ },
+ "state": {
+  "energy": 10000832,
+  "iron": 50,
+  "kriogen": 0,
+  "crystals": 0,
+  "research": 28.000506,
+  "dust": 0,
+  "essence": 0,
+  "shards": 0,
+  "currentCost": 33,
+  "baseCost": 10,
+  "MAX_LEVEL": 100,
+  "extraResources": {
+   "carbon": 0,
+   "silicon": 0,
+   "titanium": 0,
+   "uranium": 0,
+   "helium3": 0,
+   "biomass": 0,
+   "platinum": 0,
+   "darkMatter": 0
+  },
+  "compoundResources": {
+   "steel": 0,
+   "alloy": 0,
+   "chip": 0,
+   "core": 0,
+   "relic": 0
+  },
+  "energyPerSec": 20,
+  "ironPerSec": 0.22999999999999998,
+  "kriogenPerSec": 0,
+  "crystalsPerSec": 0,
+  "warehouseLevel": 0,
+  "activePlanetId": "ferrum",
+  "unlockedPlanets": [
+   "ferrum"
+  ],
+  "gameStartSeed": 2301334184,
+  "extraResourcesPerSec": {
+   "carbon": 0,
+   "silicon": 0,
+   "titanium": 0,
+   "uranium": 0,
+   "helium3": 0,
+   "biomass": 0,
+   "platinum": 0,
+   "darkMatter": 0
+  }
+ },
+ "ferrumModifiers": {
+  "armId": null,
+  "Ap_arm": 1,
+  "Xc_biome": 1,
+  "perks": {
+   "depletionMult": 0.7,
+   "scanCostMult": 1,
+   "upgradeCostMult": 1.2,
+   "badge": "МЁРЗЛЫЙ КАМЕНИСТЫЙ",
+   "desc": "Процедурный мир · Мёрзлый / Каменистый",
+   "energyBonus": 1,
+   "ironBonus": 1.15,
+   "kriogenBonus": 1,
+   "meteorRate": 1,
+   "rareChance": 1,
+   "anomalyChance": 1
+  },
+  "descriptors": {
+   "climate": {
+    "id": "frozen",
+    "name": "Мёрзлый",
+    "color": "#a8d8ff",
+    "effects": {
+     "depletionMult": 0.7,
+     "upgradeCostMult": 1.2
+    }
+   },
+   "surface": {
+    "id": "rocky",
+    "name": "Каменистый",
+    "effects": {
+     "ironBonus": 1.15
+    }
+   },
+   "anomaly": {
+    "id": "none",
+    "name": null,
+    "effects": {}
+   },
+   "effects": {
+    "depletionMult": 0.7,
+    "upgradeCostMult": 1.2,
+    "ironBonus": 1.15
+   },
+   "displayName": "Мёрзлый Каменистый"
+  },
+  "Co_energy": 1,
+  "Co_iron": 1,
+  "Co_rare": 1,
+  "xt": {
+   "id": "core",
+   "name": "ЯДРО",
+   "color": "#ffd27a",
+   "energy": 1,
+   "iron": 1,
+   "kriogen": 1,
+   "rare": 0.8,
+   "focus": {},
+   "deplete": 0.8,
+   "scan": 0.9,
+   "event": 0.75
+  },
+  "mt_allMult": 1,
+  "mt_energyMult": 1,
+  "fn_allMult": 1,
+  "fn_energyMult": 1,
+  "fn_ironMult": 1,
+  "s0": 1,
+  "sr": 1,
+  "scanBonusActive": 1
+ },
+ "globalComponents": {
+  "Ac": 1,
+  "Gi": 1,
+  "fa": 1,
+  "Ld": 1,
+  "am": 1,
+  "ld": 0,
+  "Tp": 1,
+  "Tg": 1,
+  "Ng": 1,
+  "al": 1,
+  "Bg": 1,
+  "lf": 1,
+  "Ws": 2,
+  "Vg": 1,
+  "Gg": 1,
+  "Wg": 1,
+  "Yg": 1,
+  "qg": 1,
+  "jg": 1,
+  "Zl": 1,
+  "ed": 1,
+  "ts": 1,
+  "Ti": 1,
+  "td": 1,
+  "od": 1,
+  "cd": 1
+ },
+ "cells": [
+  {
+   "id": 0,
+   "type": 0,
+   "displayType": 0,
+   "level": 0,
+   "yield": 1,
+   "ironYield": 0,
+   "kriogenYield": 0,
+   "reserve": 0,
+   "maxReserve": 0,
+   "cooldownUntil": 0,
+   "reactCount": 0,
+   "neighbors": [
+    2,
+    1,
+    3,
+    6,
+    7
+   ],
+   "resourceKey": "iron",
+   "anomalyType": null,
+   "isDeep": false,
+   "mutant": null,
+   "center": [
+    0,
+    0.5257311121191336,
+    0.8506508083520399
+   ]
+  },
+  {
+   "id": 1,
+   "type": 3,
+   "displayType": 3,
+   "level": 0,
+   "yield": 0,
+   "ironYield": 0.1,
+   "kriogenYield": 0,
+   "reserve": 126,
+   "maxReserve": 126,
+   "cooldownUntil": 0,
+   "reactCount": 0,
+   "neighbors": [
+    2,
+    0,
+    5,
+    7,
+    8
+   ],
+   "resourceKey": "iron",
+   "anomalyType": null,
+   "isDeep": false,
+   "mutant": null,
+   "center": [
+    -0.8506508083520399,
+    0,
+    0.5257311121191336
+   ]
+  },
+  {
+   "id": 2,
+   "type": 0,
+   "displayType": 0,
+   "level": 0,
+   "yield": 1,
+   "ironYield": 0,
+   "kriogenYield": 0,
+   "reserve": 0,
+   "maxReserve": 0,
+   "cooldownUntil": 0,
+   "reactCount": 0,
+   "neighbors": [
+    0,
+    1,
+    3,
+    4,
+    5
+   ],
+   "resourceKey": "iron",
+   "anomalyType": null,
+   "isDeep": false,
+   "mutant": null,
+   "center": [
+    -0.5257311121191336,
+    0.8506508083520399,
+    0
+   ]
+  },
+  {
+   "id": 3,
+   "type": 4,
+   "displayType": 0,
+   "level": 0,
+   "yield": 0,
+   "ironYield": 0,
+   "kriogenYield": 0,
+   "reserve": 0,
+   "maxReserve": 0,
+   "cooldownUntil": 0,
+   "reactCount": 0,
+   "neighbors": [
+    2,
+    0,
+    4,
+    6,
+    10
+   ],
+   "resourceKey": "iron",
+   "anomalyType": null,
+   "isDeep": false,
+   "mutant": null,
+   "center": [
+    0.5257311121191336,
+    0.8506508083520399,
+    0
+   ]
+  },
+  {
+   "id": 4,
+   "type": 0,
+   "displayType": 0,
+   "level": 0,
+   "yield": 1,
+   "ironYield": 0,
+   "kriogenYield": 0,
+   "reserve": 0,
+   "maxReserve": 0,
+   "cooldownUntil": 0,
+   "reactCount": 0,
+   "neighbors": [
+    2,
+    3,
+    5,
+    9,
+    10
+   ],
+   "resourceKey": "iron",
+   "anomalyType": null,
+   "isDeep": false,
+   "mutant": null,
+   "center": [
+    0,
+    0.5257311121191336,
+    -0.8506508083520399
+   ]
+  },
+  {
+   "id": 5,
+   "type": 1,
+   "displayType": 1,
+   "level": 0,
+   "yield": 3,
+   "ironYield": 0,
+   "kriogenYield": 0,
+   "reserve": 0,
+   "maxReserve": 0,
+   "cooldownUntil": 0,
+   "reactCount": 0,
+   "neighbors": [
+    2,
+    4,
+    1,
+    8,
+    9
+   ],
+   "resourceKey": "iron",
+   "anomalyType": null,
+   "isDeep": false,
+   "mutant": null,
+   "center": [
+    -0.8506508083520399,
+    0,
+    -0.5257311121191336
+   ]
+  },
+  {
+   "id": 6,
+   "type": 0,
+   "displayType": 0,
+   "level": 0,
+   "yield": 1,
+   "ironYield": 0,
+   "kriogenYield": 0,
+   "reserve": 0,
+   "maxReserve": 0,
+   "cooldownUntil": 0,
+   "reactCount": 0,
+   "neighbors": [
+    3,
+    0,
+    11,
+    7,
+    10
+   ],
+   "resourceKey": "iron",
+   "anomalyType": null,
+   "isDeep": false,
+   "mutant": null,
+   "center": [
+    0.8506508083520399,
+    0,
+    0.5257311121191336
+   ]
+  },
+  {
+   "id": 7,
+   "type": 2,
+   "displayType": 2,
+   "level": 0,
+   "yield": 10,
+   "ironYield": 0,
+   "kriogenYield": 0,
+   "reserve": 0,
+   "maxReserve": 0,
+   "cooldownUntil": 0,
+   "reactCount": 0,
+   "neighbors": [
+    0,
+    1,
+    11,
+    6,
+    8
+   ],
+   "resourceKey": "iron",
+   "anomalyType": null,
+   "isDeep": false,
+   "mutant": null,
+   "center": [
+    0,
+    -0.5257311121191336,
+    0.8506508083520399
+   ]
+  },
+  {
+   "id": 8,
+   "type": 0,
+   "displayType": 0,
+   "level": 0,
+   "yield": 1,
+   "ironYield": 0,
+   "kriogenYield": 0,
+   "reserve": 0,
+   "maxReserve": 0,
+   "cooldownUntil": 0,
+   "reactCount": 0,
+   "neighbors": [
+    1,
+    5,
+    11,
+    7,
+    9
+   ],
+   "resourceKey": "iron",
+   "anomalyType": null,
+   "isDeep": false,
+   "mutant": null,
+   "center": [
+    -0.5257311121191336,
+    -0.8506508083520399,
+    0
+   ]
+  },
+  {
+   "id": 9,
+   "type": 0,
+   "displayType": 0,
+   "level": 0,
+   "yield": 1,
+   "ironYield": 0,
+   "kriogenYield": 0,
+   "reserve": 0,
+   "maxReserve": 0,
+   "cooldownUntil": 0,
+   "reactCount": 0,
+   "neighbors": [
+    5,
+    4,
+    11,
+    8,
+    10
+   ],
+   "resourceKey": "iron",
+   "anomalyType": null,
+   "isDeep": false,
+   "mutant": null,
+   "center": [
+    0,
+    -0.5257311121191336,
+    -0.8506508083520399
+   ]
+  },
+  {
+   "id": 10,
+   "type": 3,
+   "displayType": 3,
+   "level": 0,
+   "yield": 0,
+   "ironYield": 0.1,
+   "kriogenYield": 0,
+   "reserve": 191,
+   "maxReserve": 191,
+   "cooldownUntil": 0,
+   "reactCount": 0,
+   "neighbors": [
+    4,
+    3,
+    11,
+    9,
+    6
+   ],
+   "resourceKey": "iron",
+   "anomalyType": null,
+   "isDeep": false,
+   "mutant": null,
+   "center": [
+    0.8506508083520399,
+    0,
+    -0.5257311121191336
+   ]
+  },
+  {
+   "id": 11,
+   "type": 0,
+   "displayType": 0,
+   "level": 0,
+   "yield": 1,
+   "ironYield": 0,
+   "kriogenYield": 0,
+   "reserve": 0,
+   "maxReserve": 0,
+   "cooldownUntil": 0,
+   "reactCount": 0,
+   "neighbors": [
+    7,
+    6,
+    8,
+    9,
+    10
+   ],
+   "resourceKey": "iron",
+   "anomalyType": null,
+   "isDeep": false,
+   "mutant": null,
+   "center": [
+    0.5257311121191336,
+    -0.8506508083520399,
+    0
+   ]
+  }
+ ]
+}

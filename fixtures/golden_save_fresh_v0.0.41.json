@@ -1,0 +1,466 @@
+{
+ "version": 39,
+ "gameVersion": "0.0.41.0",
+ "timestamp": 1793603910299,
+ "offlinePlanetId": "ferrum",
+ "energy": 0.504,
+ "iron": 0,
+ "kriogen": 0,
+ "crystals": 0,
+ "dust": 0,
+ "dustTotal": 0,
+ "totalPrestiges": 0,
+ "dustPerks": {},
+ "gameStartSeed": 2301357296,
+ "sonarRerollState": {
+  "targetIndex": 0,
+  "count": 0,
+  "viewSalt": 0,
+  "history": []
+ },
+ "sonarRerollPeak": 0,
+ "sonarRerollTierClaimed": 0,
+ "sonarCharges": 0,
+ "chargeBuffs": {},
+ "loreProgress": {
+  "1": {
+   "exploredPctMax": 8,
+   "richCharged": 0,
+   "rareCharged": 0,
+   "coreBuilt": false,
+   "bossDefeated": false,
+   "roleAssigned": false
+  }
+ },
+ "craftQueue": [],
+ "craftSeq": 1,
+ "research": 0.000504,
+ "researchTotal": 0,
+ "researchPerks": {},
+ "currentCost": 10,
+ "tech": {
+  "costScale": 0,
+  "ironBoost": 0,
+  "maxLevel": 0,
+  "crystalBoost": 0,
+  "kriogenBoost": 0,
+  "therm": 0,
+  "hyperdrill": 0,
+  "recon": 0
+ },
+ "MAX_LEVEL": 100,
+ "zoom": 0.98,
+ "rotX": -0.08,
+ "rotY": 0,
+ "tutorialStage": 0,
+ "tutorialCompleted": false,
+ "onbWarehouseSeen": false,
+ "loreMaxInsight": 0,
+ "activePlanetId": "ferrum",
+ "unlockedPlanets": [
+  "ferrum"
+ ],
+ "sonarActivatedPlanets": [],
+ "planets": {
+  "ferrum": {
+   "id": "ferrum",
+   "name": "Феррум",
+   "seed": 15929600,
+   "f": 1,
+   "geometry": "icosahedron",
+   "biome": "ferrum",
+   "planetIndex": 1,
+   "armId": null,
+   "explored": [
+    0
+   ],
+   "revealed": [
+    0,
+    2,
+    1,
+    3,
+    6,
+    7
+   ],
+   "cellStates": [
+    {
+     "id": 0,
+     "level": 0,
+     "isDeep": false,
+     "yield": 1,
+     "ironYield": 0,
+     "kriogenYield": 0,
+     "reserve": 0,
+     "maxReserve": 0,
+     "cooldownUntil": 0,
+     "reactCount": 0,
+     "resourceKey": "iron",
+     "anomalyType": null,
+     "chargedEver": false,
+     "tO": 0
+    }
+   ],
+   "resourceList": [
+    "iron"
+   ],
+   "role": null,
+   "storage": {
+    "energy": 0,
+    "iron": 0,
+    "kriogen": 0,
+    "crystals": 0,
+    "carbon": 0,
+    "silicon": 0,
+    "titanium": 0,
+    "uranium": 0,
+    "helium3": 0,
+    "biomass": 0,
+    "platinum": 0,
+    "darkMatter": 0
+   },
+   "origin": {},
+   "scanBonus": null,
+   "boss": {
+    "maxHp": 20,
+    "hp": 20,
+    "taps": 0,
+    "defeated": false,
+    "reward": null,
+    "lastTapAt": 0,
+    "activeSession": false,
+    "fails": 0,
+    "canReviveAt": 0,
+    "punishmentCells": [],
+    "bestCombo": 0
+   },
+   "tribute": null,
+   "_collapsed": false,
+   "guardian": null,
+   "overlordBuff": null,
+   "_collapseRecoverCost": null,
+   "tributeBonus": null,
+   "_visited": true,
+   "_mixed": false,
+   "_mixedClusters": null,
+   "_startId": 0,
+   "_schemaVersion": 39
+  },
+  "krios": {
+   "id": "krios",
+   "name": "Криос-9",
+   "seed": 13045769,
+   "f": 3,
+   "geometry": "icosahedron",
+   "biome": "krios",
+   "planetIndex": 2,
+   "armId": null,
+   "explored": [],
+   "revealed": [],
+   "cellStates": [],
+   "resourceList": [
+    "kriogen"
+   ],
+   "role": null,
+   "storage": {
+    "energy": 0,
+    "iron": 0,
+    "kriogen": 0,
+    "crystals": 0,
+    "carbon": 0,
+    "silicon": 0,
+    "titanium": 0,
+    "uranium": 0,
+    "helium3": 0,
+    "biomass": 0,
+    "platinum": 0,
+    "darkMatter": 0
+   },
+   "origin": {},
+   "scanBonus": null,
+   "boss": null,
+   "tribute": null,
+   "_collapsed": false,
+   "guardian": null,
+   "overlordBuff": null,
+   "_collapseRecoverCost": null,
+   "tributeBonus": null,
+   "_visited": false,
+   "_mixed": false,
+   "_mixedClusters": null,
+   "_startId": 40,
+   "_schemaVersion": 39
+  }
+ },
+ "planetaryGraph": {
+  "version": 5,
+  "nodes": {
+   "ferrum": {
+    "id": "ferrum",
+    "planetId": "ferrum",
+    "name": "Феррум",
+    "biome": "ferrum",
+    "geometry": "icosahedron",
+    "frequency": 1,
+    "geometryName": "Икосаэдр",
+    "seed": 15929600,
+    "x": -2.6,
+    "y": 0,
+    "z": 0.4,
+    "armId": "core",
+    "discovered": true
+   },
+   "krios": {
+    "id": "krios",
+    "planetId": "krios",
+    "name": "Криос-9",
+    "biome": "krios",
+    "geometry": "icosahedron",
+    "frequency": 3,
+    "geometryName": "Икосаэдр",
+    "seed": 13045769,
+    "x": 3,
+    "y": 0.6,
+    "z": -0.9,
+    "armId": "core",
+    "discovered": false
+   }
+  },
+  "edges": [
+   [
+    "ferrum",
+    "krios"
+   ]
+  ],
+  "hiddenUsed": []
+ },
+ "devicePower": "low",
+ "deviceScore": 743,
+ "extraResources": {
+  "carbon": 0,
+  "silicon": 0,
+  "titanium": 0,
+  "uranium": 0,
+  "helium3": 0,
+  "biomass": 0,
+  "platinum": 0,
+  "darkMatter": 0
+ },
+ "extraResourcesPerSec": {
+  "carbon": 0,
+  "silicon": 0,
+  "titanium": 0,
+  "uranium": 0,
+  "helium3": 0,
+  "biomass": 0,
+  "platinum": 0,
+  "darkMatter": 0
+ },
+ "deliveries": [],
+ "dailyState": {
+  "dayKey": "2026-11-02",
+  "quests": [
+   {
+    "id": "scan",
+    "icon": "🔍",
+    "reward": {
+     "crystals": 1,
+     "dust": 0
+    },
+    "target": 7,
+    "progress": 0,
+    "claimed": false,
+    "text": "Разведать 7 клеток"
+   },
+   {
+    "id": "tech",
+    "icon": "⚙️",
+    "reward": {
+     "crystals": 0,
+     "dust": 1
+    },
+    "target": 3,
+    "progress": 0,
+    "claimed": false,
+    "text": "Купить 3 технологий"
+   },
+   {
+    "id": "anomaly",
+    "icon": "💠",
+    "reward": {
+     "crystals": 0,
+     "dust": 1
+    },
+    "target": 1,
+    "progress": 0,
+    "claimed": false,
+    "text": "Найти 1 аномалий"
+   }
+  ],
+  "streak": 0,
+  "bonusClaimed": false
+ },
+ "weekly": {
+  "days": [],
+  "pending": false,
+  "cycles": 0,
+  "surgeUntil": 0,
+  "cyclesStreak": 0,
+  "lastClaimAt": 0
+ },
+ "fleet": {
+  "cap": 0,
+  "spd": 0,
+  "ships": 0
+ },
+ "meteorBuffs": {
+  "energy": {
+   "mult": 1,
+   "until": 0
+  },
+  "all": {
+   "mult": 1,
+   "until": 0
+  },
+  "iron": {
+   "mult": 1,
+   "until": 0
+  },
+  "kriogen": {
+   "mult": 1,
+   "until": 0
+  },
+  "carbon": {
+   "mult": 1,
+   "until": 0
+  },
+  "silicon": {
+   "mult": 1,
+   "until": 0
+  },
+  "titanium": {
+   "mult": 1,
+   "until": 0
+  },
+  "uranium": {
+   "mult": 1,
+   "until": 0
+  },
+  "darkMatter": {
+   "mult": 1,
+   "until": 0
+  },
+  "helium3": {
+   "mult": 1,
+   "until": 0
+  },
+  "biomass": {
+   "mult": 1,
+   "until": 0
+  },
+  "platinum": {
+   "mult": 1,
+   "until": 0
+  }
+ },
+ "achievements": {},
+ "achTiersClaimed": 0,
+ "compoundResources": {
+  "steel": 0,
+  "alloy": 0,
+  "chip": 0,
+  "core": 0,
+  "relic": 0
+ },
+ "warehouseLevel": 0,
+ "autoCraftPriority": {
+  "steel": true,
+  "alloy": true,
+  "chip": true,
+  "core": true,
+  "relic": true,
+  "researchData": true,
+  "researchDataBulk": true,
+  "researchDataElite": true
+ },
+ "hiddenWorldUnlocked": false,
+ "metaPerks": {},
+ "metaPrestiges": 0,
+ "metaIntroSeen": false,
+ "currentEcho": null,
+ "essence": 0,
+ "essenceTotal": 0,
+ "prestigeBoostUntil": 0,
+ "prestigeGrabUntil": 0,
+ "prestigeGrabsUsed": 0,
+ "prestigesSinceMeta": 0,
+ "quietUntil": 0,
+ "lastResetType": "",
+ "chainProgress": 0,
+ "supplyNodes": [],
+ "extensions": {
+  "echoWeave_v1": {
+   "weaves": {}
+  },
+  "echoStory_v1": {
+   "unlocked": {},
+   "planetMemories": {}
+  },
+  "guardianAnger_v1": {
+   "firstReady": {},
+   "angered": {},
+   "lastMissed": {}
+  },
+  "socialLite_v1": {
+   "claimedCodes": [],
+   "giftsReceived": 0,
+   "essenceReceived": 0,
+   "codesMade": 0,
+   "lastRedeemAt": 0,
+   "monthlyPending": 0,
+   "lastCode": null
+  },
+  "heartOfVoronia_v1": {
+   "fold": 0,
+   "lastFoldAt": 0,
+   "awakening": false,
+   "keptEchoes": [],
+   "newWeave": false
+  },
+  "lvBoon_v1": {
+   "granted": 0,
+   "mult": 1
+  },
+  "planetProfile_v1": {
+   "profiles": {
+    "frozen:rocky:inter:none": {
+     "key": "frozen:rocky:inter:none",
+     "guardianLevel": 0,
+     "sleepUntil": 0,
+     "sleepPenalty": 1,
+     "missedCount": 0,
+     "seal": null,
+     "watch": {
+      "nextAt": 1793647110282,
+      "windowEnds": 0,
+      "alive": false
+     },
+     "treeNodes": {},
+     "treePurchased": 0,
+     "firstSeenAt": 1793603910281,
+     "lastCycle": 0
+    }
+   },
+   "treeHourAt": 1793603910294
+  },
+  "weeklyRewards_v1": {
+   "eliteUnlocked": false,
+   "unlockedAt": 0,
+   "streakBreaks": 0,
+   "firstEliteCrafted": false
+  },
+  "friendProfile_v1": {
+   "data": null,
+   "loadedAt": 0
+  }
+ }
+}

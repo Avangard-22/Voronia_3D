@@ -1,0 +1,1124 @@
+{
+ "note": "Этап 4 — золотой аудит аномалий/зарядов/синтеза/мутантов/deep (реальные функции 1.x, замороженное время)",
+ "extractedAt": "NOW=1800000000000",
+ "randomSeed": 20260401,
+ "bundle": "Voronia_2.5D_Hybrid_v0.0.41_PROD.html (uploads/, не изменён)",
+ "missing": [],
+ "config": {
+  "charge": {
+   "buffCap": 0.25,
+   "config": {
+    "1": {
+     "basePct": 0.03,
+     "baseDur": 20,
+     "cd": 45,
+     "label": "Богатая",
+     "science": 5,
+     "sciencePct": 0.05
+    },
+    "2": {
+     "basePct": 0.08,
+     "baseDur": 25,
+     "cd": 90,
+     "label": "Редкая",
+     "science": 15,
+     "sciencePct": 0.15
+    }
+   },
+   "neighborBonus": 0.15,
+   "neighborDurBonusSec": 5,
+   "neighborMax": 2,
+   "scienceCap": 0.5
+  },
+  "transportConfig": {
+   "basePerSec": 0.02,
+   "inputPerOutput": 8,
+   "offlineCapMult": 1,
+   "maxLevel": 5,
+   "deepMult": 2
+  },
+  "mutants": {
+   "forge": {
+    "id": "ember",
+    "name": "🔥 Уголёк",
+    "yieldMult": 1.5,
+    "depletionMult": 1.5,
+    "color": "#ff8c4d"
+   },
+   "frost": {
+    "id": "rime",
+    "name": "❄ Иней",
+    "yieldMult": 1.2,
+    "depletionMult": 0.8,
+    "color": "#8fe0ff"
+   },
+   "life": {
+    "id": "mycelium",
+    "name": "🌱 Мицелий",
+    "yieldMult": 1.3,
+    "depletionMult": 1,
+    "color": "#7ee08a"
+   },
+   "void": {
+    "id": "shadow",
+    "name": "🌑 Тень",
+    "yieldMult": 2,
+    "depletionMult": 2,
+    "color": "#c084fc"
+   },
+   "core": {
+    "id": "prime",
+    "name": "⚪ Прайм",
+    "yieldMult": 1.4,
+    "depletionMult": 1.2,
+    "color": "#eaf8ff"
+   }
+  },
+  "deepLevelThreshold": 8,
+  "deepUpgradeCurveLen": 20,
+  "deepUpgradeCurveFirst3": [
+   {
+    "e": 0,
+    "a": 20,
+    "b": 0,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 110,
+    "a": 50,
+    "b": 0,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 430,
+    "a": 100,
+    "b": 25,
+    "g": 0,
+    "x": 0
+   }
+  ],
+  "researchMaxLevel": 15,
+  "researchPerLevel": 5,
+  "branchMeta": {
+   "synth": {
+    "name": "Синтез",
+    "icon": "🌌",
+    "color": "#5cf2b0"
+   },
+   "power": {
+    "name": "Питание",
+    "icon": "⚡",
+    "color": "#4ddcff"
+   },
+   "resonance": {
+    "name": "Резонанс",
+    "icon": "💎",
+    "color": "#c084fc"
+   }
+  },
+  "productByBiome": {
+   "forge": "titanium",
+   "frost": "titanium",
+   "life": "silicon",
+   "void": "uranium"
+  },
+  "sonarChargeMax": 3,
+  "Hr": 3,
+  "unlockedPlanets": [
+   "ferrum"
+  ],
+  "activePlanetId": "ferrum"
+ },
+ "discharge": {
+  "reject_type": {
+   "ok": false,
+   "reason": "type"
+  },
+  "reject_unexplored": {
+   "ok": false,
+   "reason": "unexplored"
+  },
+  "reject_destroyed": {
+   "ok": false,
+   "reason": "destroyed"
+  },
+  "first": {
+   "ok": true,
+   "pct": 0.03,
+   "pctTotal": 0.03,
+   "dur": 20,
+   "mult": 1,
+   "neighbors": 0,
+   "atCap": false,
+   "sonarChargeGained": false,
+   "leftSec": 45
+  },
+  "afterFirst": {
+   "energy": 0.513,
+   "iron": 0,
+   "kriogen": 0,
+   "crystals": 0,
+   "research": 5.000513,
+   "energyPerSec": 4.12,
+   "ironPerSec": 0,
+   "kriogenPerSec": 0,
+   "crystalsPerSec": 0,
+   "sonarCharges": 0,
+   "chargesDone": 1,
+   "deepMined": 0,
+   "synthRuns": 0,
+   "scanned": 0
+  },
+  "buffsAfterFirst": {
+   "ferrum": {
+    "pct": 0.03,
+    "until": 1800000020000,
+    "sciencePct": 0.05,
+    "scienceUntil": 1800000020000
+   }
+  },
+  "deltas": {
+   "research": 5,
+   "energyPerSecBefore": 1
+  },
+  "reject_cooldown": {
+   "ok": false,
+   "reason": "cooldown",
+   "left": 45
+  },
+  "afterCooldown": {
+   "ok": true,
+   "pct": 0.03,
+   "pctTotal": 0.03,
+   "dur": 20,
+   "mult": 1,
+   "neighbors": 0,
+   "atCap": false,
+   "sonarChargeGained": false,
+   "leftSec": 45
+  },
+  "buffsAfterCooldown": {
+   "ferrum": {
+    "pct": 0.03,
+    "until": 1800000066000,
+    "sciencePct": 0.05,
+    "scienceUntil": 1800000066000
+   }
+  },
+  "type2": {
+   "ok": true,
+   "pct": 0.08,
+   "pctTotal": 0.11,
+   "dur": 25,
+   "mult": 1,
+   "neighbors": 0,
+   "atCap": false,
+   "sonarChargeGained": true,
+   "leftSec": 90
+  },
+  "type2_sonarDelta": 1,
+  "buffsAfterType2": {
+   "ferrum": {
+    "pct": 0.11,
+    "until": 1800000072000,
+    "sciencePct": 0.2,
+    "scienceUntil": 1800000072000
+   }
+  }
+ },
+ "s0": {
+  "buffsActive": {
+   "ferrum": {
+    "pct": 0.11,
+    "until": 1800000072000,
+    "sciencePct": 0.2,
+    "scienceUntil": 1800000072000
+   }
+  },
+  "a0": {
+   "pct": 0.11,
+   "leftSec": 25,
+   "sciPct": 0.2,
+   "sciLeftSec": 25
+  },
+  "mult_active": 1.11,
+  "energyPerSec_buffed": 15.540000000000003,
+  "researchPerSec_buffed": 0.0012,
+  "breakdown_buffed": {
+   "perPlanet": {
+    "ferrum": {
+     "type6": 0,
+     "type0": 0.001,
+     "raw": 0.001,
+     "cap": 100,
+     "capped": 0.001,
+     "boost": 1.2,
+     "total": 0.0012
+    }
+   },
+   "type6": 0,
+   "type0": 0.001,
+   "cappedPlanets": 0,
+   "globalMult": 1,
+   "exhausted": false,
+   "total": 0.0012
+  },
+  "mult_expired": 1,
+  "buffsAfterCleanup": {},
+  "energyPerSec_clean": 14,
+  "researchPerSec_clean": 0.001,
+  "ratio_energy": 1.11
+ },
+ "branches": {
+  "cellId": 3,
+  "Uo_default": "synth",
+  "Uo_type0": null,
+  "income": {
+   "synth_L0": {
+    "energyPerSec": 14,
+    "crystalsPerSec": 0
+   },
+   "power_L0": {
+    "energyPerSec": 18,
+    "crystalsPerSec": 0
+   },
+   "resonance_L0": {
+    "energyPerSec": 14,
+    "crystalsPerSec": 0.005
+   },
+   "synth_L0_deep": {
+    "energyPerSec": 14,
+    "crystalsPerSec": 0
+   },
+   "power_L0_deep": {
+    "energyPerSec": 22,
+    "crystalsPerSec": 0
+   },
+   "resonance_L0_deep": {
+    "energyPerSec": 14,
+    "crystalsPerSec": 0.01
+   },
+   "synth_L3": {
+    "energyPerSec": 14,
+    "crystalsPerSec": 0
+   },
+   "power_L3": {
+    "energyPerSec": 30,
+    "crystalsPerSec": 0
+   },
+   "resonance_L3": {
+    "energyPerSec": 14,
+    "crystalsPerSec": 0.02
+   },
+   "synth_L3_deep": {
+    "energyPerSec": 14,
+    "crystalsPerSec": 0
+   },
+   "power_L3_deep": {
+    "energyPerSec": 46,
+    "crystalsPerSec": 0
+   },
+   "resonance_L3_deep": {
+    "energyPerSec": 14,
+    "crystalsPerSec": 0.04
+   }
+  },
+  "delta_power_L0": 4,
+  "delta_power_L3_deep": 32,
+  "delta_reson_L0": 0.005,
+  "delta_reson_L3_deep": 0.04,
+  "fm_power": 0.7,
+  "fm_power_deep": 0.5,
+  "fm_resonance": 1,
+  "fm_unexplored": 1,
+  "fm_synth": 1,
+  "spc_hidden": false
+ },
+ "synth": {
+  "el_ferrum": "carbon",
+  "el_krios": "carbon",
+  "Iy_ferrum": "iron",
+  "Ly": 1,
+  "y_locked": false,
+  "product_te": {
+   "rare": 0.4,
+   "researchUnlock": "unlock_carbon"
+  },
+  "ti_noAnomaliesExplored": {
+   "out": 0,
+   "in": 0,
+   "product": "carbon",
+   "input": "iron",
+   "anomalies": 1,
+   "locked": true
+  },
+  "ei_L2": 3,
+  "Cy_L2": 0.06,
+  "ei_L2_deep": 6,
+  "ti_synth_L2": {
+   "out": 0,
+   "in": 0,
+   "product": "carbon",
+   "input": "iron",
+   "anomalies": 1,
+   "locked": true
+  },
+  "krios_anomalyCount": 3,
+  "y_locked_krios": false,
+  "ti_krios": {
+   "out": 0,
+   "in": 0,
+   "product": "carbon",
+   "input": "kriogen",
+   "anomalies": 1,
+   "locked": true
+  },
+  "ftProbe_before": false,
+  "ftProbe_after": true,
+  "Kt": {
+   "iron": true,
+   "kriogen": true,
+   "carbon": true
+  },
+  "y_locked_afterUnlock": true,
+  "ti_krios_unlocked": {
+   "out": 0.036000000000000004,
+   "in": 0.28800000000000003,
+   "product": "carbon",
+   "input": "kriogen",
+   "anomalies": 1,
+   "locked": false
+  },
+  "Ty_krios_10s_unlockedPlanet": true,
+  "Ty_krios_10s": {
+   "ti": {
+    "out": 0.036000000000000004,
+    "in": 0.28800000000000003,
+    "product": "carbon",
+    "input": "kriogen",
+    "anomalies": 1,
+    "locked": false
+   },
+   "ran": true,
+   "input": "kriogen",
+   "product": "carbon",
+   "stockBefore": 0,
+   "stockAfterAdd": 100000,
+   "stockAfterTick": 99997.12,
+   "productStock": 0.36000000000000004,
+   "originSynthesized": 0.36000000000000004,
+   "inputConsumed": 2.8800000000046566,
+   "synthRunsDelta": 1,
+   "Ay_10s": 0.36000000000000004
+  },
+  "Ty_ferrum_10s": {
+   "ti": {
+    "out": 0.054,
+    "in": 0.432,
+    "product": "carbon",
+    "input": "iron",
+    "anomalies": 1,
+    "locked": false
+   },
+   "ran": true,
+   "input": "iron",
+   "product": "carbon",
+   "stockBefore": 0,
+   "stockAfterAdd": 100000,
+   "stockAfterTick": 99995.68,
+   "productStock": 0.54,
+   "originSynthesized": 0.54,
+   "inputConsumed": 4.320000000006985,
+   "synthRunsDelta": 2,
+   "Ay_10s": 0.54
+  },
+  "Ds_all_ferrum": 1,
+  "Ds_synth_ferrum": 1
+ },
+ "mutants": {
+  "ex_byArm": {
+   "forge": {
+    "id": "ember",
+    "name": "🔥 Уголёк",
+    "yieldMult": 1.5,
+    "depletionMult": 1.5,
+    "color": "#ff8c4d"
+   },
+   "frost": {
+    "id": "rime",
+    "name": "❄ Иней",
+    "yieldMult": 1.2,
+    "depletionMult": 0.8,
+    "color": "#8fe0ff"
+   },
+   "life": {
+    "id": "mycelium",
+    "name": "🌱 Мицелий",
+    "yieldMult": 1.3,
+    "depletionMult": 1,
+    "color": "#7ee08a"
+   },
+   "void": {
+    "id": "shadow",
+    "name": "🌑 Тень",
+    "yieldMult": 2,
+    "depletionMult": 2,
+    "color": "#c084fc"
+   },
+   "core": {
+    "id": "prime",
+    "name": "⚪ Прайм",
+    "yieldMult": 1.4,
+    "depletionMult": 1.2,
+    "color": "#eaf8ff"
+   },
+   "unknown": null
+  },
+  "gt": true,
+  "tb_base": 0.055999999999999994,
+  "ta_ember": 0.08399999999999999,
+  "ta_rime": 0.0448,
+  "ta_shadow": 0.11199999999999999,
+  "components": {
+   "Ws": 2,
+   "jy": 1,
+   "Wr_idx1": 1,
+   "Wr_idx5": 1.121487603305785,
+   "Yk": 1,
+   "l1": 1,
+   "xt_ferrum": {
+    "id": "core",
+    "name": "ЯДРО",
+    "color": "#ffd27a",
+    "energy": 1,
+    "iron": 1,
+    "kriogen": 1,
+    "rare": 0.8,
+    "focus": {},
+    "deplete": 0.8,
+    "scan": 0.9,
+    "event": 0.75
+   },
+   "fm_now": 1,
+   "ironYield": 0.1,
+   "kriogenYield": 0,
+   "level": 0,
+   "isDeep": false
+  },
+  "tb_withPowerAnomaly": 0.03919999999999999,
+  "tb_ratio_power": 0.7,
+  "rollNote": "12% при скане (открытии) жилы type3/5: mutant = ex(planet.armId).id, Math.random (не детерминирован по seed)"
+ },
+ "deep": {
+  "fl": 8,
+  "b0_7to8": true,
+  "isDeep_after": true,
+  "deepMined_delta": 1,
+  "b0_8to9_alreadyDeep": false,
+  "b0_6to7": false,
+  "nr_table_idx1": [
+   {
+    "L": 0,
+    "cost": {
+     "iron": 50,
+     "energy": 300
+    }
+   },
+   {
+    "L": 1,
+    "cost": {
+     "iron": 150,
+     "energy": 900
+    }
+   },
+   {
+    "L": 2,
+    "cost": {
+     "iron": 450,
+     "energy": 2700
+    }
+   },
+   {
+    "L": 3,
+    "cost": {
+     "iron": 1350,
+     "energy": 8100
+    }
+   },
+   {
+    "L": 4,
+    "cost": {
+     "iron": 4050,
+     "energy": 24300
+    }
+   },
+   {
+    "L": 5,
+    "cost": {
+     "iron": 12150,
+     "energy": 72900
+    }
+   }
+  ],
+  "nr_idx5_L0": {
+   "iron": 91,
+   "energy": 547
+  },
+  "To_5": 1.8225000000000002,
+  "ucm": 1.2,
+  "tl_steps": [
+   {
+    "before": {
+     "level": 0,
+     "isDeep": false,
+     "energy": 1000000000,
+     "iron": 1099991.3599999999
+    },
+    "result": null,
+    "after": {
+     "level": 1,
+     "isDeep": false,
+     "energy": 999999700,
+     "iron": 1099931.3599999999
+    },
+    "energyDelta": 300
+   },
+   {
+    "before": {
+     "level": 1,
+     "isDeep": false,
+     "energy": 999999700,
+     "iron": 1099931.3599999999
+    },
+    "result": null,
+    "after": {
+     "level": 2,
+     "isDeep": false,
+     "energy": 999998800,
+     "iron": 1099751.3599999999
+    },
+    "energyDelta": 900
+   },
+   {
+    "before": {
+     "level": 2,
+     "isDeep": false,
+     "energy": 999998800,
+     "iron": 1099751.3599999999
+    },
+    "result": null,
+    "after": {
+     "level": 3,
+     "isDeep": false,
+     "energy": 999996100,
+     "iron": 1099211.3599999999
+    },
+    "energyDelta": 2700
+   },
+   {
+    "before": {
+     "level": 3,
+     "isDeep": false,
+     "energy": 999996100,
+     "iron": 1099211.3599999999
+    },
+    "result": null,
+    "after": {
+     "level": 4,
+     "isDeep": false,
+     "energy": 999988000,
+     "iron": 1097591.3599999999
+    },
+    "energyDelta": 8100
+   },
+   {
+    "before": {
+     "level": 4,
+     "isDeep": false,
+     "energy": 999988000,
+     "iron": 1097591.3599999999
+    },
+    "result": null,
+    "after": {
+     "level": 5,
+     "isDeep": false,
+     "energy": 999963700,
+     "iron": 1092731.3599999999
+    },
+    "energyDelta": 24300
+   },
+   {
+    "before": {
+     "level": 5,
+     "isDeep": false,
+     "energy": 999963700,
+     "iron": 1092731.3599999999
+    },
+    "result": null,
+    "after": {
+     "level": 5,
+     "isDeep": true,
+     "energy": 999958900,
+     "iron": 1092131.3599999999
+    },
+    "energyDelta": 4800
+   }
+  ],
+  "maxLevel": 5
+ },
+ "chargeKrios": {
+  "t1count": 9,
+  "t2count": 4,
+  "sequence": [
+   {
+    "cellId": 3,
+    "ok": true,
+    "neighbors": 0,
+    "mult": 1,
+    "pct": 0.03,
+    "pctTotal": 0.03,
+    "dur": 20,
+    "atCap": false,
+    "scienceDelta": 5
+   },
+   {
+    "cellId": 7,
+    "ok": true,
+    "neighbors": 0,
+    "mult": 1,
+    "pct": 0.03,
+    "pctTotal": 0.06,
+    "dur": 20,
+    "atCap": false,
+    "scienceDelta": 5
+   },
+   {
+    "cellId": 17,
+    "ok": true,
+    "neighbors": 0,
+    "mult": 1,
+    "pct": 0.03,
+    "pctTotal": 0.09,
+    "dur": 20,
+    "atCap": false,
+    "scienceDelta": 5
+   },
+   {
+    "cellId": 41,
+    "ok": true,
+    "neighbors": 0,
+    "mult": 1,
+    "pct": 0.03,
+    "pctTotal": 0.12,
+    "dur": 20,
+    "atCap": false,
+    "scienceDelta": 5
+   },
+   {
+    "cellId": 44,
+    "ok": true,
+    "neighbors": 0,
+    "mult": 1,
+    "pct": 0.03,
+    "pctTotal": 0.15,
+    "dur": 20,
+    "atCap": false,
+    "scienceDelta": 5
+   },
+   {
+    "cellId": 63,
+    "ok": true,
+    "neighbors": 0,
+    "mult": 1,
+    "pct": 0.03,
+    "pctTotal": 0.18,
+    "dur": 20,
+    "atCap": false,
+    "scienceDelta": 5
+   },
+   {
+    "cellId": 71,
+    "ok": true,
+    "neighbors": 0,
+    "mult": 1,
+    "pct": 0.03,
+    "pctTotal": 0.21,
+    "dur": 20,
+    "atCap": false,
+    "scienceDelta": 5
+   },
+   {
+    "cellId": 78,
+    "ok": true,
+    "neighbors": 0,
+    "mult": 1,
+    "pct": 0.03,
+    "pctTotal": 0.24,
+    "dur": 20,
+    "atCap": false,
+    "scienceDelta": 5
+   },
+   {
+    "cellId": 81,
+    "ok": true,
+    "neighbors": 0,
+    "mult": 1,
+    "pct": 0.03,
+    "pctTotal": 0.25,
+    "dur": 20,
+    "atCap": true,
+    "scienceDelta": 5
+   }
+  ],
+  "buffAfterSequence": {
+   "pct": 0.25,
+   "until": 1800000667000,
+   "sciencePct": 0.44999999999999996,
+   "scienceUntil": 1800000667000
+  },
+  "a0_krios": {
+   "pct": 0.25,
+   "leftSec": 20,
+   "sciPct": 0.44999999999999996,
+   "sciLeftSec": 20
+  },
+  "s0_krios": 1.25,
+  "neighborTest": {
+   "anchorId": 3,
+   "mutatedNeighbor": 6,
+   "note": "harness: type0→type1 для проверки соседского бонуса",
+   "result": {
+    "neighbors": 1,
+    "mult": 1.15,
+    "pct": 0.034499999999999996,
+    "dur": 25,
+    "ok": true
+   }
+  },
+  "sonar": [
+   {
+    "cellId": 12,
+    "ok": true,
+    "gained": true,
+    "sonarBefore": 1,
+    "sonarAfter": 2,
+    "scienceDelta": 15
+   },
+   {
+    "cellId": 20,
+    "ok": true,
+    "gained": true,
+    "sonarBefore": 2,
+    "sonarAfter": 3,
+    "scienceDelta": 15
+   },
+   {
+    "cellId": 45,
+    "ok": true,
+    "gained": false,
+    "sonarBefore": 3,
+    "sonarAfter": 3,
+    "scienceDelta": 15
+   },
+   {
+    "cellId": 85,
+    "ok": true,
+    "gained": false,
+    "sonarBefore": 3,
+    "sonarAfter": 3,
+    "scienceDelta": 15.000000000000014
+   }
+  ],
+  "unlockedPlanets": [
+   "ferrum",
+   "krios"
+  ]
+ },
+ "surge": {
+  "constants": {
+   "schedulerGuard": "window.__voroniaSurgeSchedulerV0390",
+   "intervalMs": 2000,
+   "nextAtRand": {
+    "type1": [
+     45000,
+     120000
+    ],
+    "type2": [
+     90000,
+     240000
+    ]
+   },
+   "durationMs": {
+    "type1": 20000,
+    "type2": 25000
+   },
+   "basePctFallback": 0.12,
+   "bonusMult": {
+    "type1": 0.65,
+    "type2": 1.15
+   },
+   "cap": "cl||.75 (registry buffCap=0.25)",
+   "scienceAndSonar": "НЕ выдаются (только ручной разряд i0)",
+   "busEvent": "cell:surge {pid,cellId,type,duration,pct}",
+   "toastThrottleMs": 12000
+  },
+  "triggered": {
+   "surgeNextAt": 1800001166430.1838,
+   "surgeUntil": 1800001067000,
+   "chargedAt": 1800001047000,
+   "chargedEver": true,
+   "chargeCooldown": 1800001067000,
+   "pctBefore": 0,
+   "buffs": {
+    "ferrum": {
+     "pct": 0.0195,
+     "until": 1800001067000,
+     "sciencePct": 0,
+     "scienceUntil": 0
+    }
+   }
+  },
+  "busSurges": [
+   {
+    "type": "cell:discharged",
+    "at": 1800000747000,
+    "detail": {
+     "pid": "krios",
+     "cellId": 3,
+     "type": 1,
+     "science": 6,
+     "buffPct": 0.05
+    }
+   },
+   {
+    "type": "cell:discharged",
+    "at": 1800000747000,
+    "detail": {
+     "pid": "krios",
+     "cellId": 12,
+     "type": 2,
+     "science": 15,
+     "buffPct": 0.15
+    }
+   },
+   {
+    "type": "cell:discharged",
+    "at": 1800000747000,
+    "detail": {
+     "pid": "krios",
+     "cellId": 20,
+     "type": 2,
+     "science": 15,
+     "buffPct": 0.15
+    }
+   },
+   {
+    "type": "cell:discharged",
+    "at": 1800000747000,
+    "detail": {
+     "pid": "krios",
+     "cellId": 45,
+     "type": 2,
+     "science": 15,
+     "buffPct": 0.15
+    }
+   },
+   {
+    "type": "cell:discharged",
+    "at": 1800000747000,
+    "detail": {
+     "pid": "krios",
+     "cellId": 85,
+     "type": 2,
+     "science": 15,
+     "buffPct": 0.15
+    }
+   },
+   {
+    "type": "cell:surge",
+    "at": 1800001047000,
+    "detail": {
+     "pid": "ferrum",
+     "cellId": 5,
+     "type": 1,
+     "duration": 20,
+     "pct": 0.0195
+    }
+   }
+  ]
+ },
+ "busTail": [
+  {
+   "type": "cell:discharged",
+   "at": 1800000647000,
+   "detail": {
+    "pid": "krios",
+    "cellId": 7,
+    "type": 1,
+    "science": 5,
+    "buffPct": 0.05
+   }
+  },
+  {
+   "type": "cell:discharged",
+   "at": 1800000647000,
+   "detail": {
+    "pid": "krios",
+    "cellId": 17,
+    "type": 1,
+    "science": 5,
+    "buffPct": 0.05
+   }
+  },
+  {
+   "type": "cell:discharged",
+   "at": 1800000647000,
+   "detail": {
+    "pid": "krios",
+    "cellId": 41,
+    "type": 1,
+    "science": 5,
+    "buffPct": 0.05
+   }
+  },
+  {
+   "type": "cell:discharged",
+   "at": 1800000647000,
+   "detail": {
+    "pid": "krios",
+    "cellId": 44,
+    "type": 1,
+    "science": 5,
+    "buffPct": 0.05
+   }
+  },
+  {
+   "type": "cell:discharged",
+   "at": 1800000647000,
+   "detail": {
+    "pid": "krios",
+    "cellId": 63,
+    "type": 1,
+    "science": 5,
+    "buffPct": 0.05
+   }
+  },
+  {
+   "type": "cell:discharged",
+   "at": 1800000647000,
+   "detail": {
+    "pid": "krios",
+    "cellId": 71,
+    "type": 1,
+    "science": 5,
+    "buffPct": 0.05
+   }
+  },
+  {
+   "type": "cell:discharged",
+   "at": 1800000647000,
+   "detail": {
+    "pid": "krios",
+    "cellId": 78,
+    "type": 1,
+    "science": 5,
+    "buffPct": 0.05
+   }
+  },
+  {
+   "type": "cell:discharged",
+   "at": 1800000647000,
+   "detail": {
+    "pid": "krios",
+    "cellId": 81,
+    "type": 1,
+    "science": 5,
+    "buffPct": 0.05
+   }
+  },
+  {
+   "type": "cell:discharged",
+   "at": 1800000747000,
+   "detail": {
+    "pid": "krios",
+    "cellId": 3,
+    "type": 1,
+    "science": 6,
+    "buffPct": 0.05
+   }
+  },
+  {
+   "type": "cell:discharged",
+   "at": 1800000747000,
+   "detail": {
+    "pid": "krios",
+    "cellId": 12,
+    "type": 2,
+    "science": 15,
+    "buffPct": 0.15
+   }
+  },
+  {
+   "type": "cell:discharged",
+   "at": 1800000747000,
+   "detail": {
+    "pid": "krios",
+    "cellId": 20,
+    "type": 2,
+    "science": 15,
+    "buffPct": 0.15
+   }
+  },
+  {
+   "type": "cell:discharged",
+   "at": 1800000747000,
+   "detail": {
+    "pid": "krios",
+    "cellId": 45,
+    "type": 2,
+    "science": 15,
+    "buffPct": 0.15
+   }
+  },
+  {
+   "type": "cell:discharged",
+   "at": 1800000747000,
+   "detail": {
+    "pid": "krios",
+    "cellId": 85,
+    "type": 2,
+    "science": 15,
+    "buffPct": 0.15
+   }
+  },
+  {
+   "type": "cell:surge",
+   "at": 1800001047000,
+   "detail": {
+    "pid": "ferrum",
+    "cellId": 5,
+    "type": 1,
+    "duration": 20,
+    "pct": 0.0195
+   }
+  }
+ ],
+ "stateFinal": {
+  "energy": 999958900,
+  "iron": 1092131.3599999999,
+  "kriogen": 1000000,
+  "crystals": 0,
+  "research": 136.000513,
+  "energyPerSec": 83.2925,
+  "ironPerSec": 0.11499999999999999,
+  "kriogenPerSec": 0,
+  "crystalsPerSec": 0.05,
+  "sonarCharges": 3,
+  "chargesDone": 17,
+  "deepMined": 2,
+  "synthRuns": 3,
+  "scanned": 0
+ }
+}

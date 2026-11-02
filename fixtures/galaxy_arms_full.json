@@ -1,0 +1,304 @@
+{
+ "core_Df": {
+  "id": "core",
+  "name": "ЯДРО",
+  "color": "#ffd27a",
+  "energy": 1,
+  "iron": 1,
+  "kriogen": 1,
+  "rare": 0.8,
+  "focus": {},
+  "deplete": 0.8,
+  "scan": 0.9,
+  "event": 0.75
+ },
+ "inter_Za": {
+  "id": "inter",
+  "name": "МЕЖРУКАВЬЕ",
+  "color": "#91adbb",
+  "energy": 1,
+  "iron": 1,
+  "kriogen": 1,
+  "rare": 0.85,
+  "focus": {},
+  "deplete": 0.9,
+  "scan": 1,
+  "event": 0.85
+ },
+ "spiral_Lr": [
+  {
+   "id": "forge",
+   "name": "РУКАВ ГЕФЕСТА",
+   "color": "#ff9a5c",
+   "energy": 1.1,
+   "iron": 1.45,
+   "kriogen": 1,
+   "rare": 1.1,
+   "focus": {
+    "titanium": 1.4,
+    "iron": 1.25
+   },
+   "deplete": 1.15,
+   "scan": 1.1,
+   "event": 1.05
+  },
+  {
+   "id": "frost",
+   "name": "РУКАВ КРИО",
+   "color": "#7fd8ff",
+   "energy": 1,
+   "iron": 1,
+   "kriogen": 1.55,
+   "rare": 1.15,
+   "focus": {
+    "silicon": 1.6,
+    "kriogen": 1.25
+   },
+   "deplete": 0.85,
+   "scan": 0.95,
+   "event": 0.9
+  },
+  {
+   "id": "life",
+   "name": "РУКАВ ЖИЗНИ",
+   "color": "#7fe0a0",
+   "energy": 1.15,
+   "iron": 1.05,
+   "kriogen": 1.05,
+   "rare": 1.2,
+   "focus": {
+    "carbon": 1.7,
+    "silicon": 1.4
+   },
+   "deplete": 1.05,
+   "scan": 1,
+   "event": 1
+  },
+  {
+   "id": "void",
+   "name": "РУКАВ БЕЗДНЫ",
+   "color": "#c084fc",
+   "energy": 0.95,
+   "iron": 1.1,
+   "kriogen": 1.1,
+   "rare": 1.45,
+   "focus": {
+    "uranium": 1.6,
+    "darkMatter": 1.5
+   },
+   "deplete": 1.45,
+   "scan": 1.35,
+   "event": 1.45
+  }
+ ],
+ "armsConstants_Fn": {
+  "arms": 4,
+  "b": 0.55,
+  "r0": 3.5,
+  "width": 3.2
+ },
+ "registryGalaxy": {
+  "arms": {
+   "arms": 4,
+   "b": 0.55,
+   "r0": 3.5,
+   "width": 3.2
+  },
+  "gen": {
+   "armBias": 0.55,
+   "starterExclusionR": 24,
+   "starterZoneR": 12,
+   "outerRadius": 95,
+   "maxTries": 900,
+   "radialBias": 0.45,
+   "frontChance": 0.15,
+   "frontRadius": 72
+  },
+  "nodeRender": {
+   "BASE_R": 4.5,
+   "SCALE": 4.5,
+   "MIN_DIST": 9,
+   "THICK": 3.2
+  },
+  "mapCam": {
+   "zoomMin": 0.12,
+   "zoomMax": 16,
+   "focusZoom": 2.6,
+   "panClamp": 150,
+   "lerp": 0.14,
+   "panSpeed": 1
+  }
+ },
+ "CC_ARMS": [
+  {
+   "id": "forge",
+   "name": "РУКАВ ГЕФЕСТА",
+   "color": "#ff9a5c",
+   "energy": 1.1,
+   "iron": 1.45,
+   "kriogen": 1,
+   "rare": 1.1,
+   "focus": {
+    "titanium": 1.4,
+    "iron": 1.25
+   },
+   "deplete": 1.15,
+   "scan": 1.1,
+   "event": 1.05
+  },
+  {
+   "id": "frost",
+   "name": "РУКАВ КРИО",
+   "color": "#7fd8ff",
+   "energy": 1,
+   "iron": 1,
+   "kriogen": 1.55,
+   "rare": 1.15,
+   "focus": {
+    "silicon": 1.6,
+    "kriogen": 1.25
+   },
+   "deplete": 0.85,
+   "scan": 0.95,
+   "event": 0.9
+  },
+  {
+   "id": "life",
+   "name": "РУКАВ ЖИЗНИ",
+   "color": "#7fe0a0",
+   "energy": 1.15,
+   "iron": 1.05,
+   "kriogen": 1.05,
+   "rare": 1.2,
+   "focus": {
+    "carbon": 1.7,
+    "silicon": 1.4
+   },
+   "deplete": 1.05,
+   "scan": 1,
+   "event": 1
+  },
+  {
+   "id": "void",
+   "name": "РУКАВ БЕЗДНЫ",
+   "color": "#c084fc",
+   "energy": 0.95,
+   "iron": 1.1,
+   "kriogen": 1.1,
+   "rare": 1.45,
+   "focus": {
+    "uranium": 1.6,
+    "darkMatter": 1.5
+   },
+   "deplete": 1.45,
+   "scan": 1.35,
+   "event": 1.45
+  }
+ ],
+ "CC_CORE": {
+  "id": "core",
+  "name": "ЯДРО",
+  "color": "#ffd27a",
+  "energy": 1,
+  "iron": 1,
+  "kriogen": 1,
+  "rare": 0.8,
+  "focus": {},
+  "deplete": 0.8,
+  "scan": 0.9,
+  "event": 0.75
+ },
+ "CC_SPIRAL": {
+  "arms": 4,
+  "b": 0.55,
+  "r0": 3.5,
+  "width": 3.2
+ },
+ "CC_INTERARM": {
+  "id": "inter",
+  "name": "МЕЖРУКАВЬЕ",
+  "color": "#91adbb",
+  "energy": 1,
+  "iron": 1,
+  "kriogen": 1,
+  "rare": 0.85,
+  "focus": {},
+  "deplete": 0.9,
+  "scan": 1,
+  "event": 0.85
+ },
+ "erSamples": [
+  {
+   "x": {
+    "x": 0,
+    "z": 0
+   },
+   "arm": "core"
+  },
+  {
+   "x": {
+    "x": 3,
+    "z": 0.6
+   },
+   "arm": "core"
+  },
+  {
+   "x": {
+    "x": -2.6,
+    "z": 0.4
+   },
+   "arm": "core"
+  },
+  {
+   "x": {
+    "x": 12,
+    "z": 9
+   },
+   "arm": "inter"
+  }
+ ],
+ "graphNodes": {
+  "ferrum": {
+   "id": "ferrum",
+   "planetId": "ferrum",
+   "name": "Феррум",
+   "biome": "ferrum",
+   "geometry": "icosahedron",
+   "frequency": 1,
+   "geometryName": "Икосаэдр",
+   "seed": 15929600,
+   "x": -2.6,
+   "y": 0,
+   "z": 0.4,
+   "armId": "core",
+   "discovered": true
+  },
+  "krios": {
+   "id": "krios",
+   "planetId": "krios",
+   "name": "Криос-9",
+   "biome": "krios",
+   "geometry": "icosahedron",
+   "frequency": 3,
+   "geometryName": "Икосаэдр",
+   "seed": 13045769,
+   "x": 3,
+   "y": 0.6,
+   "z": -0.9,
+   "armId": "core",
+   "discovered": false
+  }
+ },
+ "nodeCosts": {
+  "3": {},
+  "4": {},
+  "5": {},
+  "6": {},
+  "7": {},
+  "8": {},
+  "9": {},
+  "10": {},
+  "11": {},
+  "12": {}
+ }
+}

@@ -1,0 +1,265 @@
+{
+ "scenario": "жилы: ожидаемо истощение 0.056/с (0.1×0.7×0.8), кулдаун 300с+150с×n, реактивация 65/101⚡, Xs min(14,1+0.55n)",
+ "veins": [
+  {
+   "id": 1,
+   "type": 3,
+   "resourceKey": "iron",
+   "reserve": 126,
+   "maxReserve": 126,
+   "active_gt": true,
+   "depletePerSec_ta": 0.055999999999999994,
+   "reactivationCost_$n": 65,
+   "cooldownMs_$l": 300000,
+   "Xs_mult": 1,
+   "unlockReq_zr": null,
+   "reactCount": 0
+  },
+  {
+   "id": 10,
+   "type": 3,
+   "resourceKey": "iron",
+   "reserve": 191,
+   "maxReserve": 191,
+   "active_gt": true,
+   "depletePerSec_ta": 0.055999999999999994,
+   "reactivationCost_$n": 65,
+   "cooldownMs_$l": 300000,
+   "Xs_mult": 1,
+   "unlockReq_zr": null,
+   "reactCount": 0
+  }
+ ],
+ "tickLog": [
+  {
+   "tick": 0,
+   "reserve": 126
+  },
+  {
+   "tick": 1,
+   "reserve": 125.972,
+   "cooldownUntil": 0,
+   "reactCount": 0
+  },
+  {
+   "tick": 2,
+   "reserve": 125.944,
+   "cooldownUntil": 0,
+   "reactCount": 0
+  },
+  {
+   "tick": 3,
+   "reserve": 125.916,
+   "cooldownUntil": 0,
+   "reactCount": 0
+  },
+  {
+   "tick": 4,
+   "reserve": 125.888,
+   "cooldownUntil": 0,
+   "reactCount": 0
+  },
+  {
+   "tick": 5,
+   "reserve": 125.86,
+   "cooldownUntil": 0,
+   "reactCount": 0
+  },
+  {
+   "tick": 6,
+   "reserve": 125.832,
+   "cooldownUntil": 0,
+   "reactCount": 0
+  },
+  {
+   "tick": 7,
+   "reserve": 125.804,
+   "cooldownUntil": 0,
+   "reactCount": 0
+  },
+  {
+   "tick": 8,
+   "reserve": 125.776,
+   "cooldownUntil": 0,
+   "reactCount": 0
+  },
+  {
+   "tick": 9,
+   "reserve": 125.748,
+   "cooldownUntil": 0,
+   "reactCount": 0
+  },
+  {
+   "tick": 10,
+   "reserve": 125.72,
+   "cooldownUntil": 0,
+   "reactCount": 0
+  },
+  {
+   "tick": 11,
+   "reserve": 125.692,
+   "cooldownUntil": 0,
+   "reactCount": 0
+  },
+  {
+   "tick": 12,
+   "reserve": 125.664,
+   "cooldownUntil": 0,
+   "reactCount": 0
+  },
+  {
+   "tick": 13,
+   "reserve": 125.636,
+   "cooldownUntil": 0,
+   "reactCount": 0
+  },
+  {
+   "tick": 14,
+   "reserve": 125.608,
+   "cooldownUntil": 0,
+   "reactCount": 0
+  },
+  {
+   "tick": 15,
+   "reserve": 125.58,
+   "cooldownUntil": 0,
+   "reactCount": 0
+  },
+  {
+   "tick": 16,
+   "reserve": 125.552,
+   "cooldownUntil": 0,
+   "reactCount": 0
+  },
+  {
+   "tick": 17,
+   "reserve": 125.524,
+   "cooldownUntil": 0,
+   "reactCount": 0
+  },
+  {
+   "tick": 18,
+   "reserve": 125.496,
+   "cooldownUntil": 0,
+   "reactCount": 0
+  },
+  {
+   "tick": 19,
+   "reserve": 125.468,
+   "cooldownUntil": 0,
+   "reactCount": 0
+  },
+  {
+   "tick": 20,
+   "reserve": 125.44,
+   "cooldownUntil": 0,
+   "reactCount": 0
+  }
+ ],
+ "xsCurve": [
+  {
+   "reactCount": 0,
+   "Xs": 1,
+   "reactivation": 65,
+   "cooldownMs": 300000
+  },
+  {
+   "reactCount": 1,
+   "Xs": 1.55,
+   "reactivation": 101,
+   "cooldownMs": 450000
+  },
+  {
+   "reactCount": 2,
+   "Xs": 2.1,
+   "reactivation": 136,
+   "cooldownMs": 600000
+  },
+  {
+   "reactCount": 3,
+   "Xs": 2.6500000000000004,
+   "reactivation": 172,
+   "cooldownMs": 750000
+  },
+  {
+   "reactCount": 4,
+   "Xs": 3.2,
+   "reactivation": 208,
+   "cooldownMs": 900000
+  },
+  {
+   "reactCount": 5,
+   "Xs": 3.75,
+   "reactivation": 243,
+   "cooldownMs": 1050000
+  },
+  {
+   "reactCount": 6,
+   "Xs": 4.300000000000001,
+   "reactivation": 279,
+   "cooldownMs": 1200000
+  },
+  {
+   "reactCount": 7,
+   "Xs": 4.8500000000000005,
+   "reactivation": 315,
+   "cooldownMs": 1350000
+  },
+  {
+   "reactCount": 8,
+   "Xs": 5.4,
+   "reactivation": 350,
+   "cooldownMs": 1500000
+  },
+  {
+   "reactCount": 9,
+   "Xs": 5.95,
+   "reactivation": 386,
+   "cooldownMs": 1650000
+  },
+  {
+   "reactCount": 10,
+   "Xs": 6.5,
+   "reactivation": 422,
+   "cooldownMs": 1800000
+  },
+  {
+   "reactCount": 11,
+   "Xs": 7.050000000000001,
+   "reactivation": 457,
+   "cooldownMs": 1800000
+  },
+  {
+   "reactCount": 12,
+   "Xs": 7.6000000000000005,
+   "reactivation": 493,
+   "cooldownMs": 1800000
+  },
+  {
+   "reactCount": 13,
+   "Xs": 8.15,
+   "reactivation": 529,
+   "cooldownMs": 1800000
+  },
+  {
+   "reactCount": 14,
+   "Xs": 8.700000000000001,
+   "reactivation": 564,
+   "cooldownMs": 1800000
+  },
+  {
+   "reactCount": 15,
+   "Xs": 9.25,
+   "reactivation": 600,
+   "cooldownMs": 1800000
+  }
+ ],
+ "registryCells": {
+  "reactivation": {
+   "max": 14,
+   "step": 0.55
+  },
+  "veinYieldGrowth": 1.083,
+  "veinReserveGrowth": 1.104
+ }
+}

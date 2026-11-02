@@ -1,0 +1,422 @@
+{
+ "scenario": "README parity: midgame-ferrum 42⚡/с = 7 × compound 6; 0.69⛏/с = 0.115 × 6; 0.002🔬/с (2 type0 × 0.001)",
+ "state": {
+  "explored": [
+   0,
+   1,
+   2,
+   3
+  ],
+  "cell0Level": 5,
+  "cell0Yield": 6,
+  "steel": 1000
+ },
+ "compoundBonusMult": 6,
+ "income": {
+  "energyPerSec": 42,
+  "ironPerSec": 0.69,
+  "kriogenPerSec": 0,
+  "crystalsPerSec": 0,
+  "researchPerSec": 0.002,
+  "planetIncome": {
+   "ferrum": {
+    "energy": 42,
+    "iron": 0.69,
+    "kriogen": 0,
+    "crystals": 0,
+    "extra": {},
+    "energyByType": {
+     "0": 42,
+     "3": 0
+    }
+   },
+   "krios": {
+    "energy": 0,
+    "iron": 0,
+    "kriogen": 0,
+    "crystals": 0,
+    "extra": {},
+    "energyByType": {}
+   }
+  }
+ },
+ "research": {
+  "perSec": 0.002,
+  "breakdown": {
+   "perPlanet": {
+    "ferrum": {
+     "type6": 0,
+     "type0": 0.002,
+     "raw": 0.002,
+     "cap": 100,
+     "capped": 0.002,
+     "boost": 1,
+     "total": 0.002
+    }
+   },
+   "type6": 0,
+   "type0": 0.002,
+   "cappedPlanets": 0,
+   "globalMult": 1,
+   "exhausted": false,
+   "total": 0.002
+  },
+  "globalMult": 1,
+  "capConstants": {
+   "Zu": 50,
+   "ef": 50
+  },
+  "RCELL_PER_LEVEL": 5,
+  "RCELL_MAX_LEVEL": 15
+ },
+ "cells": [
+  {
+   "id": 0,
+   "type": 0,
+   "displayType": 0,
+   "level": 5,
+   "yield": 6,
+   "ironYield": 0,
+   "kriogenYield": 0,
+   "reserve": 2,
+   "maxReserve": 2,
+   "cooldownUntil": 0,
+   "reactCount": 0,
+   "neighbors": [
+    2,
+    1,
+    3,
+    6,
+    7
+   ],
+   "resourceKey": "iron",
+   "anomalyType": null,
+   "isDeep": false,
+   "mutant": null,
+   "center": [
+    0,
+    0.5257311121191336,
+    0.8506508083520399
+   ]
+  },
+  {
+   "id": 1,
+   "type": 3,
+   "displayType": 3,
+   "level": 0,
+   "yield": 0,
+   "ironYield": 0.1,
+   "kriogenYield": 0,
+   "reserve": 126,
+   "maxReserve": 126,
+   "cooldownUntil": 0,
+   "reactCount": 0,
+   "neighbors": [
+    2,
+    0,
+    5,
+    7,
+    8
+   ],
+   "resourceKey": "iron",
+   "anomalyType": null,
+   "isDeep": false,
+   "mutant": null,
+   "center": [
+    -0.8506508083520399,
+    0,
+    0.5257311121191336
+   ]
+  },
+  {
+   "id": 2,
+   "type": 0,
+   "displayType": 0,
+   "level": 0,
+   "yield": 1,
+   "ironYield": 0,
+   "kriogenYield": 0,
+   "reserve": 0,
+   "maxReserve": 0,
+   "cooldownUntil": 0,
+   "reactCount": 0,
+   "neighbors": [
+    0,
+    1,
+    3,
+    4,
+    5
+   ],
+   "resourceKey": "iron",
+   "anomalyType": null,
+   "isDeep": false,
+   "mutant": null,
+   "center": [
+    -0.5257311121191336,
+    0.8506508083520399,
+    0
+   ]
+  },
+  {
+   "id": 3,
+   "type": 4,
+   "displayType": 0,
+   "level": 0,
+   "yield": 0,
+   "ironYield": 0,
+   "kriogenYield": 0,
+   "reserve": 0,
+   "maxReserve": 0,
+   "cooldownUntil": 0,
+   "reactCount": 0,
+   "neighbors": [
+    2,
+    0,
+    4,
+    6,
+    10
+   ],
+   "resourceKey": "iron",
+   "anomalyType": null,
+   "isDeep": false,
+   "mutant": null,
+   "center": [
+    0.5257311121191336,
+    0.8506508083520399,
+    0
+   ]
+  },
+  {
+   "id": 4,
+   "type": 0,
+   "displayType": 0,
+   "level": 0,
+   "yield": 1,
+   "ironYield": 0,
+   "kriogenYield": 0,
+   "reserve": 0,
+   "maxReserve": 0,
+   "cooldownUntil": 0,
+   "reactCount": 0,
+   "neighbors": [
+    2,
+    3,
+    5,
+    9,
+    10
+   ],
+   "resourceKey": "iron",
+   "anomalyType": null,
+   "isDeep": false,
+   "mutant": null,
+   "center": [
+    0,
+    0.5257311121191336,
+    -0.8506508083520399
+   ]
+  },
+  {
+   "id": 5,
+   "type": 1,
+   "displayType": 1,
+   "level": 0,
+   "yield": 3,
+   "ironYield": 0,
+   "kriogenYield": 0,
+   "reserve": 0,
+   "maxReserve": 0,
+   "cooldownUntil": 0,
+   "reactCount": 0,
+   "neighbors": [
+    2,
+    4,
+    1,
+    8,
+    9
+   ],
+   "resourceKey": "iron",
+   "anomalyType": null,
+   "isDeep": false,
+   "mutant": null,
+   "center": [
+    -0.8506508083520399,
+    0,
+    -0.5257311121191336
+   ]
+  },
+  {
+   "id": 6,
+   "type": 0,
+   "displayType": 0,
+   "level": 0,
+   "yield": 1,
+   "ironYield": 0,
+   "kriogenYield": 0,
+   "reserve": 0,
+   "maxReserve": 0,
+   "cooldownUntil": 0,
+   "reactCount": 0,
+   "neighbors": [
+    3,
+    0,
+    11,
+    7,
+    10
+   ],
+   "resourceKey": "iron",
+   "anomalyType": null,
+   "isDeep": false,
+   "mutant": null,
+   "center": [
+    0.8506508083520399,
+    0,
+    0.5257311121191336
+   ]
+  },
+  {
+   "id": 7,
+   "type": 2,
+   "displayType": 2,
+   "level": 0,
+   "yield": 10,
+   "ironYield": 0,
+   "kriogenYield": 0,
+   "reserve": 0,
+   "maxReserve": 0,
+   "cooldownUntil": 0,
+   "reactCount": 0,
+   "neighbors": [
+    0,
+    1,
+    11,
+    6,
+    8
+   ],
+   "resourceKey": "iron",
+   "anomalyType": null,
+   "isDeep": false,
+   "mutant": null,
+   "center": [
+    0,
+    -0.5257311121191336,
+    0.8506508083520399
+   ]
+  },
+  {
+   "id": 8,
+   "type": 0,
+   "displayType": 0,
+   "level": 0,
+   "yield": 1,
+   "ironYield": 0,
+   "kriogenYield": 0,
+   "reserve": 0,
+   "maxReserve": 0,
+   "cooldownUntil": 0,
+   "reactCount": 0,
+   "neighbors": [
+    1,
+    5,
+    11,
+    7,
+    9
+   ],
+   "resourceKey": "iron",
+   "anomalyType": null,
+   "isDeep": false,
+   "mutant": null,
+   "center": [
+    -0.5257311121191336,
+    -0.8506508083520399,
+    0
+   ]
+  },
+  {
+   "id": 9,
+   "type": 0,
+   "displayType": 0,
+   "level": 0,
+   "yield": 1,
+   "ironYield": 0,
+   "kriogenYield": 0,
+   "reserve": 0,
+   "maxReserve": 0,
+   "cooldownUntil": 0,
+   "reactCount": 0,
+   "neighbors": [
+    5,
+    4,
+    11,
+    8,
+    10
+   ],
+   "resourceKey": "iron",
+   "anomalyType": null,
+   "isDeep": false,
+   "mutant": null,
+   "center": [
+    0,
+    -0.5257311121191336,
+    -0.8506508083520399
+   ]
+  },
+  {
+   "id": 10,
+   "type": 3,
+   "displayType": 3,
+   "level": 0,
+   "yield": 0,
+   "ironYield": 0.1,
+   "kriogenYield": 0,
+   "reserve": 191,
+   "maxReserve": 191,
+   "cooldownUntil": 0,
+   "reactCount": 0,
+   "neighbors": [
+    4,
+    3,
+    11,
+    9,
+    6
+   ],
+   "resourceKey": "iron",
+   "anomalyType": null,
+   "isDeep": false,
+   "mutant": null,
+   "center": [
+    0.8506508083520399,
+    0,
+    -0.5257311121191336
+   ]
+  },
+  {
+   "id": 11,
+   "type": 0,
+   "displayType": 0,
+   "level": 0,
+   "yield": 1,
+   "ironYield": 0,
+   "kriogenYield": 0,
+   "reserve": 0,
+   "maxReserve": 0,
+   "cooldownUntil": 0,
+   "reactCount": 0,
+   "neighbors": [
+    7,
+    6,
+    8,
+    9,
+    10
+   ],
+   "resourceKey": "iron",
+   "anomalyType": null,
+   "isDeep": false,
+   "mutant": null,
+   "center": [
+    0.5257311121191336,
+    -0.8506508083520399,
+    0
+   ]
+  }
+ ]
+}

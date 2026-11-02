@@ -1,0 +1,801 @@
+{
+ "geometry": {
+  "icosahedron": {
+   "name": "Икосаэдр",
+   "weight": 45,
+   "minFrequency": 1,
+   "maxFrequency": 5,
+   "vertices": [
+    [
+     -1,
+     1.618033988749895,
+     0
+    ],
+    [
+     1,
+     1.618033988749895,
+     0
+    ],
+    [
+     -1,
+     -1.618033988749895,
+     0
+    ],
+    [
+     1,
+     -1.618033988749895,
+     0
+    ],
+    [
+     0,
+     -1,
+     1.618033988749895
+    ],
+    [
+     0,
+     1,
+     1.618033988749895
+    ],
+    [
+     0,
+     -1,
+     -1.618033988749895
+    ],
+    [
+     0,
+     1,
+     -1.618033988749895
+    ],
+    [
+     1.618033988749895,
+     0,
+     -1
+    ],
+    [
+     1.618033988749895,
+     0,
+     1
+    ],
+    [
+     -1.618033988749895,
+     0,
+     -1
+    ],
+    [
+     -1.618033988749895,
+     0,
+     1
+    ]
+   ],
+   "faces": [
+    [
+     0,
+     11,
+     5
+    ],
+    [
+     0,
+     5,
+     1
+    ],
+    [
+     0,
+     1,
+     7
+    ],
+    [
+     0,
+     7,
+     10
+    ],
+    [
+     0,
+     10,
+     11
+    ],
+    [
+     1,
+     5,
+     9
+    ],
+    [
+     5,
+     11,
+     4
+    ],
+    [
+     11,
+     10,
+     2
+    ],
+    [
+     10,
+     7,
+     6
+    ],
+    [
+     7,
+     1,
+     8
+    ],
+    [
+     3,
+     9,
+     4
+    ],
+    [
+     3,
+     4,
+     2
+    ],
+    [
+     3,
+     2,
+     6
+    ],
+    [
+     3,
+     6,
+     8
+    ],
+    [
+     3,
+     8,
+     9
+    ],
+    [
+     4,
+     9,
+     5
+    ],
+    [
+     2,
+     4,
+     11
+    ],
+    [
+     6,
+     2,
+     10
+    ],
+    [
+     8,
+     6,
+     7
+    ],
+    [
+     9,
+     8,
+     1
+    ]
+   ]
+  },
+  "octahedron": {
+   "name": "Октаэдр",
+   "weight": 25,
+   "minFrequency": 1,
+   "maxFrequency": 4,
+   "vertices": [
+    [
+     1,
+     0,
+     0
+    ],
+    [
+     -1,
+     0,
+     0
+    ],
+    [
+     0,
+     1,
+     0
+    ],
+    [
+     0,
+     -1,
+     0
+    ],
+    [
+     0,
+     0,
+     1
+    ],
+    [
+     0,
+     0,
+     -1
+    ]
+   ],
+   "faces": [
+    [
+     0,
+     2,
+     4
+    ],
+    [
+     2,
+     1,
+     4
+    ],
+    [
+     1,
+     3,
+     4
+    ],
+    [
+     3,
+     0,
+     4
+    ],
+    [
+     2,
+     0,
+     5
+    ],
+    [
+     1,
+     2,
+     5
+    ],
+    [
+     3,
+     1,
+     5
+    ],
+    [
+     0,
+     3,
+     5
+    ]
+   ]
+  },
+  "tetrahedron": {
+   "name": "Тетраэдр",
+   "weight": 10,
+   "minFrequency": 1,
+   "maxFrequency": 4,
+   "vertices": [
+    [
+     1,
+     1,
+     1
+    ],
+    [
+     1,
+     -1,
+     -1
+    ],
+    [
+     -1,
+     1,
+     -1
+    ],
+    [
+     -1,
+     -1,
+     1
+    ]
+   ],
+   "faces": [
+    [
+     0,
+     2,
+     1
+    ],
+    [
+     0,
+     1,
+     3
+    ],
+    [
+     0,
+     3,
+     2
+    ],
+    [
+     1,
+     2,
+     3
+    ]
+   ]
+  },
+  "cube": {
+   "name": "Куб",
+   "weight": 15,
+   "minFrequency": 1,
+   "maxFrequency": 4,
+   "vertices": [
+    [
+     -1,
+     -1,
+     -1
+    ],
+    [
+     1,
+     -1,
+     -1
+    ],
+    [
+     1,
+     1,
+     -1
+    ],
+    [
+     -1,
+     1,
+     -1
+    ],
+    [
+     -1,
+     -1,
+     1
+    ],
+    [
+     1,
+     -1,
+     1
+    ],
+    [
+     1,
+     1,
+     1
+    ],
+    [
+     -1,
+     1,
+     1
+    ]
+   ],
+   "faces": [
+    [
+     0,
+     1,
+     2
+    ],
+    [
+     0,
+     2,
+     3
+    ],
+    [
+     4,
+     6,
+     5
+    ],
+    [
+     4,
+     7,
+     6
+    ],
+    [
+     0,
+     4,
+     5
+    ],
+    [
+     0,
+     5,
+     1
+    ],
+    [
+     3,
+     2,
+     6
+    ],
+    [
+     3,
+     6,
+     7
+    ],
+    [
+     0,
+     3,
+     7
+    ],
+    [
+     0,
+     7,
+     4
+    ],
+    [
+     1,
+     5,
+     6
+    ],
+    [
+     1,
+     6,
+     2
+    ]
+   ]
+  }
+ },
+ "climate": {
+  "climate": [
+   {
+    "id": "temperate",
+    "name": "Умеренный",
+    "color": "#c0e8b0",
+    "effects": {}
+   },
+   {
+    "id": "frozen",
+    "name": "Мёрзлый",
+    "color": "#a8d8ff",
+    "effects": {
+     "depletionMult": 0.7,
+     "upgradeCostMult": 1.2
+    }
+   },
+   {
+    "id": "scorched",
+    "name": "Выжженный",
+    "color": "#ff8a5c",
+    "effects": {
+     "depletionMult": 1.5,
+     "energyBonus": 1.3
+    }
+   },
+   {
+    "id": "toxic",
+    "name": "Токсичный",
+    "color": "#8aff6b",
+    "effects": {
+     "scanCostMult": 1.4,
+     "ironBonus": 1.2
+    }
+   },
+   {
+    "id": "radioactive",
+    "name": "Радиоактивный",
+    "color": "#ffe88a",
+    "effects": {
+     "meteorRate": 2,
+     "ironBonus": 1.3
+    }
+   }
+  ],
+  "surface": [
+   {
+    "id": "rocky",
+    "name": "Каменистый",
+    "effects": {
+     "ironBonus": 1.15
+    }
+   },
+   {
+    "id": "oceanic",
+    "name": "Океанический",
+    "effects": {
+     "kriogenBonus": 1.3,
+     "energyBonus": 0.9
+    }
+   },
+   {
+    "id": "desert",
+    "name": "Пустынный",
+    "effects": {
+     "scanCostMult": 0.85
+    }
+   },
+   {
+    "id": "metallic",
+    "name": "Металлический",
+    "effects": {
+     "ironBonus": 1.4,
+     "upgradeCostMult": 1.1
+    }
+   },
+   {
+    "id": "crystal",
+    "name": "Кристаллический",
+    "effects": {
+     "rareChance": 2
+    }
+   }
+  ],
+  "anomaly": [
+   {
+    "id": "none",
+    "name": null,
+    "effects": {}
+   },
+   {
+    "id": "resonant",
+    "name": "Резонирующий",
+    "effects": {
+     "anomalyChance": 3
+    },
+    "chance": 0.1
+   },
+   {
+    "id": "fractured",
+    "name": "Расколотый",
+    "effects": {
+     "eventChance": 2
+    },
+    "chance": 0.08
+   },
+   {
+    "id": "echoing",
+    "name": "Эхо",
+    "effects": {
+     "echoBonus": 2
+    },
+    "chance": 0.05
+   }
+  ]
+ },
+ "nameGen": {
+  "latin": {
+   "start": [
+    "В",
+    "Кс",
+    "Т",
+    "Ар",
+    "З",
+    "Н",
+    "М",
+    "Л",
+    "Сар",
+    "Вел"
+   ],
+   "mid": [
+    "а",
+    "о",
+    "и",
+    "е",
+    "у",
+    "э",
+    "ае"
+   ],
+   "end": [
+    "н",
+    "с",
+    "р",
+    "л",
+    "м",
+    "кс",
+    "т",
+    "рн"
+   ]
+  },
+  "harsh": {
+   "start": [
+    "Кр",
+    "Гр",
+    "Тх",
+    "Вр",
+    "Зн",
+    "Хр",
+    "Др"
+   ],
+   "mid": [
+    "а",
+    "о",
+    "у"
+   ],
+   "end": [
+    "г",
+    "к",
+    "кх",
+    "рг",
+    "зг",
+    "шт"
+   ]
+  },
+  "soft": {
+   "start": [
+    "Эл",
+    "Аэ",
+    "Ил",
+    "Си",
+    "Ли",
+    "Ми",
+    "Ни"
+   ],
+   "mid": [
+    "а",
+    "э",
+    "и",
+    "о"
+   ],
+   "end": [
+    "ль",
+    "н",
+    "с",
+    "ан",
+    "ис",
+    "эль"
+   ]
+  },
+  "ancient": {
+   "start": [
+    "Аз",
+    "Ур",
+    "Эн",
+    "Ак",
+    "Ин",
+    "Ум",
+    "Он"
+   ],
+   "mid": [
+    "а",
+    "у",
+    "э"
+   ],
+   "end": [
+    "ар",
+    "ум",
+    "ор",
+    "ан",
+    "ис",
+    "арх"
+   ]
+  }
+ },
+ "goldenRatio": 1.618033988749895,
+ "events": [
+  {
+   "id": "meteor_storm",
+   "name": "☄ Метеоритный шторм",
+   "duration": 45,
+   "desc": "×5 к частоте метеоритов. Сбивай их тапом — каждый даёт случайную награду: мгновенные ресурсы или временный бафф добычи ×3/×5",
+   "effects": {
+    "meteorRate": 5
+   },
+   "polarity": "positive",
+   "weight": 0.8
+  },
+  {
+   "id": "solar_flare",
+   "name": "☀ Солнечная вспышка",
+   "duration": 30,
+   "desc": "×2 ко ВСЕЙ добыче энергии на активной планете",
+   "effects": {
+    "energyMult": 2
+   },
+   "polarity": "positive",
+   "weight": 0.9
+  },
+  {
+   "id": "acid_rain",
+   "name": "☣ Кислотный дождь",
+   "duration": 60,
+   "desc": "×3 к скорости истощения месторождений — они иссякают втрое быстрее",
+   "effects": {
+    "depletionMult": 3
+   },
+   "polarity": "negative",
+   "weight": 0.8,
+   "compensate": {
+    "crystals": 2
+   }
+  },
+  {
+   "id": "gas_cloud",
+   "name": "🌫 Газовое облако",
+   "duration": 40,
+   "desc": "−50% к стоимости сканирования клеток на активной планете",
+   "effects": {
+    "scanCostMult": 0.5
+   },
+   "polarity": "mixed",
+   "weight": 0.9
+  },
+  {
+   "id": "crystal_bloom",
+   "name": "💎 Кристальный расцвет",
+   "duration": 50,
+   "desc": "×3 к добыче кристаллов от глубоких энергоячеек",
+   "effects": {
+    "crystalMult": 3
+   },
+   "polarity": "positive",
+   "weight": 0.9
+  },
+  {
+   "id": "quasar_pulse",
+   "name": "⚡ Квазарный импульс",
+   "duration": 20,
+   "desc": "×5 к добыче энергии и железа. Коротко, но очень мощно",
+   "effects": {
+    "energyMult": 5,
+    "ironMult": 5
+   },
+   "polarity": "positive",
+   "weight": 0.7
+  },
+  {
+   "id": "deep_pulse",
+   "name": "🌀 Глубокий пульс",
+   "duration": 60,
+   "desc": "Месторождения истощаются вдвое медленнее — но кристаллы не добываются",
+   "effects": {
+    "depletionMult": 0.5,
+    "crystalMult": 0
+   },
+   "polarity": "mixed",
+   "weight": 0.8
+  },
+  {
+   "id": "cosmic_dust",
+   "name": "✨ Космическая пыль",
+   "duration": 45,
+   "desc": "×1.5 ко ВСЕМ ресурсам — но сканирование дороже ×1.5",
+   "effects": {
+    "allMult": 1.5,
+    "scanCostMult": 1.5
+   },
+   "polarity": "mixed",
+   "weight": 0.7
+  },
+  {
+   "id": "void_echo",
+   "name": "🌌 Эхо пустоты",
+   "duration": 50,
+   "desc": "×3 к появлению аномалий — но истощение жил ×1.5",
+   "effects": {
+    "anomalyChance": 3,
+    "depletionMult": 1.5
+   },
+   "polarity": "mixed",
+   "weight": 0.6
+  },
+  {
+   "id": "ion_storm",
+   "name": "⚡ Ионный шторм",
+   "duration": 45,
+   "desc": "Сканирование клеток дороже ×2",
+   "effects": {
+    "scanCostMult": 2
+   },
+   "compensate": {
+    "crystals": 2
+   },
+   "polarity": "negative",
+   "weight": 0.8
+  },
+  {
+   "id": "magnetic_anomaly",
+   "name": "🧲 Магнитная аномалия",
+   "duration": 60,
+   "desc": "Апгрейды клеток дороже ×1.5",
+   "effects": {
+    "upgradeCostMult": 1.5
+   },
+   "compensate": {
+    "crystals": 3
+   },
+   "polarity": "negative",
+   "weight": 0.7
+  },
+  {
+   "id": "resonance_collapse",
+   "name": "📉 Обвал резонанса",
+   "duration": 60,
+   "desc": "Синтез соединений идёт ×0.5",
+   "effects": {
+    "synthMult": 0.5
+   },
+   "compensate": {
+    "crystals": 4
+   },
+   "minPlanetIndex": 5,
+   "polarity": "negative",
+   "weight": 0.6
+  },
+  {
+   "id": "reactor_resonance",
+   "name": "⚗️ Резонанс реактора",
+   "duration": 60,
+   "desc": "+30% к скорости синтеза соединений (работает и на офлайн-очередь)",
+   "effects": {
+    "craftSpeedMult": 1.3
+   },
+   "polarity": "positive",
+   "weight": 0.8
+  }
+ ]
+}

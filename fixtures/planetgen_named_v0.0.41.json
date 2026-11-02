@@ -1,0 +1,1487 @@
+{
+ "note": "Этап 3: авто-имена (Rf), позиции Br для planet_04+, unique-ветка (Jo/VorResRoll uniqueBonus), lastVoronia idx15. Один бут, последовательные discoverPlanet.",
+ "uniqueChance": 0.02,
+ "uniqueSeedsFound": [
+  11,
+  79,
+  90,
+  126,
+  138,
+  156
+ ],
+ "sequential": [
+  {
+   "id": "planet_03",
+   "seed": 101,
+   "planetIndex": 3,
+   "name": "Ниоисаэан",
+   "isUnique": false,
+   "geometry": "tetrahedron",
+   "f": 1,
+   "biome": "unknown",
+   "armId": "inter",
+   "resourceList": [
+    "kriogen"
+   ],
+   "cellCount": 4,
+   "startingCellId": 2,
+   "_mixed": false,
+   "node": {
+    "x": -17.591692651332746,
+    "y": 0.22450441295291163,
+    "z": 84.0184752402838,
+    "armId": "inter"
+   },
+   "edgesAfter": [
+    [
+     "ferrum",
+     "krios"
+    ],
+    [
+     "planet_03",
+     "ferrum"
+    ]
+   ]
+  },
+  {
+   "id": "planet_04",
+   "seed": 202,
+   "planetIndex": 4,
+   "name": "Кроктхург-3",
+   "isUnique": false,
+   "geometry": "icosahedron",
+   "f": 5,
+   "biome": "unknown",
+   "armId": "inter",
+   "resourceList": [
+    "iron",
+    "carbon"
+   ],
+   "cellCount": 68,
+   "startingCellId": 19,
+   "_mixed": true,
+   "node": {
+    "x": -18.92921453698287,
+    "y": -1.3031228542327882,
+    "z": -23.83599065417457,
+    "armId": "inter"
+   },
+   "edgesAfter": [
+    [
+     "ferrum",
+     "krios"
+    ],
+    [
+     "planet_03",
+     "ferrum"
+    ],
+    [
+     "planet_04",
+     "ferrum"
+    ]
+   ]
+  },
+  {
+   "id": "planet_05",
+   "seed": 303,
+   "planetIndex": 5,
+   "name": "Ксэрннорн",
+   "isUnique": false,
+   "geometry": "icosahedron",
+   "f": 2,
+   "biome": "unknown",
+   "armId": "life",
+   "resourceList": [
+    "silicon"
+   ],
+   "cellCount": 25,
+   "startingCellId": 13,
+   "_mixed": true,
+   "node": {
+    "x": -66.22345501144444,
+    "y": -1.5334114819765092,
+    "z": 45.26083927497829,
+    "armId": "life"
+   },
+   "edgesAfter": [
+    [
+     "ferrum",
+     "krios"
+    ],
+    [
+     "planet_03",
+     "ferrum"
+    ],
+    [
+     "planet_04",
+     "ferrum"
+    ],
+    [
+     "planet_05",
+     "planet_03"
+    ]
+   ]
+  },
+  {
+   "id": "planet_06",
+   "seed": 404,
+   "planetIndex": 6,
+   "name": "Лот",
+   "isUnique": false,
+   "geometry": "octahedron",
+   "f": 2,
+   "biome": "unknown",
+   "armId": "forge",
+   "resourceList": [
+    "carbon",
+    "iron"
+   ],
+   "cellCount": 18,
+   "startingCellId": 0,
+   "_mixed": false,
+   "node": {
+    "x": -23.04221157975415,
+    "y": -0.14398564249277115,
+    "z": -15.562863758344958,
+    "armId": "forge"
+   },
+   "edgesAfter": [
+    [
+     "ferrum",
+     "krios"
+    ],
+    [
+     "planet_03",
+     "ferrum"
+    ],
+    [
+     "planet_04",
+     "ferrum"
+    ],
+    [
+     "planet_05",
+     "planet_03"
+    ],
+    [
+     "planet_06",
+     "planet_04"
+    ]
+   ]
+  },
+  {
+   "id": "planet_07",
+   "seed": 505,
+   "planetIndex": 7,
+   "name": "Грогврарг-7",
+   "isUnique": false,
+   "geometry": "icosahedron",
+   "f": 1,
+   "biome": "unknown",
+   "armId": "inter",
+   "resourceList": [
+    "carbon",
+    "iron",
+    "kriogen"
+   ],
+   "cellCount": 12,
+   "startingCellId": 0,
+   "_mixed": false,
+   "node": {
+    "x": -86.22758133661158,
+    "y": -0.5582941745467933,
+    "z": -37.29625406455311,
+    "armId": "inter"
+   },
+   "edgesAfter": [
+    [
+     "ferrum",
+     "krios"
+    ],
+    [
+     "planet_03",
+     "ferrum"
+    ],
+    [
+     "planet_04",
+     "ferrum"
+    ],
+    [
+     "planet_05",
+     "planet_03"
+    ],
+    [
+     "planet_06",
+     "planet_04"
+    ],
+    [
+     "planet_07",
+     "planet_06"
+    ]
+   ]
+  },
+  {
+   "id": "planet_08",
+   "seed": 606,
+   "planetIndex": 8,
+   "name": "Лиоис-4",
+   "isUnique": false,
+   "geometry": "icosahedron",
+   "f": 4,
+   "biome": "unknown",
+   "armId": "life",
+   "resourceList": [],
+   "cellCount": 63,
+   "startingCellId": 21,
+   "_mixed": true,
+   "node": {
+    "x": -80.8567904996875,
+    "y": 0.5306300453841687,
+    "z": 33.9170033801628,
+    "armId": "life"
+   },
+   "edgesAfter": [
+    [
+     "ferrum",
+     "krios"
+    ],
+    [
+     "planet_03",
+     "ferrum"
+    ],
+    [
+     "planet_04",
+     "ferrum"
+    ],
+    [
+     "planet_05",
+     "planet_03"
+    ],
+    [
+     "planet_06",
+     "planet_04"
+    ],
+    [
+     "planet_07",
+     "planet_06"
+    ],
+    [
+     "planet_08",
+     "planet_05"
+    ]
+   ]
+  },
+  {
+   "id": "planet_09",
+   "seed": 707,
+   "planetIndex": 9,
+   "name": "Ксэрн-1",
+   "isUnique": false,
+   "geometry": "tetrahedron",
+   "f": 2,
+   "biome": "unknown",
+   "armId": "inter",
+   "resourceList": [
+    "titanium"
+   ],
+   "cellCount": 10,
+   "startingCellId": 8,
+   "_mixed": false,
+   "node": {
+    "x": -37.52185772628943,
+    "y": -0.28351717814803123,
+    "z": -75.33833756134155,
+    "armId": "inter"
+   },
+   "edgesAfter": [
+    [
+     "ferrum",
+     "krios"
+    ],
+    [
+     "planet_03",
+     "ferrum"
+    ],
+    [
+     "planet_04",
+     "ferrum"
+    ],
+    [
+     "planet_05",
+     "planet_03"
+    ],
+    [
+     "planet_06",
+     "planet_04"
+    ],
+    [
+     "planet_07",
+     "planet_06"
+    ],
+    [
+     "planet_08",
+     "planet_05"
+    ],
+    [
+     "planet_09",
+     "planet_04"
+    ]
+   ]
+  },
+  {
+   "id": "planet_10",
+   "seed": 808,
+   "planetIndex": 10,
+   "name": "Энаар-8",
+   "isUnique": false,
+   "geometry": "octahedron",
+   "f": 4,
+   "biome": "unknown",
+   "armId": "inter",
+   "resourceList": [
+    "kriogen",
+    "iron",
+    "titanium"
+   ],
+   "cellCount": 34,
+   "startingCellId": 0,
+   "_mixed": true,
+   "node": {
+    "x": -3.0457501130635056,
+    "y": -0.31288641661405564,
+    "z": -76.56828007387938,
+    "armId": "inter"
+   },
+   "edgesAfter": [
+    [
+     "ferrum",
+     "krios"
+    ],
+    [
+     "planet_03",
+     "ferrum"
+    ],
+    [
+     "planet_04",
+     "ferrum"
+    ],
+    [
+     "planet_05",
+     "planet_03"
+    ],
+    [
+     "planet_06",
+     "planet_04"
+    ],
+    [
+     "planet_07",
+     "planet_06"
+    ],
+    [
+     "planet_08",
+     "planet_05"
+    ],
+    [
+     "planet_09",
+     "planet_04"
+    ],
+    [
+     "planet_10",
+     "planet_09"
+    ]
+   ]
+  },
+  {
+   "id": "planet_11",
+   "seed": 909,
+   "planetIndex": 11,
+   "name": "Летсарем",
+   "isUnique": false,
+   "geometry": "cube",
+   "f": 3,
+   "biome": "unknown",
+   "armId": "life",
+   "resourceList": [
+    "carbon",
+    "iron"
+   ],
+   "cellCount": 29,
+   "startingCellId": 11,
+   "_mixed": true,
+   "node": {
+    "x": 14.997330475372932,
+    "y": -1.4739288464188576,
+    "z": 35.42320024788486,
+    "armId": "life"
+   },
+   "edgesAfter": [
+    [
+     "ferrum",
+     "krios"
+    ],
+    [
+     "planet_03",
+     "ferrum"
+    ],
+    [
+     "planet_04",
+     "ferrum"
+    ],
+    [
+     "planet_05",
+     "planet_03"
+    ],
+    [
+     "planet_06",
+     "planet_04"
+    ],
+    [
+     "planet_07",
+     "planet_06"
+    ],
+    [
+     "planet_08",
+     "planet_05"
+    ],
+    [
+     "planet_09",
+     "planet_04"
+    ],
+    [
+     "planet_10",
+     "planet_09"
+    ],
+    [
+     "planet_11",
+     "krios"
+    ]
+   ]
+  },
+  {
+   "id": "planet_12",
+   "seed": 1010,
+   "planetIndex": 12,
+   "name": "Илоэль-7",
+   "isUnique": false,
+   "geometry": "icosahedron",
+   "f": 3,
+   "biome": "unknown",
+   "armId": "inter",
+   "resourceList": [
+    "silicon",
+    "carbon",
+    "kriogen"
+   ],
+   "cellCount": 54,
+   "startingCellId": 21,
+   "_mixed": true,
+   "node": {
+    "x": -57.42632891886569,
+    "y": 0.37037114727692727,
+    "z": -52.92397699213731,
+    "armId": "inter"
+   },
+   "edgesAfter": [
+    [
+     "ferrum",
+     "krios"
+    ],
+    [
+     "planet_03",
+     "ferrum"
+    ],
+    [
+     "planet_04",
+     "ferrum"
+    ],
+    [
+     "planet_05",
+     "planet_03"
+    ],
+    [
+     "planet_06",
+     "planet_04"
+    ],
+    [
+     "planet_07",
+     "planet_06"
+    ],
+    [
+     "planet_08",
+     "planet_05"
+    ],
+    [
+     "planet_09",
+     "planet_04"
+    ],
+    [
+     "planet_10",
+     "planet_09"
+    ],
+    [
+     "planet_11",
+     "krios"
+    ],
+    [
+     "planet_12",
+     "planet_09"
+    ]
+   ]
+  },
+  {
+   "id": "planet_13",
+   "seed": 1111,
+   "planetIndex": 13,
+   "name": "Знукхдрарг-8",
+   "isUnique": false,
+   "geometry": "icosahedron",
+   "f": 1,
+   "biome": "unknown",
+   "armId": "inter",
+   "resourceList": [
+    "titanium",
+    "carbon",
+    "kriogen"
+   ],
+   "cellCount": 12,
+   "startingCellId": 0,
+   "_mixed": false,
+   "node": {
+    "x": -70.77703483406725,
+    "y": -0.13125870734453202,
+    "z": -45.587886661136906,
+    "armId": "inter"
+   },
+   "edgesAfter": [
+    [
+     "ferrum",
+     "krios"
+    ],
+    [
+     "planet_03",
+     "ferrum"
+    ],
+    [
+     "planet_04",
+     "ferrum"
+    ],
+    [
+     "planet_05",
+     "planet_03"
+    ],
+    [
+     "planet_06",
+     "planet_04"
+    ],
+    [
+     "planet_07",
+     "planet_06"
+    ],
+    [
+     "planet_08",
+     "planet_05"
+    ],
+    [
+     "planet_09",
+     "planet_04"
+    ],
+    [
+     "planet_10",
+     "planet_09"
+    ],
+    [
+     "planet_11",
+     "krios"
+    ],
+    [
+     "planet_12",
+     "planet_09"
+    ],
+    [
+     "planet_13",
+     "planet_12"
+    ]
+   ]
+  },
+  {
+   "id": "planet_14",
+   "seed": 1212,
+   "planetIndex": 14,
+   "name": "Ксан-8",
+   "isUnique": false,
+   "geometry": "icosahedron",
+   "f": 3,
+   "biome": "unknown",
+   "armId": "inter",
+   "resourceList": [
+    "silicon",
+    "iron",
+    "titanium"
+   ],
+   "cellCount": 80,
+   "startingCellId": 34,
+   "_mixed": true,
+   "node": {
+    "x": 75.39765773513726,
+    "y": -0.5752578637003899,
+    "z": -31.018436859287515,
+    "armId": "inter"
+   },
+   "edgesAfter": [
+    [
+     "ferrum",
+     "krios"
+    ],
+    [
+     "planet_03",
+     "ferrum"
+    ],
+    [
+     "planet_04",
+     "ferrum"
+    ],
+    [
+     "planet_05",
+     "planet_03"
+    ],
+    [
+     "planet_06",
+     "planet_04"
+    ],
+    [
+     "planet_07",
+     "planet_06"
+    ],
+    [
+     "planet_08",
+     "planet_05"
+    ],
+    [
+     "planet_09",
+     "planet_04"
+    ],
+    [
+     "planet_10",
+     "planet_09"
+    ],
+    [
+     "planet_11",
+     "krios"
+    ],
+    [
+     "planet_12",
+     "planet_09"
+    ],
+    [
+     "planet_13",
+     "planet_12"
+    ],
+    [
+     "planet_14",
+     "krios"
+    ]
+   ]
+  },
+  {
+   "id": "planet_15",
+   "seed": 1313,
+   "planetIndex": 15,
+   "name": "Последняя Ворония",
+   "isUnique": true,
+   "geometry": "tetrahedron",
+   "f": 2,
+   "biome": "unknown",
+   "armId": "forge",
+   "resourceList": [
+    "iron",
+    "kriogen",
+    "carbon",
+    "silicon",
+    "titanium",
+    "uranium",
+    "darkMatter"
+   ],
+   "cellCount": 10,
+   "startingCellId": 8,
+   "_mixed": false,
+   "node": {
+    "x": -13.553232478036623,
+    "y": -1.4592914246022701,
+    "z": -34.55488120725124,
+    "armId": "forge"
+   },
+   "edgesAfter": [
+    [
+     "ferrum",
+     "krios"
+    ],
+    [
+     "planet_03",
+     "ferrum"
+    ],
+    [
+     "planet_04",
+     "ferrum"
+    ],
+    [
+     "planet_05",
+     "planet_03"
+    ],
+    [
+     "planet_06",
+     "planet_04"
+    ],
+    [
+     "planet_07",
+     "planet_06"
+    ],
+    [
+     "planet_08",
+     "planet_05"
+    ],
+    [
+     "planet_09",
+     "planet_04"
+    ],
+    [
+     "planet_10",
+     "planet_09"
+    ],
+    [
+     "planet_11",
+     "krios"
+    ],
+    [
+     "planet_12",
+     "planet_09"
+    ],
+    [
+     "planet_13",
+     "planet_12"
+    ],
+    [
+     "planet_14",
+     "krios"
+    ],
+    [
+     "planet_15",
+     "planet_04"
+    ]
+   ]
+  },
+  {
+   "id": "planet_16",
+   "seed": 1414,
+   "planetIndex": 16,
+   "name": "Драгхрозг-3",
+   "isUnique": false,
+   "geometry": "cube",
+   "f": 1,
+   "biome": "unknown",
+   "armId": "inter",
+   "resourceList": [
+    "carbon",
+    "titanium"
+   ],
+   "cellCount": 8,
+   "startingCellId": 4,
+   "_mixed": false,
+   "node": {
+    "x": -49.76895203484095,
+    "y": 0.3333099802387417,
+    "z": 69.55151828709263,
+    "armId": "inter"
+   },
+   "edgesAfter": [
+    [
+     "ferrum",
+     "krios"
+    ],
+    [
+     "planet_03",
+     "ferrum"
+    ],
+    [
+     "planet_04",
+     "ferrum"
+    ],
+    [
+     "planet_05",
+     "planet_03"
+    ],
+    [
+     "planet_06",
+     "planet_04"
+    ],
+    [
+     "planet_07",
+     "planet_06"
+    ],
+    [
+     "planet_08",
+     "planet_05"
+    ],
+    [
+     "planet_09",
+     "planet_04"
+    ],
+    [
+     "planet_10",
+     "planet_09"
+    ],
+    [
+     "planet_11",
+     "krios"
+    ],
+    [
+     "planet_12",
+     "planet_09"
+    ],
+    [
+     "planet_13",
+     "planet_12"
+    ],
+    [
+     "planet_14",
+     "krios"
+    ],
+    [
+     "planet_15",
+     "planet_04"
+    ],
+    [
+     "planet_16",
+     "planet_05"
+    ]
+   ]
+  }
+ ],
+ "uniques": [
+  {
+   "id": "planet_17",
+   "seed": 11,
+   "planetIndex": 17,
+   "name": "Грактхаг-3",
+   "isUnique": true,
+   "geometry": "cube",
+   "f": 2,
+   "biome": "unknown",
+   "armId": "forge",
+   "resourceList": [
+    "iron",
+    "carbon",
+    "kriogen"
+   ],
+   "cellCount": 26,
+   "startingCellId": 13,
+   "_mixed": true,
+   "node": {
+    "x": 69.5194757776544,
+    "y": -1.3305854476988317,
+    "z": -41.90509035376904,
+    "armId": "forge"
+   },
+   "edgesAfter": [
+    [
+     "ferrum",
+     "krios"
+    ],
+    [
+     "planet_03",
+     "ferrum"
+    ],
+    [
+     "planet_04",
+     "ferrum"
+    ],
+    [
+     "planet_05",
+     "planet_03"
+    ],
+    [
+     "planet_06",
+     "planet_04"
+    ],
+    [
+     "planet_07",
+     "planet_06"
+    ],
+    [
+     "planet_08",
+     "planet_05"
+    ],
+    [
+     "planet_09",
+     "planet_04"
+    ],
+    [
+     "planet_10",
+     "planet_09"
+    ],
+    [
+     "planet_11",
+     "krios"
+    ],
+    [
+     "planet_12",
+     "planet_09"
+    ],
+    [
+     "planet_13",
+     "planet_12"
+    ],
+    [
+     "planet_14",
+     "krios"
+    ],
+    [
+     "planet_15",
+     "planet_04"
+    ],
+    [
+     "planet_16",
+     "planet_05"
+    ],
+    [
+     "planet_17",
+     "planet_14"
+    ]
+   ]
+  },
+  {
+   "id": "planet_18",
+   "seed": 79,
+   "planetIndex": 18,
+   "name": "Ворония-Прайм",
+   "isUnique": true,
+   "geometry": "octahedron",
+   "f": 4,
+   "biome": "unknown",
+   "armId": "inter",
+   "resourceList": [
+    "iron",
+    "silicon",
+    "titanium",
+    "carbon",
+    "kriogen"
+   ],
+   "cellCount": 34,
+   "startingCellId": 0,
+   "_mixed": true,
+   "node": {
+    "x": -14.768470716677578,
+    "y": 0.0640086731388624,
+    "z": 72.4909336911645,
+    "armId": "inter"
+   },
+   "edgesAfter": [
+    [
+     "ferrum",
+     "krios"
+    ],
+    [
+     "planet_03",
+     "ferrum"
+    ],
+    [
+     "planet_04",
+     "ferrum"
+    ],
+    [
+     "planet_05",
+     "planet_03"
+    ],
+    [
+     "planet_06",
+     "planet_04"
+    ],
+    [
+     "planet_07",
+     "planet_06"
+    ],
+    [
+     "planet_08",
+     "planet_05"
+    ],
+    [
+     "planet_09",
+     "planet_04"
+    ],
+    [
+     "planet_10",
+     "planet_09"
+    ],
+    [
+     "planet_11",
+     "krios"
+    ],
+    [
+     "planet_12",
+     "planet_09"
+    ],
+    [
+     "planet_13",
+     "planet_12"
+    ],
+    [
+     "planet_14",
+     "krios"
+    ],
+    [
+     "planet_15",
+     "planet_04"
+    ],
+    [
+     "planet_16",
+     "planet_05"
+    ],
+    [
+     "planet_17",
+     "planet_14"
+    ],
+    [
+     "planet_18",
+     "planet_03"
+    ]
+   ]
+  },
+  {
+   "id": "planet_19",
+   "seed": 90,
+   "planetIndex": 19,
+   "name": "Память Воронии",
+   "isUnique": true,
+   "geometry": "cube",
+   "f": 4,
+   "biome": "unknown",
+   "armId": "inter",
+   "resourceList": [
+    "uranium",
+    "iron",
+    "carbon"
+   ],
+   "cellCount": 42,
+   "startingCellId": 16,
+   "_mixed": true,
+   "node": {
+    "x": 14.262583988026,
+    "y": 0.8832346956431866,
+    "z": -93.62721094101322,
+    "armId": "inter"
+   },
+   "edgesAfter": [
+    [
+     "ferrum",
+     "krios"
+    ],
+    [
+     "planet_03",
+     "ferrum"
+    ],
+    [
+     "planet_04",
+     "ferrum"
+    ],
+    [
+     "planet_05",
+     "planet_03"
+    ],
+    [
+     "planet_06",
+     "planet_04"
+    ],
+    [
+     "planet_07",
+     "planet_06"
+    ],
+    [
+     "planet_08",
+     "planet_05"
+    ],
+    [
+     "planet_09",
+     "planet_04"
+    ],
+    [
+     "planet_10",
+     "planet_09"
+    ],
+    [
+     "planet_11",
+     "krios"
+    ],
+    [
+     "planet_12",
+     "planet_09"
+    ],
+    [
+     "planet_13",
+     "planet_12"
+    ],
+    [
+     "planet_14",
+     "krios"
+    ],
+    [
+     "planet_15",
+     "planet_04"
+    ],
+    [
+     "planet_16",
+     "planet_05"
+    ],
+    [
+     "planet_17",
+     "planet_14"
+    ],
+    [
+     "planet_18",
+     "planet_03"
+    ],
+    [
+     "planet_19",
+     "planet_10"
+    ]
+   ]
+  },
+  {
+   "id": "planet_20",
+   "seed": 126,
+   "planetIndex": 20,
+   "name": "Умэумэнэан-9",
+   "isUnique": true,
+   "geometry": "icosahedron",
+   "f": 4,
+   "biome": "unknown",
+   "armId": "inter",
+   "resourceList": [
+    "titanium",
+    "silicon",
+    "iron",
+    "kriogen",
+    "carbon"
+   ],
+   "cellCount": 78,
+   "startingCellId": 28,
+   "_mixed": true,
+   "node": {
+    "x": -30.15370394119755,
+    "y": -0.14315859875364947,
+    "z": -54.15922247380299,
+    "armId": "inter"
+   },
+   "edgesAfter": [
+    [
+     "ferrum",
+     "krios"
+    ],
+    [
+     "planet_03",
+     "ferrum"
+    ],
+    [
+     "planet_04",
+     "ferrum"
+    ],
+    [
+     "planet_05",
+     "planet_03"
+    ],
+    [
+     "planet_06",
+     "planet_04"
+    ],
+    [
+     "planet_07",
+     "planet_06"
+    ],
+    [
+     "planet_08",
+     "planet_05"
+    ],
+    [
+     "planet_09",
+     "planet_04"
+    ],
+    [
+     "planet_10",
+     "planet_09"
+    ],
+    [
+     "planet_11",
+     "krios"
+    ],
+    [
+     "planet_12",
+     "planet_09"
+    ],
+    [
+     "planet_13",
+     "planet_12"
+    ],
+    [
+     "planet_14",
+     "krios"
+    ],
+    [
+     "planet_15",
+     "planet_04"
+    ],
+    [
+     "planet_16",
+     "planet_05"
+    ],
+    [
+     "planet_17",
+     "planet_14"
+    ],
+    [
+     "planet_18",
+     "planet_03"
+    ],
+    [
+     "planet_19",
+     "planet_10"
+    ],
+    [
+     "planet_20",
+     "planet_09"
+    ],
+    [
+     "planet_20",
+     "planet_15"
+    ]
+   ]
+  },
+  {
+   "id": "planet_21",
+   "seed": 138,
+   "planetIndex": 21,
+   "name": "Эхо Воронии",
+   "isUnique": true,
+   "geometry": "icosahedron",
+   "f": 2,
+   "biome": "unknown",
+   "armId": "inter",
+   "resourceList": [
+    "iron",
+    "kriogen",
+    "silicon"
+   ],
+   "cellCount": 42,
+   "startingCellId": 21,
+   "_mixed": true,
+   "node": {
+    "x": -44.17614099547196,
+    "y": 0.36363023266196254,
+    "z": -63.899720373777875,
+    "armId": "inter"
+   },
+   "edgesAfter": [
+    [
+     "ferrum",
+     "krios"
+    ],
+    [
+     "planet_03",
+     "ferrum"
+    ],
+    [
+     "planet_04",
+     "ferrum"
+    ],
+    [
+     "planet_05",
+     "planet_03"
+    ],
+    [
+     "planet_06",
+     "planet_04"
+    ],
+    [
+     "planet_07",
+     "planet_06"
+    ],
+    [
+     "planet_08",
+     "planet_05"
+    ],
+    [
+     "planet_09",
+     "planet_04"
+    ],
+    [
+     "planet_10",
+     "planet_09"
+    ],
+    [
+     "planet_11",
+     "krios"
+    ],
+    [
+     "planet_12",
+     "planet_09"
+    ],
+    [
+     "planet_13",
+     "planet_12"
+    ],
+    [
+     "planet_14",
+     "krios"
+    ],
+    [
+     "planet_15",
+     "planet_04"
+    ],
+    [
+     "planet_16",
+     "planet_05"
+    ],
+    [
+     "planet_17",
+     "planet_14"
+    ],
+    [
+     "planet_18",
+     "planet_03"
+    ],
+    [
+     "planet_19",
+     "planet_10"
+    ],
+    [
+     "planet_20",
+     "planet_09"
+    ],
+    [
+     "planet_20",
+     "planet_15"
+    ],
+    [
+     "planet_21",
+     "planet_13"
+    ]
+   ]
+  },
+  {
+   "id": "planet_22",
+   "seed": 156,
+   "planetIndex": 22,
+   "name": "Память Воронии",
+   "isUnique": true,
+   "geometry": "tetrahedron",
+   "f": 2,
+   "biome": "unknown",
+   "armId": "inter",
+   "resourceList": [
+    "kriogen",
+    "iron",
+    "silicon",
+    "carbon"
+   ],
+   "cellCount": 10,
+   "startingCellId": 8,
+   "_mixed": false,
+   "node": {
+    "x": -58.57208847362445,
+    "y": 0.7358979139082977,
+    "z": -23.988068556249985,
+    "armId": "inter"
+   },
+   "edgesAfter": [
+    [
+     "ferrum",
+     "krios"
+    ],
+    [
+     "planet_03",
+     "ferrum"
+    ],
+    [
+     "planet_04",
+     "ferrum"
+    ],
+    [
+     "planet_05",
+     "planet_03"
+    ],
+    [
+     "planet_06",
+     "planet_04"
+    ],
+    [
+     "planet_07",
+     "planet_06"
+    ],
+    [
+     "planet_08",
+     "planet_05"
+    ],
+    [
+     "planet_09",
+     "planet_04"
+    ],
+    [
+     "planet_10",
+     "planet_09"
+    ],
+    [
+     "planet_11",
+     "krios"
+    ],
+    [
+     "planet_12",
+     "planet_09"
+    ],
+    [
+     "planet_13",
+     "planet_12"
+    ],
+    [
+     "planet_14",
+     "krios"
+    ],
+    [
+     "planet_15",
+     "planet_04"
+    ],
+    [
+     "planet_16",
+     "planet_05"
+    ],
+    [
+     "planet_17",
+     "planet_14"
+    ],
+    [
+     "planet_18",
+     "planet_03"
+    ],
+    [
+     "planet_19",
+     "planet_10"
+    ],
+    [
+     "planet_20",
+     "planet_09"
+    ],
+    [
+     "planet_20",
+     "planet_15"
+    ],
+    [
+     "planet_21",
+     "planet_13"
+    ],
+    [
+     "planet_22",
+     "planet_13"
+    ],
+    [
+     "planet_22",
+     "planet_07"
+    ]
+   ]
+  }
+ ]
+}

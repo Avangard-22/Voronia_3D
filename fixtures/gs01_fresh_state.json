@@ -1,0 +1,125 @@
+{
+ "scenario": "GS-01: новая игра — все ресурсы 0, currentCost=10, ferrum активен, unlocked=[ferrum], MAX_LEVEL=100",
+ "snapshot": {
+  "energy": 0.507,
+  "iron": 0,
+  "kriogen": 0,
+  "crystals": 0,
+  "research": 0.0005070000000000001,
+  "dust": 0,
+  "essence": 0,
+  "shards": 0,
+  "currentCost": 10,
+  "baseCost": 10,
+  "MAX_LEVEL": 100,
+  "extraResources": {
+   "carbon": 0,
+   "silicon": 0,
+   "titanium": 0,
+   "uranium": 0,
+   "helium3": 0,
+   "biomass": 0,
+   "platinum": 0,
+   "darkMatter": 0
+  },
+  "compoundResources": {
+   "steel": 0,
+   "alloy": 0,
+   "chip": 0,
+   "core": 0,
+   "relic": 0
+  },
+  "energyPerSec": 1,
+  "ironPerSec": 0,
+  "kriogenPerSec": 0,
+  "crystalsPerSec": 0,
+  "warehouseLevel": 0,
+  "activePlanetId": "ferrum",
+  "unlockedPlanets": [
+   "ferrum"
+  ],
+  "gameStartSeed": 2301355400,
+  "extraResourcesPerSec": {
+   "carbon": 0,
+   "silicon": 0,
+   "titanium": 0,
+   "uranium": 0,
+   "helium3": 0,
+   "biomass": 0,
+   "platinum": 0,
+   "darkMatter": 0
+  }
+ },
+ "session": {
+  "startTime": 1793603908594,
+  "activeSeconds": 0.507,
+  "scanned": 0,
+  "upgraded": 0,
+  "deepMined": 0,
+  "anomalies": 0,
+  "techsBought": 0,
+  "prestiges": 0,
+  "planetsUnlocked": 0,
+  "travels": 0,
+  "synthRuns": 0,
+  "meteorBuffs": 0,
+  "hiddenFinds": 0,
+  "sonarRerolls": 0,
+  "chargesDone": 0,
+  "coresBuilt": 0,
+  "rerollStreak": 0,
+  "energyEarned": 0,
+  "ironEarned": 0,
+  "kriogenEarned": 0,
+  "crystalsEarned": 0,
+  "offlineEnergy": 0,
+  "offlineIron": 0,
+  "offlineKriogen": 0,
+  "offlineCrystals": 0,
+  "offlineExtra": {},
+  "researchesBought": 0,
+  "recipesUnlocked": 0,
+  "compoundsCrafted": 0,
+  "deliveriesSent": 0,
+  "cargoMassMoved": 0,
+  "fleetUpgradesBought": 0,
+  "rolesAssigned": 0,
+  "roleChanges": 0,
+  "planetsFullyExplored": 0,
+  "bossesDefeated": 0,
+  "bossLosses": 0,
+  "bossBoosts": 0,
+  "eventsTriggered": 0,
+  "maxLevelCells": 0,
+  "warehouseUpgrades": 0,
+  "hiddenWorldsOpened": 0,
+  "metaPrestigesDone": 0,
+  "codesActivated": 0,
+  "sessionLength": 0
+ },
+ "prestigeGrab": {
+  "until": 0,
+  "used": 0
+ },
+ "busHistory": [
+  {
+   "type": "migrate:v18",
+   "at": 1793603908592,
+   "detail": null
+  },
+  {
+   "type": "field:spawned",
+   "at": 1793603908597,
+   "detail": {
+    "id": "comet"
+   }
+  },
+  {
+   "type": "save:written",
+   "at": 1793603908599,
+   "detail": {
+    "bytes": 5527
+   }
+  }
+ ]
+}

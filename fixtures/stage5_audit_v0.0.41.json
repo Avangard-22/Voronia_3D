@@ -1,0 +1,232 @@
+{
+ "note": "Этап 5 — золотой аудит type7-дохода, discoverPlanet, setActivePlanet (реальные функции 1.x, замороженное время)",
+ "extractedAt": "NOW=1800000000000",
+ "randomSeed": 20260501,
+ "bundle": "Voronia_2.5D_Hybrid_v0.0.41_PROD.html (uploads/, не изменён)",
+ "missing": [],
+ "config": {
+  "baseYield": 100,
+  "crystalRate": 0.03,
+  "Ws": 2,
+  "hiddenId": "planet_hidden",
+  "hiddenWorldIndex": 100,
+  "ur7": 100,
+  "ur1": 3,
+  "ur0_L3": 4,
+  "ur7_member": 100
+ },
+ "type7": {
+  "before": {
+   "energyPerSec": 1,
+   "ironPerSec": 0,
+   "kriogenPerSec": 0,
+   "crystalsPerSec": 0,
+   "energyByType": {}
+  },
+  "type7": {
+   "energyPerSec": 200,
+   "ironPerSec": 0,
+   "kriogenPerSec": 0,
+   "crystalsPerSec": 0.03,
+   "energyByType": {}
+  },
+  "type7_deep": {
+   "energyPerSec": 200,
+   "ironPerSec": 0,
+   "kriogenPerSec": 0,
+   "crystalsPerSec": 0.03,
+   "energyByType": {}
+  },
+  "restored": {
+   "energyPerSec": 1,
+   "ironPerSec": 0,
+   "kriogenPerSec": 0,
+   "crystalsPerSec": 0,
+   "energyByType": {}
+  },
+  "deltaEnergy": 199,
+  "deltaCrystals": 0.03,
+  "deepInvariance": true,
+  "energyByType7": null
+ },
+ "discover": {
+  "before": {
+   "research": 0.0005110000000000001,
+   "researchTotal": 0,
+   "Fr": 2,
+   "unlockedPlanets": [
+    "ferrum"
+   ],
+   "planetsUnlocked": 0,
+   "planetsKeys": [
+    "ferrum",
+    "krios"
+   ]
+  },
+  "first": {
+   "id": "planet_03",
+   "planetIndex": 3,
+   "name": "Гелика-Прайм",
+   "biome": "unknown",
+   "f": 3,
+   "geometry": "octahedron",
+   "geometryName": "Октаэдр",
+   "seed": 777001,
+   "armId": "frost",
+   "role": null,
+   "isUnique": false,
+   "cellCount": 22,
+   "resourceList": [
+    "carbon"
+   ],
+   "explored": [
+    0
+   ],
+   "startingCellId": 0,
+   "storage": {
+    "iron": 0,
+    "kriogen": 0
+   }
+  },
+  "afterFirst": {
+   "research": 1100.000511,
+   "researchTotal": 1100,
+   "researchDelta": 1100,
+   "unlockedPlanets": [
+    "ferrum",
+    "planet_03"
+   ],
+   "planetsUnlocked": 1,
+   "activePlanetId": "ferrum",
+   "node": {
+    "id": "planet_03",
+    "x": 53.07654558534886,
+    "y": 0.23199582174420358,
+    "z": 21.881055292025557,
+    "armId": "frost",
+    "discovered": true,
+    "biome": "unknown"
+   },
+   "edges": [
+    [
+     "ferrum",
+     "krios"
+    ],
+    [
+     "planet_03",
+     "krios"
+    ]
+   ]
+  },
+  "busTail": [
+   {
+    "type": "planet:discovered",
+    "at": 1800000000000,
+    "detail": {
+     "id": "planet_03",
+     "index": 3,
+     "name": "Гелика-Прайм"
+    }
+   }
+  ],
+  "second": {
+   "id": "planet_04",
+   "planetIndex": 4,
+   "biome": "unknown",
+   "f": 3,
+   "geometry": "octahedron",
+   "seed": 888002,
+   "armId": "life",
+   "name": "Ван"
+  },
+  "secondRewardDelta": 2420,
+  "override": {
+   "id": "planet_05",
+   "geometry": "cube",
+   "f": 2,
+   "biome": "ferrum",
+   "armId": "inter",
+   "resourceList": [
+    "iron"
+   ]
+  },
+  "overrideRewardDelta": 5324,
+  "researchFinal": 8844.000511,
+  "rewardByIdx": {
+   "idx1": 500,
+   "idx2": 500,
+   "idx3": 1100,
+   "idx4": 2420,
+   "idx5": 5324,
+   "idx6": 11712
+  }
+ },
+ "setActive": {
+  "ferrumStorageAfterOn": {
+   "iron": 1234,
+   "kriogen": 77
+  },
+  "globalAfterOn": {
+   "iron": 1234,
+   "kriogen": 77
+  },
+  "targetStorageBefore": {
+   "iron": 0,
+   "kriogen": 0
+  },
+  "switchToDiscovered": true,
+  "after": {
+   "activePlanetId": "planet_03",
+   "iron": 0,
+   "kriogen": 0,
+   "selectedCellId": null,
+   "planetPage": 0,
+   "rotX": -0.08,
+   "rotY": 0,
+   "offlinePlanetId": "planet_03"
+  },
+  "switchToLockedKrios": false,
+  "afterLocked": {
+   "activePlanetId": "planet_03"
+  },
+  "switchToUnknown": false,
+  "switchBack": true,
+  "backAfter": {
+   "activePlanetId": "ferrum",
+   "iron": 1234,
+   "kriogen": 77
+  }
+ },
+ "hidden": {
+  "id": "planet_hidden",
+  "worldIndex": 100,
+  "seedFormula": "(gameStartSeed ^ 1212761156) >>> 0",
+  "f": 6,
+  "geometry": "icosahedron",
+  "biome": "hidden",
+  "armId": "void",
+  "node": {
+   "x": 0,
+   "y": 12,
+   "z": 0
+  },
+  "seedForCurrentGame": 3326136009,
+  "gameStartSeed": 2382989965,
+  "codeAnchor": "sm() @384269"
+ },
+ "stateFinal": {
+  "research": 8844.000511,
+  "energy": 0.511,
+  "iron": 1234,
+  "kriogen": 77,
+  "crystals": 0,
+  "unlockedPlanets": [
+   "ferrum",
+   "planet_03",
+   "planet_04",
+   "planet_05"
+  ],
+  "activePlanetId": "ferrum",
+  "planetsUnlocked": 3
+ }
+}

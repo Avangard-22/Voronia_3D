@@ -1,0 +1,103 @@
+{
+ "scenario": "склад: ожидаемо Vi 10+5L т/ячейка, Gi ×(1+0.05L), Td {alloy (L+1)²·factor, energy ceil(800×1.6^L)}",
+ "registry": {
+  "alloyCostFactor": 2,
+  "baseTons": 10,
+  "bonusPerLevel": 0.05,
+  "energyCostBase": 800,
+  "energyCostGrowth": 1.6,
+  "tonsPerLevel": 5,
+  "upgradeMax": 10
+ },
+ "levels": [
+  {
+   "L": 0,
+   "Vi_tonsPerCell": 10,
+   "Gi_bonusMult": 1,
+   "Ey_ferrum_mass": 0,
+   "_y_cell0": 0,
+   "warehouseLevelBonus": null
+  },
+  {
+   "L": 1,
+   "Vi_tonsPerCell": 15,
+   "Gi_bonusMult": 1.05,
+   "Ey_ferrum_mass": 0,
+   "_y_cell0": 0,
+   "warehouseLevelBonus": null
+  },
+  {
+   "L": 2,
+   "Vi_tonsPerCell": 20,
+   "Gi_bonusMult": 1.1,
+   "Ey_ferrum_mass": 0,
+   "_y_cell0": 0,
+   "warehouseLevelBonus": null
+  },
+  {
+   "L": 3,
+   "Vi_tonsPerCell": 25,
+   "Gi_bonusMult": 1.15,
+   "Ey_ferrum_mass": 0,
+   "_y_cell0": 0,
+   "warehouseLevelBonus": null
+  },
+  {
+   "L": 4,
+   "Vi_tonsPerCell": 30,
+   "Gi_bonusMult": 1.2,
+   "Ey_ferrum_mass": 0,
+   "_y_cell0": 0,
+   "warehouseLevelBonus": null
+  },
+  {
+   "L": 5,
+   "Vi_tonsPerCell": 35,
+   "Gi_bonusMult": 1.25,
+   "Ey_ferrum_mass": 0,
+   "_y_cell0": 0,
+   "warehouseLevelBonus": null
+  },
+  {
+   "L": 6,
+   "Vi_tonsPerCell": 40,
+   "Gi_bonusMult": 1.3,
+   "Ey_ferrum_mass": 0,
+   "_y_cell0": 0,
+   "warehouseLevelBonus": null
+  },
+  {
+   "L": 7,
+   "Vi_tonsPerCell": 45,
+   "Gi_bonusMult": 1.35,
+   "Ey_ferrum_mass": 0,
+   "_y_cell0": 0,
+   "warehouseLevelBonus": null
+  },
+  {
+   "L": 8,
+   "Vi_tonsPerCell": 50,
+   "Gi_bonusMult": 1.4,
+   "Ey_ferrum_mass": 0,
+   "_y_cell0": 0,
+   "warehouseLevelBonus": null
+  },
+  {
+   "L": 9,
+   "Vi_tonsPerCell": 55,
+   "Gi_bonusMult": 1.45,
+   "Ey_ferrum_mass": 0,
+   "_y_cell0": 0,
+   "warehouseLevelBonus": null
+  },
+  {
+   "L": 10,
+   "Vi_tonsPerCell": 60,
+   "Gi_bonusMult": 1.5,
+   "Ey_ferrum_mass": 0,
+   "_y_cell0": 0,
+   "warehouseLevelBonus": null
+  }
+ ],
+ "costProbe": {}
+}

@@ -1,0 +1,40 @@
+{
+ "history": [
+  {
+   "type": "migrate:v18",
+   "at": 1793603925049,
+   "detail": null
+  },
+  {
+   "type": "field:spawned",
+   "at": 1793603925059,
+   "detail": {
+    "id": "comet"
+   }
+  },
+  {
+   "type": "save:written",
+   "at": 1793603925060,
+   "detail": {
+    "bytes": 5527
+   }
+  },
+  {
+   "type": "quest:changed",
+   "at": 1793603925068,
+   "detail": {
+    "claimed": true
+   }
+  },
+  {
+   "type": "cell:scanned",
+   "at": 1793603925068,
+   "detail": {
+    "pid": "ferrum",
+    "cellId": 1,
+    "type": 3
+   }
+  }
+ ],
+ "note": "payload-структуры событий cell:scanned / cell:upgraded и др."
+}

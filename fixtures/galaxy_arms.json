@@ -1,0 +1,342 @@
+{
+ "arms": {
+  "CC_ARMS": [
+   {
+    "id": "forge",
+    "name": "РУКАВ ГЕФЕСТА",
+    "color": "#ff9a5c",
+    "energy": 1.1,
+    "iron": 1.45,
+    "kriogen": 1,
+    "rare": 1.1,
+    "focus": {
+     "titanium": 1.4,
+     "iron": 1.25
+    },
+    "deplete": 1.15,
+    "scan": 1.1,
+    "event": 1.05
+   },
+   {
+    "id": "frost",
+    "name": "РУКАВ КРИО",
+    "color": "#7fd8ff",
+    "energy": 1,
+    "iron": 1,
+    "kriogen": 1.55,
+    "rare": 1.15,
+    "focus": {
+     "silicon": 1.6,
+     "kriogen": 1.25
+    },
+    "deplete": 0.85,
+    "scan": 0.95,
+    "event": 0.9
+   },
+   {
+    "id": "life",
+    "name": "РУКАВ ЖИЗНИ",
+    "color": "#7fe0a0",
+    "energy": 1.15,
+    "iron": 1.05,
+    "kriogen": 1.05,
+    "rare": 1.2,
+    "focus": {
+     "carbon": 1.7,
+     "silicon": 1.4
+    },
+    "deplete": 1.05,
+    "scan": 1,
+    "event": 1
+   },
+   {
+    "id": "void",
+    "name": "РУКАВ БЕЗДНЫ",
+    "color": "#c084fc",
+    "energy": 0.95,
+    "iron": 1.1,
+    "kriogen": 1.1,
+    "rare": 1.45,
+    "focus": {
+     "uranium": 1.6,
+     "darkMatter": 1.5
+    },
+    "deplete": 1.45,
+    "scan": 1.35,
+    "event": 1.45
+   }
+  ],
+  "CC_CORE": {
+   "id": "core",
+   "name": "ЯДРО",
+   "color": "#ffd27a",
+   "energy": 1,
+   "iron": 1,
+   "kriogen": 1,
+   "rare": 0.8,
+   "focus": {},
+   "deplete": 0.8,
+   "scan": 0.9,
+   "event": 0.75
+  },
+  "CC_SPIRAL": {
+   "arms": 4,
+   "b": 0.55,
+   "r0": 3.5,
+   "width": 3.2
+  },
+  "CC_INTERARM": {
+   "id": "inter",
+   "name": "МЕЖРУКАВЬЕ",
+   "color": "#91adbb",
+   "energy": 1,
+   "iron": 1,
+   "kriogen": 1,
+   "rare": 0.85,
+   "focus": {},
+   "deplete": 0.9,
+   "scan": 1,
+   "event": 0.85
+  },
+  "armSpan": 6.256137937236966
+ },
+ "erSamples": [
+  {
+   "x": 0,
+   "er": "core"
+  },
+  {
+   "x": 0.25,
+   "er": "core"
+  },
+  {
+   "x": 0.5,
+   "er": "core"
+  },
+  {
+   "x": 0.75,
+   "er": "core"
+  },
+  {
+   "x": 1,
+   "er": "core"
+  },
+  {
+   "x": 2,
+   "er": "core"
+  },
+  {
+   "x": 3,
+   "er": "core"
+  }
+ ],
+ "roles": {
+  "crafter": {
+   "id": "crafter",
+   "icon": "⚗",
+   "name": "Мастеровая",
+   "color": "#c084fc",
+   "desc": "Синтез и сплавы: −25% время, +15% выход, −15% добыча",
+   "mult": {
+    "energy": 0.85,
+    "iron": 0.85,
+    "kriogen": 0.85,
+    "rare": 1,
+    "synthTime": 0.75,
+    "synthOut": 1.15,
+    "scan": 1,
+    "research": 1
+   },
+   "fleet": {
+    "cap": 1,
+    "speed": 1
+   },
+   "cost": {
+    "e": 90000,
+    "i": 3500,
+    "materials": {
+     "core": 5
+    }
+   }
+  },
+  "feeder": {
+   "id": "feeder",
+   "icon": "⚡",
+   "name": "Питающая",
+   "color": "#4ddcff",
+   "desc": "+25% энергии, +5% редких, −15% синтез",
+   "mult": {
+    "energy": 1.25,
+    "iron": 1,
+    "kriogen": 1,
+    "rare": 1.05,
+    "synthTime": 1.15,
+    "synthOut": 0.85,
+    "scan": 1,
+    "research": 1
+   },
+   "fleet": {
+    "cap": 1,
+    "speed": 1
+   },
+   "cost": {
+    "e": 60000,
+    "i": 2500,
+    "materials": {
+     "alloy": 20
+    }
+   }
+  },
+  "scholar": {
+   "id": "scholar",
+   "icon": "🔬",
+   "name": "Учёная",
+   "color": "#7ee08a",
+   "desc": "+20% науки, −20% цена скана, −10% добыча",
+   "mult": {
+    "energy": 0.9,
+    "iron": 0.9,
+    "kriogen": 0.9,
+    "rare": 1,
+    "synthTime": 1,
+    "synthOut": 1,
+    "scan": 0.8,
+    "research": 1.2
+   },
+   "fleet": {
+    "cap": 1,
+    "speed": 1
+   },
+   "cost": {
+    "e": 75000,
+    "i": 2000,
+    "materials": {
+     "chip": 10
+    }
+   }
+  }
+ },
+ "ferrumArm": null,
+ "armIdForPosFerrum": null,
+ "registryGalaxy": {
+  "arms": {
+   "arms": 4,
+   "b": 0.55,
+   "r0": 3.5,
+   "width": 3.2
+  },
+  "gen": {
+   "armBias": 0.55,
+   "starterExclusionR": 24,
+   "starterZoneR": 12,
+   "outerRadius": 95,
+   "maxTries": 900,
+   "radialBias": 0.45,
+   "frontChance": 0.15,
+   "frontRadius": 72
+  },
+  "nodeRender": {
+   "BASE_R": 4.5,
+   "SCALE": 4.5,
+   "MIN_DIST": 9,
+   "THICK": 3.2
+  },
+  "mapCam": {
+   "zoomMin": 0.12,
+   "zoomMax": 16,
+   "focusZoom": 2.6,
+   "panClamp": 150,
+   "lerp": 0.14,
+   "panSpeed": 1
+  }
+ },
+ "registryRoles": {
+  "costGrowthPerDuplicate": 1.8,
+  "defs": {
+   "crafter": {
+    "id": "crafter",
+    "icon": "⚗",
+    "name": "Мастеровая",
+    "color": "#c084fc",
+    "desc": "Синтез и сплавы: −25% время, +15% выход, −15% добыча",
+    "mult": {
+     "energy": 0.85,
+     "iron": 0.85,
+     "kriogen": 0.85,
+     "rare": 1,
+     "synthTime": 0.75,
+     "synthOut": 1.15,
+     "scan": 1,
+     "research": 1
+    },
+    "fleet": {
+     "cap": 1,
+     "speed": 1
+    },
+    "cost": {
+     "e": 90000,
+     "i": 3500,
+     "materials": {
+      "core": 5
+     }
+    }
+   },
+   "feeder": {
+    "id": "feeder",
+    "icon": "⚡",
+    "name": "Питающая",
+    "color": "#4ddcff",
+    "desc": "+25% энергии, +5% редких, −15% синтез",
+    "mult": {
+     "energy": 1.25,
+     "iron": 1,
+     "kriogen": 1,
+     "rare": 1.05,
+     "synthTime": 1.15,
+     "synthOut": 0.85,
+     "scan": 1,
+     "research": 1
+    },
+    "fleet": {
+     "cap": 1,
+     "speed": 1
+    },
+    "cost": {
+     "e": 60000,
+     "i": 2500,
+     "materials": {
+      "alloy": 20
+     }
+    }
+   },
+   "scholar": {
+    "id": "scholar",
+    "icon": "🔬",
+    "name": "Учёная",
+    "color": "#7ee08a",
+    "desc": "+20% науки, −20% цена скана, −10% добыча",
+    "mult": {
+     "energy": 0.9,
+     "iron": 0.9,
+     "kriogen": 0.9,
+     "rare": 1,
+     "synthTime": 1,
+     "synthOut": 1,
+     "scan": 0.8,
+     "research": 1.2
+    },
+    "fleet": {
+     "cap": 1,
+     "speed": 1
+    },
+    "cost": {
+     "e": 75000,
+     "i": 2000,
+     "materials": {
+      "chip": 10
+     }
+    }
+   }
+  }
+ }
+}

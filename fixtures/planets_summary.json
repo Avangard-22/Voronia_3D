@@ -1,0 +1,162 @@
+{
+ "ferrum": {
+  "id": "ferrum",
+  "seed": 15929600,
+  "biome": "ferrum",
+  "geometry": "icosahedron",
+  "cellCount": 12,
+  "typeDistribution": {
+   "0": 7,
+   "1": 1,
+   "2": 1,
+   "3": 2,
+   "4": 1
+  },
+  "armId": null,
+  "role": null,
+  "descriptors": {
+   "climate": {
+    "id": "frozen",
+    "name": "Мёрзлый",
+    "color": "#a8d8ff",
+    "effects": {
+     "depletionMult": 0.7,
+     "upgradeCostMult": 1.2
+    }
+   },
+   "surface": {
+    "id": "rocky",
+    "name": "Каменистый",
+    "effects": {
+     "ironBonus": 1.15
+    }
+   },
+   "anomaly": {
+    "id": "none",
+    "name": null,
+    "effects": {}
+   },
+   "effects": {
+    "depletionMult": 0.7,
+    "upgradeCostMult": 1.2,
+    "ironBonus": 1.15
+   },
+   "displayName": "Мёрзлый Каменистый"
+  },
+  "perks": {
+   "depletionMult": 0.7,
+   "scanCostMult": 1,
+   "upgradeCostMult": 1.2,
+   "badge": "МЁРЗЛЫЙ КАМЕНИСТЫЙ",
+   "desc": "Процедурный мир · Мёрзлый / Каменистый",
+   "energyBonus": 1,
+   "ironBonus": 1.15,
+   "kriogenBonus": 1,
+   "meteorRate": 1,
+   "rareChance": 1,
+   "anomalyChance": 1
+  }
+ },
+ "krios": {
+  "id": "krios",
+  "seed": 13045769,
+  "biome": "krios",
+  "geometry": "icosahedron",
+  "cellCount": 92,
+  "typeDistribution": {
+   "0": 27,
+   "1": 9,
+   "2": 4,
+   "3": 13,
+   "4": 3,
+   "5": 36
+  },
+  "armId": null,
+  "role": null,
+  "descriptors": {
+   "climate": {
+    "id": "toxic",
+    "name": "Токсичный",
+    "color": "#8aff6b",
+    "effects": {
+     "scanCostMult": 1.4,
+     "ironBonus": 1.2
+    }
+   },
+   "surface": {
+    "id": "metallic",
+    "name": "Металлический",
+    "effects": {
+     "ironBonus": 1.4,
+     "upgradeCostMult": 1.1
+    }
+   },
+   "anomaly": {
+    "id": "none",
+    "name": null,
+    "effects": {}
+   },
+   "effects": {
+    "scanCostMult": 1.4,
+    "ironBonus": 1.68,
+    "upgradeCostMult": 1.1
+   },
+   "displayName": "Токсичный Металлический"
+  },
+  "perks": {
+   "depletionMult": 0.5,
+   "scanCostMult": 0.7,
+   "upgradeCostMult": 2.2,
+   "badge": "ТОКСИЧНЫЙ МЕТАЛЛИЧЕСКИЙ",
+   "desc": "Процедурный мир · Токсичный / Металлический",
+   "energyBonus": 1,
+   "ironBonus": 1.68,
+   "kriogenBonus": 1,
+   "meteorRate": 1,
+   "rareChance": 1,
+   "anomalyChance": 1
+  }
+ },
+ "graph": {
+  "version": 5,
+  "nodes": {
+   "ferrum": {
+    "id": "ferrum",
+    "planetId": "ferrum",
+    "name": "Феррум",
+    "biome": "ferrum",
+    "geometry": "icosahedron",
+    "frequency": 1,
+    "geometryName": "Икосаэдр",
+    "seed": 15929600,
+    "x": -2.6,
+    "y": 0,
+    "z": 0.4,
+    "armId": "core",
+    "discovered": true
+   },
+   "krios": {
+    "id": "krios",
+    "planetId": "krios",
+    "name": "Криос-9",
+    "biome": "krios",
+    "geometry": "icosahedron",
+    "frequency": 3,
+    "geometryName": "Икосаэдр",
+    "seed": 13045769,
+    "x": 3,
+    "y": 0.6,
+    "z": -0.9,
+    "armId": "core",
+    "discovered": false
+   }
+  },
+  "edges": [
+   [
+    "ferrum",
+    "krios"
+   ]
+  ],
+  "hiddenUsed": []
+ }
+}

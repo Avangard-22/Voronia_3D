@@ -1,0 +1,66 @@
+{
+ "extractedAt": "2026-11-02T07:18:27.770Z",
+ "bundle": "Voronia_2.5D_Hybrid_v0.0.41_PROD.html (uploads/, 2949932 B, не изменён)",
+ "version": "0.0.41.0",
+ "saveSchema": 39,
+ "gameVersion": "0.0.41.0",
+ "harness": {
+  "randomSeed": 20260102,
+  "injection": "window.__LvScanGrowth=LvScanGrowth; +__INT getters",
+  "layers": 30
+ },
+ "intMissing": [
+  "Dt (Dt is not defined)"
+ ],
+ "registrySections": 37,
+ "freshState": {
+  "energy": 0.513,
+  "iron": 0,
+  "kriogen": 0,
+  "crystals": 0,
+  "research": 0.000513,
+  "dust": 0,
+  "essence": 0,
+  "shards": 0,
+  "currentCost": 10,
+  "baseCost": 10,
+  "MAX_LEVEL": 100,
+  "extraResources": {
+   "carbon": 0,
+   "silicon": 0,
+   "titanium": 0,
+   "uranium": 0,
+   "helium3": 0,
+   "biomass": 0,
+   "platinum": 0,
+   "darkMatter": 0
+  },
+  "compoundResources": {
+   "steel": 0,
+   "alloy": 0,
+   "chip": 0,
+   "core": 0,
+   "relic": 0
+  },
+  "energyPerSec": 1,
+  "ironPerSec": 0,
+  "kriogenPerSec": 0,
+  "crystalsPerSec": 0,
+  "warehouseLevel": 0,
+  "activePlanetId": "ferrum",
+  "unlockedPlanets": [
+   "ferrum"
+  ],
+  "gameStartSeed": 2301355753,
+  "extraResourcesPerSec": {
+   "carbon": 0,
+   "silicon": 0,
+   "titanium": 0,
+   "uranium": 0,
+   "helium3": 0,
+   "biomass": 0,
+   "platinum": 0,
+   "darkMatter": 0
+  }
+ }
+}

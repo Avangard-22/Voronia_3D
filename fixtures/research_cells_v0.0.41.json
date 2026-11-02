@@ -1,0 +1,956 @@
+{
+ "scenario": "наука type6 линейна 5×L; cap 15 (cells.researchMaxLevel); кривая цены researchCellCost (25000×1.9^L ⚡, 15×1.7^L 💎, 150×1.9^L 🔬, silicon с L5)",
+ "rows": [
+  {
+   "levelBefore": 0,
+   "levelAfter": 1,
+   "cost": {
+    "energy": 25000,
+    "crystals": 15,
+    "research": 150
+   },
+   "yieldFn": 0,
+   "ok": true,
+   "reason": null
+  },
+  {
+   "levelBefore": 1,
+   "levelAfter": 2,
+   "cost": {
+    "energy": 47500,
+    "crystals": 26,
+    "research": 285
+   },
+   "yieldFn": 5,
+   "ok": true,
+   "reason": null
+  },
+  {
+   "levelBefore": 2,
+   "levelAfter": 3,
+   "cost": {
+    "energy": 90250,
+    "crystals": 43,
+    "research": 542
+   },
+   "yieldFn": 6.5,
+   "ok": true,
+   "reason": null
+  },
+  {
+   "levelBefore": 3,
+   "levelAfter": 4,
+   "cost": {
+    "energy": 171475,
+    "crystals": 74,
+    "research": 1029
+   },
+   "yieldFn": 8.450000000000001,
+   "ok": true,
+   "reason": null
+  },
+  {
+   "levelBefore": 4,
+   "levelAfter": 5,
+   "cost": {
+    "energy": 325802,
+    "crystals": 125,
+    "research": 1955
+   },
+   "yieldFn": 10.985,
+   "ok": true,
+   "reason": null
+  },
+  {
+   "levelBefore": 5,
+   "levelAfter": 6,
+   "cost": {
+    "energy": 619025,
+    "crystals": 213,
+    "research": 3714,
+    "silicon": 50
+   },
+   "yieldFn": 14.280500000000004,
+   "ok": true,
+   "reason": null
+  },
+  {
+   "levelBefore": 6,
+   "levelAfter": 7,
+   "cost": {
+    "energy": 1176147,
+    "crystals": 362,
+    "research": 7057,
+    "silicon": 100
+   },
+   "yieldFn": 18.564650000000004,
+   "ok": true,
+   "reason": null
+  },
+  {
+   "levelBefore": 7,
+   "levelAfter": 8,
+   "cost": {
+    "energy": 2234679,
+    "crystals": 616,
+    "research": 13408,
+    "silicon": 200
+   },
+   "yieldFn": 24.134045000000004,
+   "ok": true,
+   "reason": null
+  },
+  {
+   "levelBefore": 8,
+   "levelAfter": 9,
+   "cost": {
+    "energy": 4245891,
+    "crystals": 1046,
+    "research": 25475,
+    "silicon": 400
+   },
+   "yieldFn": 31.374258500000003,
+   "ok": true,
+   "reason": null
+  },
+  {
+   "levelBefore": 9,
+   "levelAfter": 10,
+   "cost": {
+    "energy": 8067192,
+    "crystals": 1779,
+    "research": 48403,
+    "silicon": 800
+   },
+   "yieldFn": 40.78653605000001,
+   "ok": true,
+   "reason": null
+  },
+  {
+   "levelBefore": 10,
+   "levelAfter": 11,
+   "cost": {
+    "energy": 15327666,
+    "crystals": 3024,
+    "research": 91966,
+    "silicon": 1600
+   },
+   "yieldFn": 53.022496865000015,
+   "ok": true,
+   "reason": null
+  },
+  {
+   "levelBefore": 11,
+   "levelAfter": 12,
+   "cost": {
+    "energy": 29122565,
+    "crystals": 5141,
+    "research": 174735,
+    "silicon": 3200
+   },
+   "yieldFn": 68.92924592450002,
+   "ok": true,
+   "reason": null
+  },
+  {
+   "levelBefore": 12,
+   "levelAfter": 13,
+   "cost": {
+    "energy": 55332873,
+    "crystals": 8739,
+    "research": 331997,
+    "silicon": 6400
+   },
+   "yieldFn": 89.60801970185003,
+   "ok": true,
+   "reason": null
+  },
+  {
+   "levelBefore": 13,
+   "levelAfter": 14,
+   "cost": {
+    "energy": 105132459,
+    "crystals": 14857,
+    "research": 630795,
+    "silicon": 12800
+   },
+   "yieldFn": 116.49042561240506,
+   "ok": true,
+   "reason": null
+  },
+  {
+   "levelBefore": 14,
+   "levelAfter": 15,
+   "cost": {
+    "energy": 199751671,
+    "crystals": 25257,
+    "research": 1198510,
+    "silicon": 25600
+   },
+   "yieldFn": 151.43755329612657,
+   "ok": true,
+   "reason": null
+  }
+ ],
+ "cap": 15,
+ "registryCells": {
+  "curveGrowth": 1.13,
+  "deepLevelThreshold": 8,
+  "deepUpgradeCurve": [
+   {
+    "e": 0,
+    "a": 20,
+    "b": 0,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 110,
+    "a": 50,
+    "b": 0,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 430,
+    "a": 100,
+    "b": 25,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 950,
+    "a": 180,
+    "b": 55,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 1900,
+    "a": 290,
+    "b": 95,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 3400,
+    "a": 460,
+    "b": 150,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 5800,
+    "a": 700,
+    "b": 225,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 9000,
+    "a": 1020,
+    "b": 330,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 13500,
+    "a": 1450,
+    "b": 470,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 19500,
+    "a": 2050,
+    "b": 650,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 29000,
+    "a": 3000,
+    "b": 850,
+    "g": 35,
+    "x": 3
+   },
+   {
+    "e": 37000,
+    "a": 3800,
+    "b": 1050,
+    "g": 50,
+    "x": 4
+   },
+   {
+    "e": 47000,
+    "a": 4800,
+    "b": 1300,
+    "g": 70,
+    "x": 5
+   },
+   {
+    "e": 60000,
+    "a": 6100,
+    "b": 1650,
+    "g": 95,
+    "x": 7
+   },
+   {
+    "e": 76000,
+    "a": 7700,
+    "b": 2100,
+    "g": 125,
+    "x": 9
+   },
+   {
+    "e": 154000,
+    "a": 15520,
+    "b": 4320,
+    "g": 264,
+    "x": 19
+   },
+   {
+    "e": 230000,
+    "a": 23370,
+    "b": 6555,
+    "g": 409,
+    "x": 30
+   },
+   {
+    "e": 334000,
+    "a": 34100,
+    "b": 9570,
+    "g": 594,
+    "x": 48
+   },
+   {
+    "e": 494000,
+    "a": 50440,
+    "b": 14560,
+    "g": 936,
+    "x": 78
+   },
+   {
+    "e": 714000,
+    "a": 73500,
+    "b": 21600,
+    "g": 1380,
+    "x": 120
+   }
+  ],
+  "levelRewards": [
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   {
+    "key": "carbon",
+    "amount": 150
+   },
+   {
+    "key": "carbon",
+    "amount": 180
+   },
+   {
+    "key": "carbon",
+    "amount": 216
+   },
+   {
+    "key": "carbon",
+    "amount": 259
+   },
+   {
+    "key": "silicon",
+    "amount": 250
+   },
+   {
+    "key": "silicon",
+    "amount": 360
+   },
+   {
+    "key": "silicon",
+    "amount": 432
+   },
+   {
+    "key": "silicon",
+    "amount": 518
+   },
+   {
+    "key": "silicon",
+    "amount": 622
+   },
+   {
+    "key": "silicon",
+    "amount": 746
+   },
+   {
+    "key": "silicon",
+    "amount": 896
+   },
+   {
+    "key": "silicon",
+    "amount": 1075
+   },
+   {
+    "key": "silicon",
+    "amount": 1290
+   },
+   {
+    "key": "silicon",
+    "amount": 1548
+   },
+   {
+    "key": "titanium",
+    "amount": 400
+   },
+   {
+    "key": "titanium",
+    "amount": 480
+   },
+   {
+    "key": "titanium",
+    "amount": 576
+   },
+   {
+    "key": "titanium",
+    "amount": 691
+   },
+   {
+    "key": "titanium",
+    "amount": 829
+   },
+   {
+    "key": "titanium",
+    "amount": 995
+   },
+   {
+    "key": "titanium",
+    "amount": 1194
+   },
+   {
+    "key": "titanium",
+    "amount": 1433
+   },
+   {
+    "key": "titanium",
+    "amount": 1720
+   },
+   {
+    "key": "titanium",
+    "amount": 2064
+   },
+   {
+    "key": "uranium",
+    "amount": 500
+   },
+   {
+    "key": "uranium",
+    "amount": 600
+   },
+   {
+    "key": "uranium",
+    "amount": 720
+   },
+   {
+    "key": "uranium",
+    "amount": 864
+   },
+   {
+    "key": "uranium",
+    "amount": 1037
+   },
+   {
+    "key": "uranium",
+    "amount": 1244
+   },
+   {
+    "key": "uranium",
+    "amount": 1493
+   },
+   {
+    "key": "uranium",
+    "amount": 1792
+   },
+   {
+    "key": "helium3",
+    "amount": 260
+   },
+   {
+    "key": "helium3",
+    "amount": 312
+   },
+   {
+    "key": "helium3",
+    "amount": 374
+   },
+   {
+    "key": "helium3",
+    "amount": 449
+   },
+   {
+    "key": "helium3",
+    "amount": 539
+   },
+   {
+    "key": "helium3",
+    "amount": 647
+   },
+   {
+    "key": "helium3",
+    "amount": 776
+   },
+   {
+    "key": "helium3",
+    "amount": 932
+   },
+   {
+    "key": "darkMatter",
+    "amount": 80
+   },
+   {
+    "key": "darkMatter",
+    "amount": 96
+   },
+   {
+    "key": "darkMatter",
+    "amount": 115
+   },
+   {
+    "key": "darkMatter",
+    "amount": 138
+   },
+   {
+    "key": "darkMatter",
+    "amount": 166
+   },
+   {
+    "key": "darkMatter",
+    "amount": 199
+   },
+   {
+    "key": "darkMatter",
+    "amount": 239
+   },
+   {
+    "key": "darkMatter",
+    "amount": 287
+   },
+   {
+    "key": "biomass",
+    "amount": 950
+   },
+   {
+    "key": "biomass",
+    "amount": 1140
+   },
+   {
+    "key": "biomass",
+    "amount": 1368
+   },
+   {
+    "key": "biomass",
+    "amount": 1642
+   },
+   {
+    "key": "biomass",
+    "amount": 1970
+   },
+   {
+    "key": "biomass",
+    "amount": 2364
+   },
+   {
+    "key": "biomass",
+    "amount": 2837
+   },
+   {
+    "key": "biomass",
+    "amount": 3404
+   },
+   {
+    "key": "platinum",
+    "amount": 380
+   },
+   {
+    "key": "platinum",
+    "amount": 456
+   },
+   {
+    "key": "platinum",
+    "amount": 547
+   },
+   {
+    "key": "platinum",
+    "amount": 657
+   },
+   {
+    "key": "platinum",
+    "amount": 788
+   },
+   {
+    "key": "platinum",
+    "amount": 946
+   },
+   {
+    "key": "platinum",
+    "amount": 1135
+   },
+   {
+    "key": "platinum",
+    "amount": 1362
+   },
+   {
+    "key": "uranium",
+    "amount": 2150
+   },
+   {
+    "key": "uranium",
+    "amount": 2580
+   },
+   {
+    "key": "uranium",
+    "amount": 3096
+   },
+   {
+    "key": "uranium",
+    "amount": 3715
+   },
+   {
+    "key": "uranium",
+    "amount": 4458
+   },
+   {
+    "key": "uranium",
+    "amount": 5350
+   },
+   {
+    "key": "uranium",
+    "amount": 6420
+   },
+   {
+    "key": "uranium",
+    "amount": 7704
+   },
+   {
+    "key": "uranium",
+    "amount": 9245
+   },
+   {
+    "key": "uranium",
+    "amount": 11094
+   },
+   {
+    "key": "darkMatter",
+    "amount": 345
+   },
+   {
+    "key": "darkMatter",
+    "amount": 414
+   },
+   {
+    "key": "darkMatter",
+    "amount": 497
+   },
+   {
+    "key": "darkMatter",
+    "amount": 596
+   },
+   {
+    "key": "darkMatter",
+    "amount": 715
+   },
+   {
+    "key": "darkMatter",
+    "amount": 858
+   },
+   {
+    "key": "darkMatter",
+    "amount": 1030
+   },
+   {
+    "key": "darkMatter",
+    "amount": 1236
+   },
+   {
+    "key": "platinum",
+    "amount": 1650
+   },
+   {
+    "key": "platinum",
+    "amount": 1980
+   },
+   {
+    "key": "platinum",
+    "amount": 2376
+   },
+   {
+    "key": "platinum",
+    "amount": 2851
+   },
+   {
+    "key": "platinum",
+    "amount": 3421
+   },
+   {
+    "key": "platinum",
+    "amount": 4106
+   },
+   {
+    "key": "platinum",
+    "amount": 4927
+   },
+   {
+    "key": "platinum",
+    "amount": 5912
+   },
+   {
+    "key": "darkMatter",
+    "amount": 1483
+   }
+  ],
+  "recycleEnergyMult": 6,
+  "reactCooldownBaseMs": 300000,
+  "reactCooldownPerCntMs": 150000,
+  "reactCooldownMaxMs": 1800000,
+  "reactCooldownCntCap": 20,
+  "reactCooldownPerk2Mul": 0.5,
+  "reactAutoSkipEnergyFactor": 10,
+  "researchCostFromLevel": 16,
+  "researchCostBase": 250,
+  "researchCostGrowth": 1.14,
+  "researchMaxLevel": 15,
+  "researchPerLevel": 5,
+  "hardcore": {
+   "fromLevel": 16,
+   "compounds": {
+    "steel": {
+     "from": 24,
+     "base": 4,
+     "growth": 1.08,
+     "cap": 250,
+     "research": "recipe_steel"
+    },
+    "chip": {
+     "from": 34,
+     "base": 4,
+     "growth": 1.08,
+     "cap": 250,
+     "research": "recipe_chip"
+    },
+    "alloy": {
+     "from": 46,
+     "base": 4,
+     "growth": 1.08,
+     "cap": 250,
+     "research": "recipe_alloy"
+    },
+    "core": {
+     "from": 58,
+     "base": 3,
+     "growth": 1.08,
+     "cap": 150,
+     "research": "recipe_core"
+    },
+    "relic": {
+     "from": 70,
+     "base": 2,
+     "growth": 1.07,
+     "cap": 100,
+     "research": "recipe_relic"
+    }
+   }
+  },
+  "resourceChain": {
+   "darkMatter": "platinum",
+   "platinum": "uranium",
+   "uranium": "biomass",
+   "biomass": "titanium",
+   "titanium": "helium3",
+   "helium3": "silicon",
+   "silicon": "carbon",
+   "carbon": null
+  },
+  "resourceWeights": {
+   "carbon": 1,
+   "kriogen": 0.8,
+   "silicon": 0.65,
+   "titanium": 0.4,
+   "uranium": 0.16,
+   "darkMatter": 0.03
+  },
+  "typePriority": {
+   "0": 5,
+   "1": 2,
+   "2": 1,
+   "3": 3,
+   "4": 0,
+   "5": 4,
+   "6": 0.5,
+   "7": 0.4
+  },
+  "upgradeCurve": [
+   {
+    "e": 0,
+    "a": 10,
+    "b": 0,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 80,
+    "a": 22,
+    "b": 0,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 280,
+    "a": 50,
+    "b": 0,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 700,
+    "a": 90,
+    "b": 25,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 1400,
+    "a": 150,
+    "b": 45,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 2500,
+    "a": 230,
+    "b": 80,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 4200,
+    "a": 340,
+    "b": 125,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 6800,
+    "a": 500,
+    "b": 180,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 10000,
+    "a": 720,
+    "b": 250,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 14500,
+    "a": 1000,
+    "b": 340,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 22000,
+    "a": 1500,
+    "b": 450,
+    "g": 25,
+    "x": 2
+   },
+   {
+    "e": 28000,
+    "a": 1900,
+    "b": 560,
+    "g": 35,
+    "x": 3
+   },
+   {
+    "e": 36000,
+    "a": 2400,
+    "b": 700,
+    "g": 50,
+    "x": 4
+   },
+   {
+    "e": 46000,
+    "a": 3000,
+    "b": 880,
+    "g": 70,
+    "x": 5
+   },
+   {
+    "e": 58000,
+    "a": 3800,
+    "b": 1150,
+    "g": 95,
+    "x": 7
+   },
+   {
+    "e": 117000,
+    "a": 7680,
+    "b": 2320,
+    "g": 200,
+    "x": 14
+   },
+   {
+    "e": 175000,
+    "a": 11590,
+    "b": 3420,
+    "g": 314,
+    "x": 23
+   },
+   {
+    "e": 255000,
+    "a": 17160,
+    "b": 4950,
+    "g": 473,
+    "x": 35
+   },
+   {
+    "e": 380000,
+    "a": 26000,
+    "b": 7280,
+    "g": 728,
+    "x": 57
+   },
+   {
+    "e": 555000,
+    "a": 38400,
+    "b": 10500,
+    "g": 1080,
+    "x": 90
+   }
+  ],
+  "researchPerLevelGrowth": 1.3,
+  "researchCellCost": {
+   "energyBase": 25000,
+   "energyGrowth": 1.9,
+   "crystalsBase": 15,
+   "crystalsGrowth": 1.7,
+   "researchBase": 150,
+   "researchGrowth": 1.9,
+   "siliconFromLevel": 5,
+   "siliconBase": 50,
+   "siliconGrowth": 2
+  },
+  "curveGrowthCap": 25,
+  "curveGrowthAfterCap": 1.025,
+  "veinYieldGrowth": 1.083,
+  "veinReserveGrowth": 1.104
+ }
+}
