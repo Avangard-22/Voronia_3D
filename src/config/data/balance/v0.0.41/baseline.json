@@ -1,0 +1,442 @@
+{
+ "_provenance": {
+  "_note": "ADR-011: source-only константы среза v0.0.41 (не вошли в реестр VORONIA_BALANCE). Каждая — с источником: [R]=runtime-аудит fixtures/, [S]=якорь исходника (offset в bundle_main.js копии воркспейса work/extract).",
+  "extraction": "tools/extract_stage0.js (harness node+vm+DOM-заглушки, randomSeed=20260102)",
+  "baseline": "uploads/Voronia_2.5D_Hybrid_v0.0.41_PROD.html (не изменён, ТЗ §19)"
+ },
+ "scan": {
+  "_provenance": "STAGE1_REPORT §3 + fixtures/gs03_scan_trail.json",
+  "baseCost": 10,
+  "growthDefault": 1.15,
+  "growthMin": 1.03,
+  "growthMax": 1.3,
+  "chargeDiscountCoreArm": 0.9,
+  "rounding": "floor",
+  "costStepFloorIncrement": 1,
+  "costCap": 1e+30,
+  "scienceFromChargeDivisor": 1000,
+  "scienceMax": 10,
+  "freeScansAfterPrestige": 3
+ },
+ "anomaly": {
+  "_provenance": "fixtures/gs03_scan_trail.json (GS-03: +990 = −10 charge + 1000 награда) + Sd @359xxx (bi({energy:1e3*u, iron:50*u}), research 10+floor(rand*15))",
+  "energyInstantReward": 1000,
+  "ironInstantReward": 50,
+  "scienceRandomMin": 10,
+  "scienceRandomSpan": 15
+ },
+ "upgrade": {
+  "_provenance": "g0 raw (20 записей, [R] runtime I.g0); продолжение за капом — yl(): growth=cells.curveGrowth(1.13)^n до cap 25, затем curveGrowthAfterCap(1.025); GS-04: ×1.2 frozen → 0/96/336/840/1680⚡, iron round(a×1.2)=12/26/60/108/180",
+  "baseCurve": [
+   {
+    "e": 0,
+    "a": 10,
+    "b": 0,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 80,
+    "a": 22,
+    "b": 0,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 280,
+    "a": 50,
+    "b": 0,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 700,
+    "a": 90,
+    "b": 25,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 1400,
+    "a": 150,
+    "b": 45,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 2500,
+    "a": 230,
+    "b": 80,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 4200,
+    "a": 340,
+    "b": 125,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 6800,
+    "a": 500,
+    "b": 180,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 10000,
+    "a": 720,
+    "b": 250,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 14500,
+    "a": 1000,
+    "b": 340,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 22000,
+    "a": 1500,
+    "b": 450,
+    "g": 25,
+    "x": 2
+   },
+   {
+    "e": 28000,
+    "a": 1900,
+    "b": 560,
+    "g": 35,
+    "x": 3
+   },
+   {
+    "e": 36000,
+    "a": 2400,
+    "b": 700,
+    "g": 50,
+    "x": 4
+   },
+   {
+    "e": 46000,
+    "a": 3000,
+    "b": 880,
+    "g": 70,
+    "x": 5
+   },
+   {
+    "e": 58000,
+    "a": 3800,
+    "b": 1150,
+    "g": 95,
+    "x": 7
+   },
+   {
+    "e": 117000,
+    "a": 7680,
+    "b": 2320,
+    "g": 200,
+    "x": 14
+   },
+   {
+    "e": 175000,
+    "a": 11590,
+    "b": 3420,
+    "g": 314,
+    "x": 23
+   },
+   {
+    "e": 255000,
+    "a": 17160,
+    "b": 4950,
+    "g": 473,
+    "x": 35
+   },
+   {
+    "e": 380000,
+    "a": 26000,
+    "b": 7280,
+    "g": 728,
+    "x": 57
+   },
+   {
+    "e": 555000,
+    "a": 38400,
+    "b": 10500,
+    "g": 1080,
+    "x": 90
+   }
+  ],
+  "researchPerUpgradeDivisor": 2500,
+  "researchPerUpgradeMax": 25,
+  "extension": {
+   "growthKey": "cells.curveGrowth",
+   "capKey": "cells.curveGrowthCap",
+   "afterCapKey": "cells.curveGrowthAfterCap"
+  },
+  "maxLevel": 100
+ },
+ "cells": {
+  "_provenance": "Ur() @115078: type0 (1+L)×members, type1 3×m, type2 10×m, type7 100 (core.baseYield); ng() @717304: type6 5×L (RCELL_PER_LEVEL), type0 +0.001",
+  "yieldByType": {
+   "0": "level+1",
+   "1": 3,
+   "2": 10,
+   "7": 100
+  },
+  "researchPerType0Cell": 0.001,
+  "levelProfile": {
+   "_provenance": "Vr() @139084 runtime [R]: yieldMult/reserveMult таблицы L0..25; за L25 — ×veinYieldGrowth(1.083)^s / ×veinReserveGrowth(1.104)^s (registry cells)",
+   "yieldMult": [
+    1,
+    1.11,
+    1.25,
+    1.4,
+    1.58,
+    1.78,
+    2,
+    2.25,
+    2.52,
+    2.82,
+    3.14,
+    3.48,
+    3.85,
+    4.25,
+    4.68,
+    5.15,
+    5.65,
+    6.2,
+    6.8,
+    7.45,
+    8.15,
+    8.9,
+    9.7,
+    10.55,
+    11.45,
+    12.4
+   ],
+   "reserveMult": [
+    1,
+    1.16,
+    1.36,
+    1.6,
+    1.88,
+    2.2,
+    2.56,
+    2.96,
+    3.4,
+    3.88,
+    4.4,
+    4.98,
+    5.62,
+    6.32,
+    7.08,
+    7.92,
+    8.84,
+    9.84,
+    10.92,
+    12.1,
+    13.4,
+    14.85,
+    16.45,
+    18.2,
+    20.1,
+    22.2
+   ]
+  },
+  "deepUnlockThresholdNote": "b0(): isDeep=true при пересечении cells.deepLevelThreshold(8) ВВЕРХ; session.deepMined++"
+ },
+ "veins": {
+  "_provenance": "fixtures/veins_audit_v0.0.41.json + ta/tb @263838, $n @171973, $l; 0.056 = ironYield 0.1 × perk 0.7 (frozen) × arm 0.8 (core deplete)",
+  "baseIronYieldOnScan": 0.1,
+  "cooldownBaseMs": 300000,
+  "cooldownStepMs": 150000,
+  "reactivationBaseEnergy": 48,
+  "reactivationLevelPow": 1.18,
+  "reactivationReserveScaleMax": 0.35,
+  "reactivationReserveScaleK": 0.06,
+  "reactivationMinEnergy": 40,
+  "ferrumReserves": {
+   "cell1": 126,
+   "cell10": 191
+  },
+  "reactivationFormula": "max(40, round(48×(L+1)^1.18 × (1+min(0.35, log10(max(10,maxReserve))×0.06)) × Xs × perkUpgradeCostMult × r0 × To × seal))",
+  "cooldownFormula": "300000 + 150000×reactCount (ms)",
+  "depletionFormula": "ironYield × armDeplete(core 0.8) × Wr(planetIndex) × perkDepletion(frozen 0.7) × l1(deficit) × fm(sleep) × mt×fn; ferrum fresh: 0.1×0.8×0.7=0.056/s",
+  "unlock": "gt(): type3 → Kt(resourceKey), type5 → Kt('kriogen'); iron открыт, kriogen — за исследованием (Kt('kriogen')=false fresh)"
+ },
+ "warehouse": {
+  "_provenance": "Vi()=Sy+L×tonsPerLevel (Sy=baseTons), Gi()=1+L×bonusPerLevel, Td(L)={alloy:ceil(factor×(L+1)²/2×ov), energy:ceil(base×growth^L×ov)}; fixtures/warehouse_curve_v0.0.41.json",
+  "baseTonsAlias": "warehouse.baseTons"
+ },
+ "start": {
+  "_provenance": "fixtures/gs01_fresh_state.json + golden_save_fresh_v0.0.41.json (GS-01/GS-02)",
+  "activePlanetId": "ferrum",
+  "unlockedPlanets": [
+   "ferrum"
+  ],
+  "ferrumExplored": [
+   0
+  ],
+  "ferrumRevealed": [
+   0,
+   2,
+   1,
+   3,
+   6,
+   7
+  ]
+ },
+ "research": {
+  "_provenance": "ng() @717304: cap/планета = dispatch.batchEnergy + dispatch.batchIron×planetIndex; Yu() globalMult; exhausted ×0.15",
+  "planetCapEnergyKey": "dispatch.batchEnergy",
+  "planetCapIronKey": "dispatch.batchIron",
+  "exhaustedMult": 0.15
+ },
+ "researchCell": {
+  "_provenance": "li()/hl() [R] runtime: cost L0 {25000⚡,15💎,150🔬} growth 1.9/1.7/1.9, silicon с L5 (50×2^(L−5)); yield hl=5×1.3^(L−1) (cells.researchPerLevelGrowth); доход в ng() ЛИНЕЙНЫЙ: RCELL_PER_LEVEL(5)×min(cap15,L)",
+  "yieldPerLevel": 5,
+  "yieldGrowthDisplay": 1.3,
+  "cap": 15
+ },
+ "galaxy": {
+  "_provenance": "Df/Za/Lr runtime-таблицы рукавов (fixtures/galaxy_arms_full.json) + Xc biomeMults (source-only; registry planet.biomeMults имеет только ferrum/krios)",
+  "arms": {
+   "core": {
+    "id": "core",
+    "name": "ЯДРО",
+    "color": "#ffd27a",
+    "energy": 1,
+    "iron": 1,
+    "kriogen": 1,
+    "rare": 0.8,
+    "focus": {},
+    "deplete": 0.8,
+    "scan": 0.9,
+    "event": 0.75
+   },
+   "inter": {
+    "id": "inter",
+    "name": "МЕЖРУКАВЬЕ",
+    "color": "#91adbb",
+    "energy": 1,
+    "iron": 1,
+    "kriogen": 1,
+    "rare": 0.85,
+    "focus": {},
+    "deplete": 0.9,
+    "scan": 1,
+    "event": 0.85
+   },
+   "forge": {
+    "id": "forge",
+    "name": "РУКАВ ГЕФЕСТА",
+    "color": "#ff9a5c",
+    "energy": 1.1,
+    "iron": 1.45,
+    "kriogen": 1,
+    "rare": 1.1,
+    "focus": {
+     "titanium": 1.4,
+     "iron": 1.25
+    },
+    "deplete": 1.15,
+    "scan": 1.1,
+    "event": 1.05
+   },
+   "frost": {
+    "id": "frost",
+    "name": "РУКАВ КРИО",
+    "color": "#7fd8ff",
+    "energy": 1,
+    "iron": 1,
+    "kriogen": 1.55,
+    "rare": 1.15,
+    "focus": {
+     "silicon": 1.6,
+     "kriogen": 1.25
+    },
+    "deplete": 0.85,
+    "scan": 0.95,
+    "event": 0.9
+   },
+   "life": {
+    "id": "life",
+    "name": "РУКАВ ЖИЗНИ",
+    "color": "#7fe0a0",
+    "energy": 1.15,
+    "iron": 1.05,
+    "kriogen": 1.05,
+    "rare": 1.2,
+    "focus": {
+     "carbon": 1.7,
+     "silicon": 1.4
+    },
+    "deplete": 1.05,
+    "scan": 1,
+    "event": 1
+   },
+   "void": {
+    "id": "void",
+    "name": "РУКАВ БЕЗДНЫ",
+    "color": "#c084fc",
+    "energy": 0.95,
+    "iron": 1.1,
+    "kriogen": 1.1,
+    "rare": 1.45,
+    "focus": {
+     "uranium": 1.6,
+     "darkMatter": 1.5
+    },
+    "deplete": 1.45,
+    "scan": 1.35,
+    "event": 1.45
+   }
+  },
+  "biomeMults": {
+   "ferrum": 1,
+   "krios": 0.6,
+   "hidden": 0.8,
+   "frozen": 0.7,
+   "scorched": 1.2,
+   "toxic": 0.9
+  }
+ },
+ "anomalyUpgrade": {
+  "_provenance": "bundle nr() @76900: {iron:round(50×3^L×To(idx)), energy:round(300×3^L×To(idx))}; To @152902: idx<=3?1:1.35^(idx-3); tl() @77100: deep-конверсия round(4000×ucm)⚡ + round(500×ucm) железа/криогена (biome ferrum→iron, иначе kriogen; фолбэк — другой ресурс); аудит: fixtures/stage4_audit_v0.0.41.json §deep",
+  "ironBase": 50,
+  "energyBase": 300,
+  "growth": 3,
+  "indexMultFrom": 3,
+  "indexMultGrowth": 1.35,
+  "deepEnergy": 4000,
+  "deepMaterial": 500
+ },
+ "anomalyIncome": {
+  "_provenance": "bundle ce() @129995: power +4×(1+L)×dc ⚡/с, resonance +0.005×(1+L)×dc 💎/с, type0 isDeep +0.05 💎/с; dc=isDeep?2:1; аудит §branches (ferrum fresh: +4/+8/+16/+32 ⚡, +.005/.01/.02/.04 💎)",
+  "powerBase": 4,
+  "resonanceBase": 0.005,
+  "deepMult": 2,
+  "type0DeepCrystal": 0.05
+ },
+ "synth": {
+  "_provenance": "bundle ti() @76100: out = Σ Cy(cell) × (0.5+rare(product)) × Co(synthOut) × mt(synthOutMult)×mt(anomalyBonusMult); Cy @75800 = transport.basePerSec × (1+L)×(isDeep?deepMult:1) × Ly(); Ly @79700: boost_synth ×1.5, boost_synth2 ×2; аудит §synth (krios L1: .036/s, ferrum L2: .054/s)",
+  "rareOffset": 0.5
+ },
+ "surge": {
+  "_provenance": "bundle v0.0.39.0 surge-планировщик @122100 (IIFE, setInterval 2000): nextAt=rand(45..120s | 90..240s), duration=20s|25s, bonus=basePct×(0.65|1.15) (fallback basePct .12), cap=buffCap(fallback .75), БЕЗ науки/сонара; аудит §surge (pct .0195 = .03×.65)",
+  "intervalMs": 2000,
+  "nextAtMinType1": 45000,
+  "nextAtMaxType1": 120000,
+  "nextAtMinType2": 90000,
+  "nextAtMaxType2": 240000,
+  "durationMsType1": 20000,
+  "durationMsType2": 25000,
+  "basePctFallback": 0.12,
+  "bonusMultType1": 0.65,
+  "bonusMultType2": 1.15,
+  "buffCapFallback": 0.75
+ }
+}

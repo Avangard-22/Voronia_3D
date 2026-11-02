@@ -1,0 +1,3603 @@
+{
+ "hygiene": {
+  "autosaveMs": 10000,
+  "floatingTextCap": 60,
+  "fpsWarnBelow": 40,
+  "fpsWindowMs": 3000,
+  "meteorCap": 40,
+  "particleCap": 180,
+  "sanitizeIntervalMs": 15000,
+  "saveIntervalCheckMs": 5000,
+  "saveThrottleMs": 2000,
+  "uiTickMs": 80
+ },
+ "render": {
+  "bgCacheVersion": 1,
+  "biomeLayers": 6,
+  "biomeTileSize": 48,
+  "fieldObjectTuning": {
+   "ship": {
+    "ttl": 45000
+   },
+   "comet": {
+    "ttl": 30000
+   },
+   "cache": {
+    "ttl": 60000
+   }
+  },
+  "glowSpriteSize": 96,
+  "glowSprites": 12
+ },
+ "cells": {
+  "curveGrowth": 1.13,
+  "deepLevelThreshold": 8,
+  "deepUpgradeCurve": [
+   {
+    "e": 0,
+    "a": 20,
+    "b": 0,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 110,
+    "a": 50,
+    "b": 0,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 430,
+    "a": 100,
+    "b": 25,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 950,
+    "a": 180,
+    "b": 55,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 1900,
+    "a": 290,
+    "b": 95,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 3400,
+    "a": 460,
+    "b": 150,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 5800,
+    "a": 700,
+    "b": 225,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 9000,
+    "a": 1020,
+    "b": 330,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 13500,
+    "a": 1450,
+    "b": 470,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 19500,
+    "a": 2050,
+    "b": 650,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 29000,
+    "a": 3000,
+    "b": 850,
+    "g": 35,
+    "x": 3
+   },
+   {
+    "e": 37000,
+    "a": 3800,
+    "b": 1050,
+    "g": 50,
+    "x": 4
+   },
+   {
+    "e": 47000,
+    "a": 4800,
+    "b": 1300,
+    "g": 70,
+    "x": 5
+   },
+   {
+    "e": 60000,
+    "a": 6100,
+    "b": 1650,
+    "g": 95,
+    "x": 7
+   },
+   {
+    "e": 76000,
+    "a": 7700,
+    "b": 2100,
+    "g": 125,
+    "x": 9
+   },
+   {
+    "e": 154000,
+    "a": 15520,
+    "b": 4320,
+    "g": 264,
+    "x": 19
+   },
+   {
+    "e": 230000,
+    "a": 23370,
+    "b": 6555,
+    "g": 409,
+    "x": 30
+   },
+   {
+    "e": 334000,
+    "a": 34100,
+    "b": 9570,
+    "g": 594,
+    "x": 48
+   },
+   {
+    "e": 494000,
+    "a": 50440,
+    "b": 14560,
+    "g": 936,
+    "x": 78
+   },
+   {
+    "e": 714000,
+    "a": 73500,
+    "b": 21600,
+    "g": 1380,
+    "x": 120
+   }
+  ],
+  "levelRewards": [
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   {
+    "key": "carbon",
+    "amount": 150
+   },
+   {
+    "key": "carbon",
+    "amount": 180
+   },
+   {
+    "key": "carbon",
+    "amount": 216
+   },
+   {
+    "key": "carbon",
+    "amount": 259
+   },
+   {
+    "key": "silicon",
+    "amount": 250
+   },
+   {
+    "key": "silicon",
+    "amount": 360
+   },
+   {
+    "key": "silicon",
+    "amount": 432
+   },
+   {
+    "key": "silicon",
+    "amount": 518
+   },
+   {
+    "key": "silicon",
+    "amount": 622
+   },
+   {
+    "key": "silicon",
+    "amount": 746
+   },
+   {
+    "key": "silicon",
+    "amount": 896
+   },
+   {
+    "key": "silicon",
+    "amount": 1075
+   },
+   {
+    "key": "silicon",
+    "amount": 1290
+   },
+   {
+    "key": "silicon",
+    "amount": 1548
+   },
+   {
+    "key": "titanium",
+    "amount": 400
+   },
+   {
+    "key": "titanium",
+    "amount": 480
+   },
+   {
+    "key": "titanium",
+    "amount": 576
+   },
+   {
+    "key": "titanium",
+    "amount": 691
+   },
+   {
+    "key": "titanium",
+    "amount": 829
+   },
+   {
+    "key": "titanium",
+    "amount": 995
+   },
+   {
+    "key": "titanium",
+    "amount": 1194
+   },
+   {
+    "key": "titanium",
+    "amount": 1433
+   },
+   {
+    "key": "titanium",
+    "amount": 1720
+   },
+   {
+    "key": "titanium",
+    "amount": 2064
+   },
+   {
+    "key": "uranium",
+    "amount": 500
+   },
+   {
+    "key": "uranium",
+    "amount": 600
+   },
+   {
+    "key": "uranium",
+    "amount": 720
+   },
+   {
+    "key": "uranium",
+    "amount": 864
+   },
+   {
+    "key": "uranium",
+    "amount": 1037
+   },
+   {
+    "key": "uranium",
+    "amount": 1244
+   },
+   {
+    "key": "uranium",
+    "amount": 1493
+   },
+   {
+    "key": "uranium",
+    "amount": 1792
+   },
+   {
+    "key": "helium3",
+    "amount": 260
+   },
+   {
+    "key": "helium3",
+    "amount": 312
+   },
+   {
+    "key": "helium3",
+    "amount": 374
+   },
+   {
+    "key": "helium3",
+    "amount": 449
+   },
+   {
+    "key": "helium3",
+    "amount": 539
+   },
+   {
+    "key": "helium3",
+    "amount": 647
+   },
+   {
+    "key": "helium3",
+    "amount": 776
+   },
+   {
+    "key": "helium3",
+    "amount": 932
+   },
+   {
+    "key": "darkMatter",
+    "amount": 80
+   },
+   {
+    "key": "darkMatter",
+    "amount": 96
+   },
+   {
+    "key": "darkMatter",
+    "amount": 115
+   },
+   {
+    "key": "darkMatter",
+    "amount": 138
+   },
+   {
+    "key": "darkMatter",
+    "amount": 166
+   },
+   {
+    "key": "darkMatter",
+    "amount": 199
+   },
+   {
+    "key": "darkMatter",
+    "amount": 239
+   },
+   {
+    "key": "darkMatter",
+    "amount": 287
+   },
+   {
+    "key": "biomass",
+    "amount": 950
+   },
+   {
+    "key": "biomass",
+    "amount": 1140
+   },
+   {
+    "key": "biomass",
+    "amount": 1368
+   },
+   {
+    "key": "biomass",
+    "amount": 1642
+   },
+   {
+    "key": "biomass",
+    "amount": 1970
+   },
+   {
+    "key": "biomass",
+    "amount": 2364
+   },
+   {
+    "key": "biomass",
+    "amount": 2837
+   },
+   {
+    "key": "biomass",
+    "amount": 3404
+   },
+   {
+    "key": "platinum",
+    "amount": 380
+   },
+   {
+    "key": "platinum",
+    "amount": 456
+   },
+   {
+    "key": "platinum",
+    "amount": 547
+   },
+   {
+    "key": "platinum",
+    "amount": 657
+   },
+   {
+    "key": "platinum",
+    "amount": 788
+   },
+   {
+    "key": "platinum",
+    "amount": 946
+   },
+   {
+    "key": "platinum",
+    "amount": 1135
+   },
+   {
+    "key": "platinum",
+    "amount": 1362
+   },
+   {
+    "key": "uranium",
+    "amount": 2150
+   },
+   {
+    "key": "uranium",
+    "amount": 2580
+   },
+   {
+    "key": "uranium",
+    "amount": 3096
+   },
+   {
+    "key": "uranium",
+    "amount": 3715
+   },
+   {
+    "key": "uranium",
+    "amount": 4458
+   },
+   {
+    "key": "uranium",
+    "amount": 5350
+   },
+   {
+    "key": "uranium",
+    "amount": 6420
+   },
+   {
+    "key": "uranium",
+    "amount": 7704
+   },
+   {
+    "key": "uranium",
+    "amount": 9245
+   },
+   {
+    "key": "uranium",
+    "amount": 11094
+   },
+   {
+    "key": "darkMatter",
+    "amount": 345
+   },
+   {
+    "key": "darkMatter",
+    "amount": 414
+   },
+   {
+    "key": "darkMatter",
+    "amount": 497
+   },
+   {
+    "key": "darkMatter",
+    "amount": 596
+   },
+   {
+    "key": "darkMatter",
+    "amount": 715
+   },
+   {
+    "key": "darkMatter",
+    "amount": 858
+   },
+   {
+    "key": "darkMatter",
+    "amount": 1030
+   },
+   {
+    "key": "darkMatter",
+    "amount": 1236
+   },
+   {
+    "key": "platinum",
+    "amount": 1650
+   },
+   {
+    "key": "platinum",
+    "amount": 1980
+   },
+   {
+    "key": "platinum",
+    "amount": 2376
+   },
+   {
+    "key": "platinum",
+    "amount": 2851
+   },
+   {
+    "key": "platinum",
+    "amount": 3421
+   },
+   {
+    "key": "platinum",
+    "amount": 4106
+   },
+   {
+    "key": "platinum",
+    "amount": 4927
+   },
+   {
+    "key": "platinum",
+    "amount": 5912
+   },
+   {
+    "key": "darkMatter",
+    "amount": 1483
+   }
+  ],
+  "recycleEnergyMult": 6,
+  "reactCooldownBaseMs": 300000,
+  "reactCooldownPerCntMs": 150000,
+  "reactCooldownMaxMs": 1800000,
+  "reactCooldownCntCap": 20,
+  "reactCooldownPerk2Mul": 0.5,
+  "reactAutoSkipEnergyFactor": 10,
+  "researchCostFromLevel": 16,
+  "researchCostBase": 250,
+  "researchCostGrowth": 1.14,
+  "researchMaxLevel": 15,
+  "researchPerLevel": 5,
+  "hardcore": {
+   "fromLevel": 16,
+   "compounds": {
+    "steel": {
+     "from": 24,
+     "base": 4,
+     "growth": 1.08,
+     "cap": 250,
+     "research": "recipe_steel"
+    },
+    "chip": {
+     "from": 34,
+     "base": 4,
+     "growth": 1.08,
+     "cap": 250,
+     "research": "recipe_chip"
+    },
+    "alloy": {
+     "from": 46,
+     "base": 4,
+     "growth": 1.08,
+     "cap": 250,
+     "research": "recipe_alloy"
+    },
+    "core": {
+     "from": 58,
+     "base": 3,
+     "growth": 1.08,
+     "cap": 150,
+     "research": "recipe_core"
+    },
+    "relic": {
+     "from": 70,
+     "base": 2,
+     "growth": 1.07,
+     "cap": 100,
+     "research": "recipe_relic"
+    }
+   }
+  },
+  "resourceChain": {
+   "darkMatter": "platinum",
+   "platinum": "uranium",
+   "uranium": "biomass",
+   "biomass": "titanium",
+   "titanium": "helium3",
+   "helium3": "silicon",
+   "silicon": "carbon",
+   "carbon": null
+  },
+  "resourceWeights": {
+   "carbon": 1,
+   "kriogen": 0.8,
+   "silicon": 0.65,
+   "titanium": 0.4,
+   "uranium": 0.16,
+   "darkMatter": 0.03
+  },
+  "typePriority": {
+   "0": 5,
+   "1": 2,
+   "2": 1,
+   "3": 3,
+   "4": 0,
+   "5": 4,
+   "6": 0.5,
+   "7": 0.4
+  },
+  "upgradeCurve": [
+   {
+    "e": 0,
+    "a": 10,
+    "b": 0,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 80,
+    "a": 22,
+    "b": 0,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 280,
+    "a": 50,
+    "b": 0,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 700,
+    "a": 90,
+    "b": 25,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 1400,
+    "a": 150,
+    "b": 45,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 2500,
+    "a": 230,
+    "b": 80,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 4200,
+    "a": 340,
+    "b": 125,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 6800,
+    "a": 500,
+    "b": 180,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 10000,
+    "a": 720,
+    "b": 250,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 14500,
+    "a": 1000,
+    "b": 340,
+    "g": 0,
+    "x": 0
+   },
+   {
+    "e": 22000,
+    "a": 1500,
+    "b": 450,
+    "g": 25,
+    "x": 2
+   },
+   {
+    "e": 28000,
+    "a": 1900,
+    "b": 560,
+    "g": 35,
+    "x": 3
+   },
+   {
+    "e": 36000,
+    "a": 2400,
+    "b": 700,
+    "g": 50,
+    "x": 4
+   },
+   {
+    "e": 46000,
+    "a": 3000,
+    "b": 880,
+    "g": 70,
+    "x": 5
+   },
+   {
+    "e": 58000,
+    "a": 3800,
+    "b": 1150,
+    "g": 95,
+    "x": 7
+   },
+   {
+    "e": 117000,
+    "a": 7680,
+    "b": 2320,
+    "g": 200,
+    "x": 14
+   },
+   {
+    "e": 175000,
+    "a": 11590,
+    "b": 3420,
+    "g": 314,
+    "x": 23
+   },
+   {
+    "e": 255000,
+    "a": 17160,
+    "b": 4950,
+    "g": 473,
+    "x": 35
+   },
+   {
+    "e": 380000,
+    "a": 26000,
+    "b": 7280,
+    "g": 728,
+    "x": 57
+   },
+   {
+    "e": 555000,
+    "a": 38400,
+    "b": 10500,
+    "g": 1080,
+    "x": 90
+   }
+  ],
+  "researchPerLevelGrowth": 1.3,
+  "researchCellCost": {
+   "energyBase": 25000,
+   "energyGrowth": 1.9,
+   "crystalsBase": 15,
+   "crystalsGrowth": 1.7,
+   "researchBase": 150,
+   "researchGrowth": 1.9,
+   "siliconFromLevel": 5,
+   "siliconBase": 50,
+   "siliconGrowth": 2
+  },
+  "curveGrowthCap": 25,
+  "curveGrowthAfterCap": 1.025,
+  "veinYieldGrowth": 1.083,
+  "veinReserveGrowth": 1.104
+ },
+ "planet": {
+  "biomeMults": {
+   "ferrum": {
+    "mult": 1
+   },
+   "krios": {
+    "mult": 0.6
+   }
+  },
+  "geometryTuning": {
+   "icosahedron": {
+    "weight": 45,
+    "minFrequency": 1,
+    "maxFrequency": 5
+   },
+   "octahedron": {
+    "weight": 25,
+    "minFrequency": 1,
+    "maxFrequency": 4
+   },
+   "tetrahedron": {
+    "weight": 10,
+    "minFrequency": 1,
+    "maxFrequency": 4
+   },
+   "cube": {
+    "weight": 15,
+    "minFrequency": 1,
+    "maxFrequency": 4
+   }
+  },
+  "hiddenWorldIndex": 100,
+  "mutants": {
+   "forge": {
+    "id": "ember",
+    "name": "🔥 Уголёк",
+    "yieldMult": 1.5,
+    "depletionMult": 1.5,
+    "color": "#ff8c4d"
+   },
+   "frost": {
+    "id": "rime",
+    "name": "❄ Иней",
+    "yieldMult": 1.2,
+    "depletionMult": 0.8,
+    "color": "#8fe0ff"
+   },
+   "life": {
+    "id": "mycelium",
+    "name": "🌱 Мицелий",
+    "yieldMult": 1.3,
+    "depletionMult": 1,
+    "color": "#7ee08a"
+   },
+   "void": {
+    "id": "shadow",
+    "name": "🌑 Тень",
+    "yieldMult": 2,
+    "depletionMult": 2,
+    "color": "#c084fc"
+   },
+   "core": {
+    "id": "prime",
+    "name": "⚪ Прайм",
+    "yieldMult": 1.4,
+    "depletionMult": 1.2,
+    "color": "#eaf8ff"
+   }
+  },
+  "specialCellChance": 0.34,
+  "tierThresholds": [
+   2,
+   8,
+   15
+  ],
+  "uniqueChance": 0.02,
+  "resourceDist": {
+   "ironWeight": 1,
+   "kriogenWeight": 0.7,
+   "focusBonus": 1.8,
+   "depthPenalty": 0.5,
+   "depthScale": 4,
+   "slots": [
+    [
+     5,
+     1
+    ],
+    [
+     9,
+     2
+    ],
+    [
+     14,
+     3
+    ],
+    [
+     999,
+     4
+    ]
+   ],
+   "extraSlotPct": 0.1,
+   "extraSlotDepthPct": 0.01,
+   "extraSlotMax": 0.25,
+   "slotFillPct": 0.6,
+   "uniqueBonus": 1,
+   "maxSlots": 5,
+   "barrenChance": 0.1,
+   "barrenMinIndex": 5
+  },
+  "lastVoronia": {
+   "index": 15,
+   "resources": [
+    "iron",
+    "kriogen",
+    "carbon",
+    "silicon",
+    "titanium",
+    "uranium",
+    "darkMatter"
+   ],
+   "cost": {
+    "e": 1,
+    "i": 1,
+    "k": 1
+   },
+   "armName": "РУКАВ БЕЗДНЫ",
+   "armColor": "#c084fc"
+  }
+ },
+ "galaxy": {
+  "arms": {
+   "arms": 4,
+   "b": 0.55,
+   "r0": 3.5,
+   "width": 3.2
+  },
+  "gen": {
+   "armBias": 0.55,
+   "starterExclusionR": 24,
+   "starterZoneR": 12,
+   "outerRadius": 95,
+   "maxTries": 900,
+   "radialBias": 0.45,
+   "frontChance": 0.15,
+   "frontRadius": 72
+  },
+  "nodeRender": {
+   "BASE_R": 4.5,
+   "SCALE": 4.5,
+   "MIN_DIST": 9,
+   "THICK": 3.2
+  },
+  "mapCam": {
+   "zoomMin": 0.12,
+   "zoomMax": 16,
+   "focusZoom": 2.6,
+   "panClamp": 150,
+   "lerp": 0.14,
+   "panSpeed": 1
+  }
+ },
+ "uxFirst": {
+  "cycleIndicatorCells": 8,
+  "baseBtnCells": 2,
+  "questsCells": 3,
+  "fleetCells": 6,
+  "radarCells": 10,
+  "veinCooldownMs": 15000
+ },
+ "warehouse": {
+  "alloyCostFactor": 2,
+  "baseTons": 10,
+  "bonusPerLevel": 0.05,
+  "energyCostBase": 800,
+  "energyCostGrowth": 1.6,
+  "tonsPerLevel": 5,
+  "upgradeMax": 10
+ },
+ "charge": {
+  "buffCap": 0.25,
+  "config": {
+   "1": {
+    "basePct": 0.03,
+    "baseDur": 20,
+    "cd": 45,
+    "label": "Богатая",
+    "science": 5,
+    "sciencePct": 0.05
+   },
+   "2": {
+    "basePct": 0.08,
+    "baseDur": 25,
+    "cd": 90,
+    "label": "Редкая",
+    "science": 15,
+    "sciencePct": 0.15
+   }
+  },
+  "neighborBonus": 0.15,
+  "neighborDurBonusSec": 5,
+  "neighborMax": 2,
+  "scienceCap": 0.5
+ },
+ "core": {
+  "baseYield": 100,
+  "buildCost": {
+   "crystals": 900,
+   "energy": 200000
+  },
+  "crystalRate": 0.03,
+  "mergeFallbackCost": {
+   "crystals": 140,
+   "energy": 30000
+  },
+  "mergeRichCost": {
+   "crystals": 90,
+   "energy": 20000
+  },
+  "reactivate": {
+   "max": 14,
+   "step": 0.55
+  }
+ },
+ "boss": {
+  "attackThrottleMs": 200,
+  "comboMax": 5,
+  "comboStep": 0.1,
+  "comboWindowMs": 1500,
+  "guardianTiers": [
+   {
+    "id": "sentinel",
+    "name": "🛡 Страж",
+    "tier": 1,
+    "hpMult": 0.5,
+    "weaponTier": 1,
+    "reward": {
+     "iron": 5000,
+     "kriogen": 2000,
+     "crystals": 10
+    },
+    "canRepeat": false
+   },
+   {
+    "id": "guardian",
+    "name": "⚔ Хранитель",
+    "tier": 2,
+    "hpMult": 1,
+    "weaponTier": 2,
+    "reward": "choice3",
+    "canRepeat": false
+   },
+   {
+    "id": "overlord",
+    "name": "🌌 Владыка",
+    "tier": 3,
+    "hpMult": 2,
+    "weaponTier": 3,
+    "reward": {
+     "essence": 500,
+     "buff": "allMult1.3_4h"
+    },
+    "canRepeat": true,
+    "cooldownMs": 10800000
+   }
+  ],
+  "openDurationMs": 3000,
+  "openMult": 1.3,
+  "phaseMults": {
+   "shield": {
+    "energy": 1,
+    "iron": 3,
+    "kriogen": 2
+   },
+   "armor": {
+    "energy": 2,
+    "iron": 1,
+    "kriogen": 3
+   },
+   "core": {
+    "energy": 3,
+    "iron": 2,
+    "kriogen": 1
+   }
+  },
+  "punishCellsBase": 3,
+  "punishCellsMax": 8,
+  "punishRestoreMs": 900000,
+  "regenRate": 0.4,
+  "regenThresholdMs": 2000,
+  "reviveCooldownMs": 300000,
+  "rewards": [
+   {
+    "id": "power",
+    "icon": "⚡",
+    "title": "СИЛА ХРАНИТЕЛЯ",
+    "desc": "+25% к доходу этой планеты (энергия, железо, криоген, редкие) до престижа"
+   },
+   {
+    "id": "crystal",
+    "icon": "💎",
+    "title": "КРИСТАЛЬНОЕ ЭХО",
+    "desc": "+0.02 💎/с от этой планеты (глобально, до престижа)"
+   },
+   {
+    "id": "reserve",
+    "icon": "⛏",
+    "title": "НЕДРА БЕЗДНЫ",
+    "desc": "Все месторождения планеты +50% к максимальному запасу сейчас и впредь"
+   }
+  ],
+  "sealDurationMs": 14400000,
+  "sealMinerReactivateMult": 0.85,
+  "sealMinerUpgradeMult": 0.85,
+  "seals": [
+   {
+    "id": "energy_seal",
+    "icon": "⚡",
+    "name": "Печать Потока",
+    "desc": "+30% энергии планеты",
+    "weight": 25
+   },
+   {
+    "id": "iron_seal",
+    "icon": "⛏",
+    "name": "Печать Недр",
+    "desc": "+30% железа планеты",
+    "weight": 25
+   },
+   {
+    "id": "kriogen_seal",
+    "icon": "❄",
+    "name": "Печать Стужи",
+    "desc": "+30% криогена планеты",
+    "weight": 20
+   },
+   {
+    "id": "depletion_seal",
+    "icon": "⏳",
+    "name": "Печать Тверди",
+    "desc": "−20% истощения планеты",
+    "weight": 15
+   },
+   {
+    "id": "scan_seal",
+    "icon": "⛏",
+    "name": "Печать Рудокопа",
+    "desc": "−15% цена улучшения и реактивации месторождений и криогенных жил",
+    "weight": 12
+   },
+   {
+    "id": "all_seal",
+    "icon": "✨",
+    "name": "Печать Единства",
+    "desc": "+12% ко всему на планете",
+    "weight": 5
+   }
+  ],
+  "shieldGainPct": 0.08,
+  "strikeIntervalMs": 6000,
+  "strikeIntervalRandMs": 3000,
+  "strikeWindupMs": 1500,
+  "timeLimitMs": 30000,
+  "watchCountdownMs": 2700000,
+  "watchIntervalMs": 43200000,
+  "watchWindowMs": 10800000
+ },
+ "prestige": {
+  "burnResearch": true,
+  "countRewards": [
+   {
+    "count": 15,
+    "reward": {
+     "dust": 5,
+     "crystals": 5,
+     "research": 100
+    },
+    "label": "Новичок"
+   },
+   {
+    "count": 30,
+    "reward": {
+     "dust": 15,
+     "crystals": 15,
+     "research": 300
+    },
+    "label": "Опытный"
+   },
+   {
+    "count": 50,
+    "reward": {
+     "dust": 40,
+     "crystals": 40,
+     "research": 800
+    },
+    "label": "Ветеран"
+   },
+   {
+    "count": 70,
+    "reward": {
+     "dust": 100,
+     "crystals": 100,
+     "research": 2000
+    },
+    "label": "Мастер"
+   },
+   {
+    "count": 90,
+    "reward": {
+     "dust": 250,
+     "crystals": 250,
+     "research": 5000
+    },
+    "label": "Гроссмейстер"
+   },
+   {
+    "count": 105,
+    "reward": {
+     "dust": 600,
+     "crystals": 600,
+     "research": 12000
+    },
+    "label": "Легенда"
+   }
+  ],
+  "crystalThreshold": 10,
+  "dustEnergyBonus": 0.05,
+  "dustIronBonus": 0.03
+ },
+ "weekly": {
+  "bulkPack": {
+   "energy": 2000000,
+   "iron": 50000,
+   "kriogen": 20000
+  },
+  "eliteGapMs": 1209600000,
+  "eliteRequiredCycles": 4,
+  "questTuning": {
+   "scan": {
+    "targets": [
+     8,
+     15,
+     25
+    ],
+    "reward": {
+     "crystals": 1
+    }
+   },
+   "upgrade": {
+    "targets": [
+     4,
+     8,
+     15
+    ],
+    "reward": {
+     "crystals": 1
+    }
+   },
+   "deep": {
+    "targets": [
+     1,
+     1,
+     2
+    ],
+    "reward": {
+     "dust": 1
+    }
+   },
+   "anomaly": {
+    "targets": [
+     1,
+     2
+    ],
+    "reward": {
+     "dust": 1
+    }
+   },
+   "tech": {
+    "targets": [
+     1,
+     2,
+     3
+    ],
+    "reward": {
+     "dust": 1
+    }
+   },
+   "travel": {
+    "targets": [
+     1,
+     2
+    ],
+    "reward": {
+     "dust": 1
+    }
+   },
+   "planet": {
+    "targets": [
+     1
+    ],
+    "reward": {
+     "dust": 2
+    }
+   },
+   "prestige": {
+    "targets": [
+     1
+    ],
+    "reward": {
+     "dust": 2
+    }
+   },
+   "offline": {
+    "targets": [
+     1
+    ],
+    "reward": {
+     "crystals": 1
+    }
+   }
+  },
+  "researchJitter": 600,
+  "researchMax": 500000,
+  "researchMin": 150,
+  "reward": {
+   "dust": 15,
+   "crystals": 20,
+   "research": 150
+  },
+  "streakDays": 7,
+  "surgeHours": 24,
+  "surgeMult": 2
+ },
+ "sonar": {
+  "chargeMax": 3,
+  "difficulty": {
+   "baseRounds": 3,
+   "maxIdx": 9,
+   "basePeriod": 1.6,
+   "periodStep": 0.06,
+   "minPeriod": 1
+  },
+  "hintEnergy": 1500,
+  "rerollBurnPct": 0.25,
+  "rerollHistory": 3,
+  "rerollMax": 25,
+  "rewardGood": 1.25,
+  "rewardHours": 24,
+  "rewardIdxBonus": 0.05,
+  "rewardOk": 1.1,
+  "rewardPerfect": 1.5,
+  "roundSpeedFloor": 0.55,
+  "roundSpeedStep": 0.92,
+  "tierRewards": [
+   {
+    "count": 5,
+    "label": "Искатель",
+    "reward": {
+     "research": 200,
+     "dust": 5,
+     "crystals": 3
+    }
+   },
+   {
+    "count": 15,
+    "label": "Переборщик",
+    "reward": {
+     "research": 1000,
+     "dust": 25,
+     "crystals": 10
+    }
+   },
+   {
+    "count": 25,
+    "label": "Пересборщик",
+    "reward": {
+     "research": 5000,
+     "dust": 100,
+     "crystals": 30
+    }
+   }
+  ]
+ },
+ "offline": {
+  "efficiency": 0.5,
+  "maxSeconds": 43200,
+  "minSeconds": 60
+ },
+ "transport": {
+  "config": {
+   "basePerSec": 0.02,
+   "inputPerOutput": 8,
+   "offlineCapMult": 1,
+   "maxLevel": 5,
+   "deepMult": 2
+  },
+  "fleetBaseCap": 200,
+  "flightBaseCost": 8000,
+  "flightCostPerTon": 6,
+  "haulFeePerTon": 5,
+  "routeCacheMs": 300000,
+  "speedTiers": [
+   1,
+   1.4,
+   2,
+   3,
+   4.5,
+   6.5,
+   9,
+   12,
+   16,
+   21,
+   27
+  ],
+  "fleetMaxLevels": {
+   "cap": 50,
+   "spd": 50,
+   "ships": 19
+  },
+  "supplyNodesMax": 2,
+  "supplyTiers": [
+   {
+    "cap": 1,
+    "speed": 1
+   },
+   {
+    "cap": 1.3,
+    "speed": 1.15
+   },
+   {
+    "cap": 1.5,
+    "speed": 1.25
+   }
+  ],
+  "speedGrowthAfter": 1.15,
+  "holdLinearUntil": 10,
+  "holdGrowthAfter": 1.35,
+  "costCurves": {
+   "cap": {
+    "soft": {
+     "energy": [
+      2500,
+      3
+     ],
+     "iron": [
+      300,
+      2.5
+     ]
+    },
+    "hardFrom": 10,
+    "hard": {
+     "energy": 1.45,
+     "iron": 1.4,
+     "crystals": [
+      80,
+      1.28
+     ],
+     "titanium": [
+      300,
+      1.3
+     ],
+     "alloy": [
+      25,
+      1.34
+     ]
+    }
+   },
+   "spd": {
+    "soft": {
+     "energy": [
+      6000,
+      3
+     ],
+     "iron": [
+      500,
+      2.5
+     ]
+    },
+    "hardFrom": 10,
+    "hard": {
+     "energy": 1.45,
+     "iron": 1.42,
+     "crystals": [
+      120,
+      1.3
+     ],
+     "uranium": [
+      150,
+      1.3
+     ],
+     "core": [
+      10,
+      1.35
+     ]
+    }
+   },
+   "ships": {
+    "soft": {
+     "energy": [
+      12000,
+      3.5
+     ],
+     "iron": [
+      900,
+      3
+     ]
+    },
+    "hardFrom": 5,
+    "hard": {
+     "energy": 2.2,
+     "iron": 2,
+     "crystals": [
+      300,
+      1.5
+     ],
+     "chip": [
+      50,
+      1.55
+     ],
+     "core": [
+      10,
+      1.5
+     ],
+     "darkMatter": [
+      5,
+      1.7
+     ]
+    }
+   }
+  }
+ },
+ "craft": {
+  "autoIntervalMs": 30000,
+  "baseSlots": 1,
+  "esoQueueBonus": 25,
+  "haulIntervalSec": 12,
+  "haulTimeoutMs": 15000,
+  "massPerUnit": {
+   "steel": 1,
+   "alloy": 1.5,
+   "chip": 2,
+   "core": 2,
+   "relic": 8,
+   "researchData": 1.5,
+   "researchDataBulk": 1.2,
+   "helium3": 4,
+   "biomass": 2,
+   "platinum": 6
+  },
+  "maxHauls": 200,
+  "minTimeSec": 5,
+  "offlineCapSec": 28800,
+  "queueCapBase": 50,
+  "queueCapPerWarehouse": 10,
+  "recipeDefaultMult": 10000,
+  "recipes": {
+   "steel": {
+    "inputs": {
+     "carbon": 10,
+     "energy": 1000
+    },
+    "time": 30
+   },
+   "chip": {
+    "inputs": {
+     "silicon": 10,
+     "steel": 1,
+     "energy": 5000
+    },
+    "time": 60
+   },
+   "alloy": {
+    "inputs": {
+     "titanium": 10,
+     "chip": 1,
+     "energy": 25000
+    },
+    "time": 90
+   },
+   "core": {
+    "inputs": {
+     "uranium": 10,
+     "alloy": 1,
+     "energy": 120000
+    },
+    "time": 150
+   },
+   "relic": {
+    "inputs": {
+     "darkMatter": 10,
+     "core": 1,
+     "energy": 800000
+    },
+    "time": 300
+   },
+   "researchData": {
+    "inputs": {
+     "energy": 100000,
+     "silicon": 25000,
+     "carbon": 25000,
+     "steel": 500
+    },
+    "time": 20,
+    "noScale": true,
+    "dataGain": 2500
+   },
+   "researchDataBulk": {
+    "inputs": {
+     "energy": 500000,
+     "iron": 60000,
+     "kriogen": 20000
+    },
+    "time": 20,
+    "noScale": true,
+    "dataGain": 1800
+   },
+   "researchDataElite": {
+    "inputs": {
+     "energy": 8000000,
+     "iron": 200000,
+     "kriogen": 100000,
+     "silicon": 5000
+    },
+    "time": 30,
+    "noScale": true,
+    "dataGain": 32000
+   },
+   "helium3": {
+    "inputs": {
+     "energy": 100000000,
+     "iron": 500000,
+     "silicon": 10000
+    },
+    "time": 60,
+    "noScale": true,
+    "resGain": 50
+   },
+   "biomass": {
+    "inputs": {
+     "energy": 250000000,
+     "kriogen": 1000000,
+     "titanium": 10000
+    },
+    "time": 120,
+    "noScale": true,
+    "resGain": 50
+   },
+   "platinum": {
+    "inputs": {
+     "energy": 500000000,
+     "iron": 2000000,
+     "uranium": 10000
+    },
+    "time": 300,
+    "noScale": true,
+    "resGain": 25
+   }
+  },
+  "refundRatio": 0.8,
+  "resonanceBonus": 0.3,
+  "speedBase": 0.3,
+  "speedPerWarehouseLevel": 0.03,
+  "slotPurchase": {
+   "max": 5,
+   "costs": [
+    {
+     "energy": 5000000,
+     "iron": 400000,
+     "kriogen": 150000,
+     "crystals": 800,
+     "steel": 300
+    },
+    {
+     "energy": 50000000,
+     "iron": 4000000,
+     "kriogen": 1500000,
+     "crystals": 5000,
+     "steel": 1500,
+     "chip": 500
+    },
+    {
+     "energy": 500000000,
+     "iron": 40000000,
+     "kriogen": 15000000,
+     "crystals": 30000,
+     "chip": 2500,
+     "alloy": 800
+    },
+    {
+     "energy": 5000000000,
+     "iron": 400000000,
+     "kriogen": 150000000,
+     "crystals": 200000,
+     "alloy": 4000,
+     "core": 1000,
+     "titanium": 50000
+    },
+    {
+     "energy": 50000000000,
+     "iron": 4000000000,
+     "kriogen": 1500000000,
+     "crystals": 1500000,
+     "core": 5000,
+     "relic": 150,
+     "uranium": 20000,
+     "darkMatter": 5000
+    }
+   ]
+  }
+ },
+ "tech": {
+  "costCurveLate": {
+   "tableDepth": 10,
+   "lastRow": 9,
+   "expFrom": 9,
+   "lateGrowth": 1.35
+  },
+  "costScaleCurve": {
+   "costScale": [
+    1.15,
+    1.1,
+    1.07,
+    1.05,
+    1.04,
+    1.03,
+    1.02,
+    1.015,
+    1.01,
+    1.005,
+    1,
+    0.98,
+    0.96,
+    0.94,
+    0.92,
+    0.9,
+    0.88,
+    0.86,
+    0.84,
+    0.82,
+    0.8,
+    0.796875,
+    0.79375,
+    0.790625,
+    0.7875,
+    0.784375,
+    0.78125,
+    0.778125,
+    0.775,
+    0.771875,
+    0.76875,
+    0.765625,
+    0.7625,
+    0.759375,
+    0.75625,
+    0.753125,
+    0.75,
+    0.746875,
+    0.74375,
+    0.740625,
+    0.7375,
+    0.734375,
+    0.73125,
+    0.728125,
+    0.725,
+    0.721875,
+    0.71875,
+    0.715625,
+    0.7125,
+    0.709375,
+    0.70625,
+    0.703125,
+    0.7,
+    0.696875,
+    0.69375,
+    0.690625,
+    0.6875,
+    0.684375,
+    0.68125,
+    0.678125,
+    0.675,
+    0.671875,
+    0.66875,
+    0.665625,
+    0.6625,
+    0.659375,
+    0.65625,
+    0.653125,
+    0.65,
+    0.646875,
+    0.64375,
+    0.640625,
+    0.6375,
+    0.634375,
+    0.63125,
+    0.628125,
+    0.625,
+    0.621875,
+    0.61875,
+    0.615625,
+    0.6125,
+    0.609375,
+    0.60625,
+    0.603125,
+    0.6,
+    0.596875,
+    0.59375,
+    0.590625,
+    0.5875,
+    0.584375,
+    0.58125,
+    0.578125,
+    0.575,
+    0.571875,
+    0.56875,
+    0.565625,
+    0.5625,
+    0.559375,
+    0.55625,
+    0.553125,
+    0.55
+   ],
+   "ironBoost": [
+    1,
+    2,
+    4,
+    8,
+    12,
+    16,
+    24,
+    32,
+    48,
+    64,
+    100,
+    140,
+    200,
+    280,
+    400,
+    600,
+    900,
+    1400,
+    2200,
+    3500,
+    5500,
+    6006,
+    6535,
+    7085,
+    7658,
+    8253,
+    8871,
+    9511,
+    10173,
+    10857,
+    11564,
+    12293,
+    13044,
+    13817,
+    14613,
+    15431,
+    16271,
+    17134,
+    18019,
+    18926,
+    19855,
+    20807,
+    21781,
+    22777,
+    23795,
+    24836,
+    25899,
+    26984,
+    28092,
+    29222,
+    30374,
+    31548,
+    32745,
+    33964,
+    35205,
+    36468,
+    37754,
+    39062,
+    40393,
+    41745,
+    43120,
+    44517,
+    45937,
+    47378,
+    48842,
+    50328,
+    51837,
+    53368,
+    54921,
+    56496,
+    58094,
+    59714,
+    61356,
+    63020,
+    64707,
+    66416,
+    68147,
+    69901,
+    71677,
+    73475,
+    75295,
+    77138,
+    79003,
+    80890,
+    82799,
+    84731,
+    86685,
+    88661,
+    90660,
+    92681,
+    94724,
+    96789,
+    98877,
+    100987,
+    103119,
+    105273,
+    107450,
+    109649,
+    111871,
+    114114,
+    116380
+   ],
+   "kriogenBoost": [
+    1,
+    2,
+    4,
+    8,
+    12,
+    16,
+    24,
+    32,
+    48,
+    64,
+    100,
+    140,
+    200,
+    280,
+    400,
+    600,
+    900,
+    1400,
+    2200,
+    3500,
+    5500,
+    6006,
+    6535,
+    7085,
+    7658,
+    8253,
+    8871,
+    9511,
+    10173,
+    10857,
+    11564,
+    12293,
+    13044,
+    13817,
+    14613,
+    15431,
+    16271,
+    17134,
+    18019,
+    18926,
+    19855,
+    20807,
+    21781,
+    22777,
+    23795,
+    24836,
+    25899,
+    26984,
+    28092,
+    29222,
+    30374,
+    31548,
+    32745,
+    33964,
+    35205,
+    36468,
+    37754,
+    39062,
+    40393,
+    41745,
+    43120,
+    44517,
+    45937,
+    47378,
+    48842,
+    50328,
+    51837,
+    53368,
+    54921,
+    56496,
+    58094,
+    59714,
+    61356,
+    63020,
+    64707,
+    66416,
+    68147,
+    69901,
+    71677,
+    73475,
+    75295,
+    77138,
+    79003,
+    80890,
+    82799,
+    84731,
+    86685,
+    88661,
+    90660,
+    92681,
+    94724,
+    96789,
+    98877,
+    100987,
+    103119,
+    105273,
+    107450,
+    109649,
+    111871,
+    114114,
+    116380
+   ],
+   "therm": [
+    1,
+    0.8,
+    0.6,
+    0.4,
+    0.35,
+    0.3,
+    0.25,
+    0.2,
+    0.15,
+    0.12,
+    0.1,
+    0.08,
+    0.06,
+    0.05,
+    0.04,
+    0.035,
+    0.03,
+    0.025,
+    0.02,
+    0.015,
+    0.01
+   ],
+   "recon": [
+    1,
+    0.8,
+    0.6,
+    0.4,
+    0.35,
+    0.3,
+    0.25,
+    0.2,
+    0.15,
+    0.12,
+    0.1,
+    0.08,
+    0.06,
+    0.05,
+    0.04,
+    0.035,
+    0.03,
+    0.025,
+    0.02,
+    0.015,
+    0.01
+   ],
+   "hyperdrill": [
+    2,
+    2.5,
+    3,
+    4,
+    4.5,
+    5,
+    6,
+    7,
+    8,
+    10,
+    12,
+    15,
+    20,
+    28,
+    40,
+    55,
+    75,
+    100,
+    140,
+    200,
+    280,
+    308.7,
+    338.8,
+    370.3,
+    403.2,
+    437.5,
+    473.2,
+    510.3,
+    548.8,
+    588.7,
+    630,
+    672.7,
+    716.8,
+    762.3,
+    809.2,
+    857.5,
+    907.2,
+    958.3,
+    1010.8,
+    1064.7,
+    1120,
+    1176.7,
+    1234.8,
+    1294.3,
+    1355.2,
+    1417.5,
+    1481.2,
+    1546.3,
+    1612.8,
+    1680.7,
+    1750,
+    1820.7,
+    1892.8,
+    1966.3,
+    2041.2,
+    2117.5,
+    2195.2,
+    2274.3,
+    2354.8,
+    2436.7,
+    2520,
+    2604.7,
+    2690.8,
+    2778.3,
+    2867.2,
+    2957.5,
+    3049.2,
+    3142.3,
+    3236.8,
+    3332.7,
+    3430,
+    3528.7,
+    3628.8,
+    3730.3,
+    3833.2,
+    3937.5,
+    4043.2,
+    4150.3,
+    4258.8,
+    4368.7,
+    4480,
+    4592.7,
+    4706.8,
+    4822.3,
+    4939.2,
+    5057.5,
+    5177.2,
+    5298.3,
+    5420.8,
+    5544.7,
+    5670,
+    5796.7,
+    5924.8,
+    6054.3,
+    6185.2,
+    6317.5,
+    6451.2,
+    6586.3,
+    6722.8,
+    6860.7,
+    7000
+   ]
+  },
+  "costScaleTable": {
+   "costScale": [
+    {
+     "e": 1000,
+     "i": 50
+    },
+    {
+     "e": 5000,
+     "i": 200
+    },
+    {
+     "e": 20000,
+     "i": 500
+    },
+    {
+     "e": 80000,
+     "i": 1500,
+     "carbon": 200
+    },
+    {
+     "e": 250000,
+     "i": 4000,
+     "carbon": 800,
+     "silicon": 400
+    },
+    {
+     "e": 800000,
+     "i": 10000,
+     "carbon": 2000,
+     "silicon": 1200,
+     "helium3": 600
+    },
+    {
+     "e": 2500000,
+     "i": 30000,
+     "titanium": 800,
+     "silicon": 3000
+    },
+    {
+     "e": 8000000,
+     "i": 80000,
+     "titanium": 2500,
+     "biomass": 1500
+    },
+    {
+     "e": 25000000,
+     "i": 200000,
+     "uranium": 3000,
+     "platinum": 800
+    },
+    {
+     "e": 100000000,
+     "i": 500000,
+     "darkMatter": 50
+    }
+   ],
+   "ironBoost": [
+    {
+     "e": 500,
+     "i": 100
+    },
+    {
+     "e": 2500,
+     "i": 300
+    },
+    {
+     "e": 10000,
+     "i": 800
+    },
+    {
+     "e": 50000,
+     "i": 2500,
+     "carbon": 150
+    },
+    {
+     "e": 200000,
+     "i": 8000,
+     "carbon": 600,
+     "silicon": 300
+    },
+    {
+     "e": 800000,
+     "i": 25000,
+     "carbon": 1800,
+     "silicon": 900,
+     "helium3": 500
+    },
+    {
+     "e": 2500000,
+     "i": 80000,
+     "titanium": 700,
+     "silicon": 2500
+    },
+    {
+     "e": 8000000,
+     "i": 200000,
+     "titanium": 2000,
+     "biomass": 1200
+    },
+    {
+     "e": 25000000,
+     "i": 500000,
+     "uranium": 2500,
+     "platinum": 600
+    },
+    {
+     "e": 100000000,
+     "i": 1000000,
+     "darkMatter": 40
+    }
+   ],
+   "maxLevel": [
+    {
+     "e": 2000,
+     "i": 200
+    },
+    {
+     "e": 8000,
+     "i": 600
+    },
+    {
+     "e": 30000,
+     "i": 1500
+    },
+    {
+     "e": 100000,
+     "i": 4000,
+     "carbon": 300
+    },
+    {
+     "e": 350000,
+     "i": 12000,
+     "carbon": 1200,
+     "silicon": 600
+    },
+    {
+     "e": 1200000,
+     "i": 35000,
+     "carbon": 3000,
+     "silicon": 1800,
+     "helium3": 900
+    },
+    {
+     "e": 4000000,
+     "i": 100000,
+     "titanium": 1200,
+     "silicon": 4000
+    },
+    {
+     "e": 12000000,
+     "i": 250000,
+     "titanium": 3500,
+     "biomass": 2000
+    },
+    {
+     "e": 40000000,
+     "i": 600000,
+     "uranium": 4000,
+     "platinum": 1200
+    },
+    {
+     "e": 150000000,
+     "i": 1500000,
+     "darkMatter": 80
+    }
+   ],
+   "crystalBoost": [
+    {
+     "c": 5
+    },
+    {
+     "c": 25
+    },
+    {
+     "c": 100
+    },
+    {
+     "c": 400,
+     "carbon": 200
+    },
+    {
+     "c": 1500,
+     "carbon": 800,
+     "silicon": 400
+    },
+    {
+     "c": 5000,
+     "carbon": 2000,
+     "silicon": 1200,
+     "helium3": 600
+    },
+    {
+     "c": 15000,
+     "titanium": 800,
+     "silicon": 3000
+    },
+    {
+     "c": 50000,
+     "titanium": 2500,
+     "biomass": 1500
+    },
+    {
+     "c": 150000,
+     "uranium": 3000,
+     "platinum": 800
+    },
+    {
+     "c": 500000,
+     "darkMatter": 50
+    }
+   ],
+   "kriogenBoost": [
+    {
+     "e": 1000,
+     "i": 200,
+     "k": 50
+    },
+    {
+     "e": 5000,
+     "i": 500,
+     "k": 200
+    },
+    {
+     "e": 20000,
+     "i": 1000,
+     "k": 500
+    },
+    {
+     "e": 80000,
+     "i": 3000,
+     "k": 1500,
+     "carbon": 200
+    },
+    {
+     "e": 250000,
+     "i": 8000,
+     "k": 4000,
+     "carbon": 800,
+     "silicon": 400
+    },
+    {
+     "e": 800000,
+     "i": 25000,
+     "k": 10000,
+     "carbon": 2000,
+     "silicon": 1200,
+     "helium3": 600
+    },
+    {
+     "e": 2500000,
+     "i": 80000,
+     "k": 25000,
+     "titanium": 800,
+     "silicon": 3000
+    },
+    {
+     "e": 8000000,
+     "i": 200000,
+     "k": 60000,
+     "titanium": 2500,
+     "biomass": 1500
+    },
+    {
+     "e": 25000000,
+     "i": 500000,
+     "k": 150000,
+     "uranium": 3000,
+     "platinum": 800
+    },
+    {
+     "e": 100000000,
+     "i": 1000000,
+     "k": 400000,
+     "darkMatter": 50
+    }
+   ],
+   "therm": [
+    {
+     "e": 2000,
+     "i": 300,
+     "k": 100
+    },
+    {
+     "e": 8000,
+     "i": 800,
+     "k": 400
+    },
+    {
+     "e": 30000,
+     "i": 2000,
+     "k": 1000
+    },
+    {
+     "e": 100000,
+     "i": 5000,
+     "k": 2500,
+     "carbon": 300
+    },
+    {
+     "e": 350000,
+     "i": 15000,
+     "k": 6000,
+     "carbon": 1200,
+     "silicon": 600
+    },
+    {
+     "e": 1200000,
+     "i": 40000,
+     "k": 15000,
+     "carbon": 3000,
+     "silicon": 1800,
+     "helium3": 900
+    },
+    {
+     "e": 4000000,
+     "i": 120000,
+     "k": 40000,
+     "titanium": 1200,
+     "silicon": 4000
+    },
+    {
+     "e": 12000000,
+     "i": 300000,
+     "k": 100000,
+     "titanium": 3500,
+     "biomass": 2000
+    },
+    {
+     "e": 40000000,
+     "i": 800000,
+     "k": 250000,
+     "uranium": 4000,
+     "platinum": 1200
+    },
+    {
+     "e": 150000000,
+     "i": 2000000,
+     "k": 600000,
+     "darkMatter": 80
+    }
+   ],
+   "hyperdrill": [
+    {
+     "e": 1500,
+     "i": 250,
+     "k": 80
+    },
+    {
+     "e": 6000,
+     "i": 600,
+     "k": 250
+    },
+    {
+     "e": 25000,
+     "i": 1500,
+     "k": 800
+    },
+    {
+     "e": 90000,
+     "i": 3500,
+     "k": 2000,
+     "carbon": 250
+    },
+    {
+     "e": 300000,
+     "i": 10000,
+     "k": 5000,
+     "carbon": 900,
+     "silicon": 450
+    },
+    {
+     "e": 1000000,
+     "i": 30000,
+     "k": 12000,
+     "carbon": 2400,
+     "silicon": 1400,
+     "helium3": 700
+    },
+    {
+     "e": 3500000,
+     "i": 90000,
+     "k": 30000,
+     "titanium": 1000,
+     "silicon": 3500
+    },
+    {
+     "e": 10000000,
+     "i": 250000,
+     "k": 80000,
+     "titanium": 3000,
+     "biomass": 1800
+    },
+    {
+     "e": 35000000,
+     "i": 600000,
+     "k": 180000,
+     "uranium": 3500,
+     "platinum": 1000
+    },
+    {
+     "e": 120000000,
+     "i": 1500000,
+     "k": 450000,
+     "darkMatter": 70
+    }
+   ],
+   "recon": [
+    {
+     "e": 1200,
+     "i": 150,
+     "k": 60
+    },
+    {
+     "e": 5000,
+     "i": 400,
+     "k": 180
+    },
+    {
+     "e": 20000,
+     "i": 1000,
+     "k": 500
+    },
+    {
+     "e": 80000,
+     "i": 2500,
+     "k": 1200,
+     "carbon": 180
+    },
+    {
+     "e": 250000,
+     "i": 7000,
+     "k": 3500,
+     "carbon": 700,
+     "silicon": 350
+    },
+    {
+     "e": 800000,
+     "i": 20000,
+     "k": 9000,
+     "carbon": 1800,
+     "silicon": 1000,
+     "helium3": 500
+    },
+    {
+     "e": 2500000,
+     "i": 60000,
+     "k": 22000,
+     "titanium": 700,
+     "silicon": 2500
+    },
+    {
+     "e": 8000000,
+     "i": 160000,
+     "k": 55000,
+     "titanium": 2000,
+     "biomass": 1200
+    },
+    {
+     "e": 25000000,
+     "i": 400000,
+     "k": 120000,
+     "uranium": 2500,
+     "platinum": 600
+    },
+    {
+     "e": 90000000,
+     "i": 1000000,
+     "k": 300000,
+     "darkMatter": 40
+    }
+   ]
+  },
+  "maxLevel": 100
+ },
+ "echo": {
+  "copiesMax": 2,
+  "copiesMaxNewWeave": 3,
+  "shareAdjacent": 0.4,
+  "shareArm": 0.25,
+  "slotsMax": 5,
+  "treeHourTickMs": 3600000,
+  "switchCost": 250,
+  "shardToEssence": 100
+ },
+ "heart": {
+  "foldCostWeaves": 5,
+  "stages": [
+   {
+    "fold": 1,
+    "name": "Сплетено",
+    "allMult": 1.025,
+    "echoKept": 0,
+    "desc": "+2.5% ко всему"
+   },
+   {
+    "fold": 3,
+    "name": "Углублено",
+    "allMult": 1.075,
+    "echoKept": 1,
+    "desc": "+7.5% ко всему · 1 слот эха переживает престиж"
+   },
+   {
+    "fold": 5,
+    "name": "Пробуждено",
+    "allMult": 1.15,
+    "echoKept": 2,
+    "desc": "+15% ко всему · 2 слота эха переживают престиж"
+   },
+   {
+    "fold": 8,
+    "name": "Едино",
+    "allMult": 1.25,
+    "echoKept": 3,
+    "desc": "+25% ко всему · 3 слота · энергия от Хранителей всей сети"
+   }
+  ]
+ },
+ "tree": {
+  "eventMods": {
+   "tem_growth": {
+    "positive": 1.1,
+    "rewardMult": 1.05
+   },
+   "tem_cycle": {
+    "mixed": 1.2
+   },
+   "frz_arch": {
+    "negative": 0.85
+   },
+   "frz_lens": {
+    "positive": 1.1
+   },
+   "scr_forge": {
+    "positive": 1.15
+   },
+   "scr_ash": {
+    "negative": 0.8
+   },
+   "tox_sym": {
+    "negative": 0.65,
+    "positive": 1.05
+   },
+   "tox_res": {
+    "negative": 0.65
+   },
+   "rad_mut": {
+    "mixed": 1.3
+   },
+   "rad_decay": {
+    "mixed": 1.4,
+    "eventSpeed": 1.15
+   },
+   "rck_bed": {
+    "negative": 0.9
+   },
+   "rck_deep": {
+    "positive": 1.1
+   },
+   "ocean_flow": {
+    "positive": 1.1,
+    "flavorAdd": "🌊"
+   },
+   "ocean_deep": {
+    "rewardMult": 1.2,
+    "comboChance": 0.1
+   },
+   "dstr_dune": {
+    "mixed": 1.15
+   },
+   "dstr_mir": {
+    "positive": 1.05,
+    "negative": 0.9
+   },
+   "mtl_vein": {
+    "positive": 1.1
+   },
+   "mtl_cond": {
+    "mixed": 1.1,
+    "rewardMult": 1.1
+   },
+   "crl_facet": {
+    "rewardMult": 1.15
+   },
+   "crl_lens": {
+    "comboChance": 0.2,
+    "eventSpeed": 1.1
+   },
+   "fge_horn": {
+    "positive": 1.15,
+    "rewardMult": 1.05
+   },
+   "fge_temper": {
+    "mixed": 1.25,
+    "rewardMult": 1.15
+   },
+   "fro_rime": {
+    "negative": 0.65
+   },
+   "fro_sleep": {
+    "positive": 1.2,
+    "eventSpeed": 0.9
+   },
+   "lif_myc": {
+    "positive": 1.3,
+    "rewardMult": 1.1,
+    "flavorAdd": "🍄"
+   },
+   "lif_bloom": {
+    "mixed": 1.4,
+    "negative": 0.75
+   },
+   "voi_pact": {
+    "negative": 1.5,
+    "rewardMult": 1.5,
+    "flavorAdd": "🌑"
+   },
+   "voi_echo": {
+    "mixed": 1.6,
+    "negative": 1.2,
+    "comboChance": 0.15
+   },
+   "cor_prime": {
+    "positive": 1.05,
+    "rewardMult": 1.2
+   },
+   "cor_stab": {
+    "negative": 0.7,
+    "positive": 1.05
+   },
+   "cra_bench": {
+    "mixed": 1.15
+   },
+   "cra_quality": {
+    "rewardMult": 1.2,
+    "comboChance": 0.1
+   },
+   "fee_grid": {
+    "positive": 1.1
+   },
+   "fee_batt": {
+    "rewardMult": 1.15
+   },
+   "sch_lab": {
+    "mixed": 1.2,
+    "rewardMult": 1.1
+   },
+   "sch_arch": {
+    "positive": 1.15,
+    "comboChance": 0.15
+   },
+   "spc_core": {
+    "rewardMult": 1.3,
+    "eventSpeed": 1.2
+   },
+   "spc_unique": {
+    "positive": 1.25,
+    "rewardMult": 1.25
+   },
+   "spc_hidden": {
+    "mixed": 1.5,
+    "rewardMult": 1.4
+   }
+  }
+ },
+ "events": {
+  "anomalyPool": [
+   {
+    "id": "energy_instant",
+    "weight": 55,
+    "kind": "instant",
+    "key": "energy"
+   },
+   {
+    "id": "iron_instant",
+    "weight": 28,
+    "kind": "instant",
+    "key": "iron"
+   },
+   {
+    "id": "kriogen_instant",
+    "weight": 14,
+    "kind": "instant",
+    "key": "kriogen"
+   },
+   {
+    "id": "rare_instant",
+    "weight": 22,
+    "kind": "instant",
+    "key": "rare"
+   },
+   {
+    "id": "crystal_instant",
+    "weight": 8,
+    "kind": "instant",
+    "key": "crystals"
+   },
+   {
+    "id": "buff_energy",
+    "weight": 2,
+    "kind": "buff",
+    "key": "energy",
+    "mult": 3,
+    "durMin": 8,
+    "durMax": 40
+   },
+   {
+    "id": "buff_iron",
+    "weight": 1.5,
+    "kind": "buff",
+    "key": "iron",
+    "mult": 3,
+    "durMin": 8,
+    "durMax": 40
+   },
+   {
+    "id": "buff_kriogen",
+    "weight": 1,
+    "kind": "buff",
+    "key": "kriogen",
+    "mult": 3,
+    "durMin": 8,
+    "durMax": 40
+   },
+   {
+    "id": "buff_rare",
+    "weight": 2.2,
+    "kind": "buff",
+    "key": "rare",
+    "mult": 2.5,
+    "durMin": 8,
+    "durMax": 40
+   },
+   {
+    "id": "buff_all",
+    "weight": 0.7,
+    "kind": "buff",
+    "key": "all",
+    "mult": 3,
+    "durMin": 5,
+    "durMax": 15
+   },
+   {
+    "id": "jackpot",
+    "weight": 0.2,
+    "kind": "buff",
+    "key": "all",
+    "mult": 5,
+    "durMin": 8,
+    "durMax": 20
+   }
+  ],
+  "armMods": {
+   "forge": {
+    "positive": 1.3,
+    "mixed": 1,
+    "negative": 0.7,
+    "rewardMult": 1,
+    "flavor": "🔥"
+   },
+   "frost": {
+    "positive": 1,
+    "mixed": 1.2,
+    "negative": 0.9,
+    "rewardMult": 1.2,
+    "flavor": "❄"
+   },
+   "life": {
+    "positive": 1.5,
+    "mixed": 1,
+    "negative": 0.5,
+    "rewardMult": 0.9,
+    "flavor": "🌱"
+   },
+   "void": {
+    "positive": 0.6,
+    "mixed": 1,
+    "negative": 1.8,
+    "rewardMult": 2,
+    "flavor": "🌑"
+   },
+   "core": {
+    "positive": 1,
+    "mixed": 1,
+    "negative": 1,
+    "rewardMult": 1.1,
+    "flavor": "⚪"
+   },
+   "inter": {
+    "positive": 1,
+    "mixed": 1,
+    "negative": 1,
+    "rewardMult": 1,
+    "flavor": "⚪"
+   }
+  },
+  "chains": [
+   {
+    "id": "aurora_forge",
+    "chain": [
+     "stellar_shower",
+     "solar_flare"
+    ],
+    "name": "🌌 АУРОРА-КУЗНИЦА",
+    "duration": 40,
+    "desc": "Звёздный ливень + Вспышка: ×20 кристаллы, ×10 энергия",
+    "effects": {
+     "crystalMult": 20,
+     "energyMult": 10
+    }
+   },
+   {
+    "id": "abyss_bloom",
+    "chain": [
+     "deep_bloom",
+     "void_echo"
+    ],
+    "name": "🌑 ЦВЕТ БЕЗДНЫ",
+    "duration": 45,
+    "desc": "Глубинный цвет + Эхо пустоты: аномалии ×6, истощение ×0.1",
+    "effects": {
+     "anomalyChance": 6,
+     "depletionMult": 0.1
+    }
+   },
+   {
+    "id": "storm_cathedral",
+    "chain": [
+     "storm_quasar",
+     "ion_storm"
+    ],
+    "name": "⚡ ГРОЗОВОЙ СОБОР",
+    "duration": 30,
+    "desc": "Грозовой квазар + Ионный шторм: ×20 энергия, скан ×3",
+    "effects": {
+     "energyMult": 20,
+     "scanCostMult": 3
+    }
+   }
+  ],
+  "pairs": [
+   {
+    "id": "stellar_shower",
+    "pair": [
+     "meteor_storm",
+     "crystal_bloom"
+    ],
+    "name": "🌟 ЗВЁЗДНЫЙ ЛИВЕНЬ",
+    "duration": 30,
+    "desc": "Метеоритный шторм + Кристальный расцвет: ×15 к кристаллам",
+    "effects": {
+     "meteorRate": 8,
+     "crystalMult": 15
+    }
+   },
+   {
+    "id": "supernova",
+    "pair": [
+     "solar_flare",
+     "quasar_pulse"
+    ],
+    "name": "💥 СВЕРХНОВАЯ",
+    "duration": 25,
+    "desc": "Вспышка + Квазар: ×12 к энергии и железу",
+    "effects": {
+     "energyMult": 12,
+     "ironMult": 12
+    }
+   },
+   {
+    "id": "forge_winds",
+    "pair": [
+     "gas_cloud",
+     "reactor_resonance"
+    ],
+    "name": "🔥 КУЗНЕЧНЫЕ ВЕТРЫ",
+    "duration": 40,
+    "desc": "Облако + Резонанс: скан −70% и синтез ×2",
+    "effects": {
+     "scanCostMult": 0.3,
+     "synthMult": 2
+    }
+   },
+   {
+    "id": "deep_bloom",
+    "pair": [
+     "deep_pulse",
+     "crystal_bloom"
+    ],
+    "name": "🌀 ГЛУБИННЫЙ ЦВЕТ",
+    "duration": 45,
+    "desc": "Пульс + Расцвет: истощение ×0.25 и кристаллы ×6",
+    "effects": {
+     "depletionMult": 0.25,
+     "crystalMult": 6
+    }
+   },
+   {
+    "id": "void_dust",
+    "pair": [
+     "void_echo",
+     "cosmic_dust"
+    ],
+    "name": "🌑 ПЫЛЬ ПУСТОТЫ",
+    "duration": 40,
+    "desc": "Эхо + Пыль: аномалии ×4 и все ресурсы ×2",
+    "effects": {
+     "anomalyChance": 4,
+     "allMult": 2
+    }
+   },
+   {
+    "id": "storm_quasar",
+    "pair": [
+     "ion_storm",
+     "quasar_pulse"
+    ],
+    "name": "⚡ ГРОЗОВОЙ КВАЗАР",
+    "duration": 20,
+    "desc": "Шторм + Квазар: энергия ×8, но скан ×2",
+    "effects": {
+     "energyMult": 8,
+     "scanCostMult": 2
+    }
+   }
+  ],
+  "polarityWeights": {
+   "meteor_storm": {
+    "polarity": "positive",
+    "weight": 0.8
+   },
+   "solar_flare": {
+    "polarity": "positive",
+    "weight": 0.9
+   },
+   "crystal_bloom": {
+    "polarity": "positive",
+    "weight": 0.9
+   },
+   "quasar_pulse": {
+    "polarity": "positive",
+    "weight": 0.7
+   },
+   "reactor_resonance": {
+    "polarity": "positive",
+    "weight": 0.8
+   },
+   "gas_cloud": {
+    "polarity": "mixed",
+    "weight": 0.9
+   },
+   "deep_pulse": {
+    "polarity": "mixed",
+    "weight": 0.8
+   },
+   "cosmic_dust": {
+    "polarity": "mixed",
+    "weight": 0.7
+   },
+   "void_echo": {
+    "polarity": "mixed",
+    "weight": 0.6
+   },
+   "acid_rain": {
+    "polarity": "negative",
+    "weight": 0.8,
+    "compensate": {
+     "crystals": 2
+    }
+   },
+   "ion_storm": {
+    "polarity": "negative",
+    "weight": 0.8,
+    "compensate": {
+     "crystals": 2
+    }
+   },
+   "magnetic_anomaly": {
+    "polarity": "negative",
+    "weight": 0.7,
+    "compensate": {
+     "crystals": 3
+    }
+   },
+   "resonance_collapse": {
+    "polarity": "negative",
+    "weight": 0.6,
+    "compensate": {
+     "crystals": 4
+    }
+   }
+  }
+ },
+ "rare": {
+  "lockedWeight": 0.35,
+  "reachAhead": 2
+ },
+ "roles": {
+  "costGrowthPerDuplicate": 1.8,
+  "defs": {
+   "crafter": {
+    "id": "crafter",
+    "icon": "⚗",
+    "name": "Мастеровая",
+    "color": "#c084fc",
+    "desc": "Синтез и сплавы: −25% время, +15% выход, −15% добыча",
+    "mult": {
+     "energy": 0.85,
+     "iron": 0.85,
+     "kriogen": 0.85,
+     "rare": 1,
+     "synthTime": 0.75,
+     "synthOut": 1.15,
+     "scan": 1,
+     "research": 1
+    },
+    "fleet": {
+     "cap": 1,
+     "speed": 1
+    },
+    "cost": {
+     "e": 90000,
+     "i": 3500,
+     "materials": {
+      "core": 5
+     }
+    }
+   },
+   "feeder": {
+    "id": "feeder",
+    "icon": "⚡",
+    "name": "Питающая",
+    "color": "#4ddcff",
+    "desc": "+25% энергии, +5% редких, −15% синтез",
+    "mult": {
+     "energy": 1.25,
+     "iron": 1,
+     "kriogen": 1,
+     "rare": 1.05,
+     "synthTime": 1.15,
+     "synthOut": 0.85,
+     "scan": 1,
+     "research": 1
+    },
+    "fleet": {
+     "cap": 1,
+     "speed": 1
+    },
+    "cost": {
+     "e": 60000,
+     "i": 2500,
+     "materials": {
+      "alloy": 20
+     }
+    }
+   },
+   "scholar": {
+    "id": "scholar",
+    "icon": "🔬",
+    "name": "Учёная",
+    "color": "#7ee08a",
+    "desc": "+20% науки, −20% цена скана, −10% добыча",
+    "mult": {
+     "energy": 0.9,
+     "iron": 0.9,
+     "kriogen": 0.9,
+     "rare": 1,
+     "synthTime": 1,
+     "synthOut": 1,
+     "scan": 0.8,
+     "research": 1.2
+    },
+    "fleet": {
+     "cap": 1,
+     "speed": 1
+    },
+    "cost": {
+     "e": 75000,
+     "i": 2000,
+     "materials": {
+      "chip": 10
+     }
+    }
+   }
+  }
+ },
+ "ui": {
+  "statsPages": 3,
+  "toastStackMax": 3
+ },
+ "premium": {
+  "durations": [
+   3,
+   7,
+   15,
+   30
+  ],
+  "prices": {
+   "autoScan": {
+    "3": 49,
+    "7": 89,
+    "15": 159,
+    "30": 249
+   },
+   "autoUpgrade": {
+    "3": 69,
+    "7": 129,
+    "15": 229,
+    "30": 349
+   },
+   "autoTransport": {
+    "3": 89,
+    "7": 169,
+    "15": 299,
+    "30": 449
+   },
+   "dispatcher": {
+    "3": 109,
+    "7": 209,
+    "15": 369,
+    "30": 549
+   },
+   "vip": {
+    "30": 1190
+   }
+  },
+  "botUsername": "",
+  "botStars": {
+   "autoScan": {
+    "3": 40,
+    "7": 75,
+    "15": 135,
+    "30": 210
+   },
+   "autoUpgrade": {
+    "3": 55,
+    "7": 105,
+    "15": 190,
+    "30": 290
+   },
+   "autoTransport": {
+    "3": 75,
+    "7": 140,
+    "15": 250,
+    "30": 375
+   },
+   "dispatcher": {
+    "3": 90,
+    "7": 170,
+    "15": 300,
+    "30": 450
+   },
+   "vip": {
+    "30": 990
+   }
+  }
+ },
+ "eco": {
+  "deficit": {
+   "start": 3,
+   "offset": 2,
+   "step": 0.075,
+   "minMult": 0.32
+  },
+  "deficitPrestige": {
+   "start": 0,
+   "step": 0.005,
+   "minMult": 0.6
+  },
+  "deplete": {
+   "start": 3,
+   "offset": 2,
+   "step": 0.07,
+   "maxMult": 1.7
+  },
+  "scan": {
+   "start": 3,
+   "step": 0.35,
+   "curve": 1.1
+  },
+  "softCurveA": {
+   "start": 3,
+   "step": 0.2
+  },
+  "softCurveB": {
+   "start": 3,
+   "step": 0.1
+  }
+ },
+ "save": {
+  "backupIntervalMs": 3600000
+ },
+ "bus": {
+  "historyCap": 50
+ },
+ "tips": {
+  "throttleMs": 45000
+ },
+ "social": {
+  "tierGifts": {
+   "1": 10,
+   "2": 25,
+   "3": 50,
+   "4": 100,
+   "5": 250
+  },
+  "tierThresholds": [
+   0,
+   0,
+   100,
+   500,
+   2000,
+   10000
+  ]
+ },
+ "audio": {
+  "volumes": {
+   "title": {
+    "src": "music/title.mp3",
+    "volume": 0.55
+   },
+   "planet": {
+    "src": "music/planet.mp3",
+    "volume": 0.5
+   },
+   "galaxy": {
+    "src": "music/galaxy.mp3",
+    "volume": 0.45
+   }
+  }
+ },
+ "dispatch": {
+  "ageLowMs": 150000,
+  "ageMs": 90000,
+  "batchEnergy": 50,
+  "batchIron": 50,
+  "config": {
+   "enabled": false,
+   "intervalMs": 25000,
+   "nonstopIntervalMs": 4000,
+   "nonstop": true,
+   "lastRunAt": 0,
+   "log": [],
+   "lastDispatchAt": 0,
+   "idleSince": 0,
+   "lastCheckAt": 0,
+   "lastIdleLogAt": 0,
+   "stats": {
+    "sent": 0,
+    "mass": 0,
+    "skipped": 0,
+    "multi": 0,
+    "wakeups": 0,
+    "checks": 0,
+    "hold": 0,
+    "energyHold": 0
+   },
+   "demandAge": {},
+   "holdLogAt": {},
+   "priority": {
+    "sonar": 100,
+    "reactor": 92,
+    "activePlanet": 78,
+    "bossRecovery": 70,
+    "reactivate": 60,
+    "anyUpgrade": 42,
+    "recipe": 40,
+    "stockpile": 30
+   }
+  },
+  "critPrio": 90,
+  "floor": 10,
+  "minFill": 0.35,
+  "minMass": 35,
+  "resourceWeights": {
+   "energy": 1,
+   "iron": 4,
+   "kriogen": 4
+  }
+ },
+ "shards": {
+  "absorbBonus": 0.05,
+  "absorbCap": 0.5,
+  "cacheMs": 2000,
+  "chronicleMax": 40,
+  "fabricBonus": 0.1,
+  "membraneMult": 0.5,
+  "minEssenceToSplit": 100000,
+  "minMetaToSplit": 3,
+  "minWorldsToSplit": 3,
+  "seedsEssenceDivisor": 1000,
+  "seedsMetaBonus": 0.1,
+  "seedsSmallWorldFactor": 0.35,
+  "seedsSmallWorldLimit": 8,
+  "seedsWorldBonus": 0.05,
+  "splitEssenceShare": 0.25,
+  "synthBonus": 0.02,
+  "synthCap": 10,
+  "synthCost": 10,
+  "transferCooldownMs": 86400000,
+  "transferLoss": 0.3,
+  "tree": {
+   "seamSlot": {
+    "tier": 1,
+    "cost": 5,
+    "name": "Тонкий шов",
+    "repeatable": true,
+    "costGrowth": 3,
+    "desc": "+1 слот параллельной вселенной (каждая следующая дороже ×3)"
+   },
+   "essencePool": {
+    "tier": 1,
+    "cost": 10,
+    "name": "Общий пул эссенции",
+    "desc": "Эссенция стекает в общий банк: можно снимать в любой вселенной (раз в сутки)"
+   },
+   "sharedAch": {
+    "tier": 1,
+    "cost": 15,
+    "name": "Общие достижения",
+    "desc": "Открытые в одной вселенной засчитываются во всех"
+   },
+   "dustBridge": {
+    "tier": 2,
+    "cost": 50,
+    "name": "Мост пыли",
+    "desc": "Пыль перетекает между вселенными с потерей 30%"
+   },
+   "quickSwitch": {
+    "tier": 2,
+    "cost": 75,
+    "name": "Быстрый перелёт",
+    "desc": "Смена вселенной без подтверждения"
+   },
+   "shardBridge": {
+    "tier": 2,
+    "cost": 200,
+    "name": "Мост осколков",
+    "desc": "Осколки перетекают между вселенными с потерей 30%"
+   },
+   "weaveFabric": {
+    "tier": 3,
+    "cost": 500,
+    "name": "Ткань реальности",
+    "desc": "+10% к добыче во всех вселенных"
+   },
+   "weaverAnchor": {
+    "tier": 3,
+    "cost": 750,
+    "name": "Якорь Ткача",
+    "desc": "3 изученных узла дерева переносятся в новую вселенную"
+   },
+   "membrane": {
+    "tier": 3,
+    "cost": 1200,
+    "name": "Мембрана",
+    "desc": "Хранители в не-первой вселенной бьются в 0.5 силы"
+   },
+   "absorb": {
+    "tier": 4,
+    "cost": 2000,
+    "name": "Поглощение",
+    "desc": "Можно поглотить вселенную: +5% добычи навсегда (до +50%), слот освобождается"
+   },
+   "synthSeeds": {
+    "tier": 4,
+    "cost": 5000,
+    "name": "Синтез зёрен",
+    "desc": "Открывает конвертацию 10 🌠 → 1 семя синтеза: +2% к добыче (до 10 семян)"
+   }
+  }
+ },
+ "ghost": {
+  "alpha": 0.16,
+  "codePrefix": "VORGP1",
+  "color": "#c084fc",
+  "markAlpha": 0.5,
+  "markColors": [
+   "#ffd27a",
+   "#ff8c8c",
+   "#7ec9e8"
+  ],
+  "markRadius": 7,
+  "maxCellsPerPlanet": 400,
+  "maxDraw": 140,
+  "maxMarks": 40,
+  "maxPlanets": 24,
+  "maxWeaves": 60,
+  "weaveAlpha": 0.22,
+  "weaveColor": "192,132,252",
+  "weaveDash": [
+   3,
+   5
+  ]
+ },
+ "cinematic": {
+  "arrivalMs": 1200,
+  "blackoutMs": 320,
+  "collapseMs": 1000,
+  "colors": {
+   "collapse": "#ff4d9d",
+   "fold": "#c084fc",
+   "burn": "#eaf8ff"
+  },
+  "cracks": 24,
+  "reportMs": 4200,
+  "zoomFrom": 0.22,
+  "zoomTo": 0.98
+ },
+ "guardian": {
+  "shardAwarePct": 35,
+  "shardLines": {
+   "sentinel": [
+    "Я чувствую шов. По ту сторону — ещё одна грань, и на ней кто-то держит удар. Не я.",
+    "Ты расколол мир. Я остался на этом осколке — значит, моя служба стала короче и яснее.",
+    "Раньше я охранял границу мира. Теперь граница проходит сквозь меня.",
+    "Когда ты уходишь в другую вселенную, я стою здесь. Это и есть моя работа."
+   ],
+   "guardian": [
+    "Ещё одно Я рядом. Оно не моё — и всё же я слышу, как оно дышит сквозь шов.",
+    "Раскол не рана, если ты знаешь, зачем режешь. Ты знаешь?",
+    "Я помню Воронию целой. Ты сделал её несколькими — и она не перестала быть собой.",
+    "Между вселенными тише, чем здесь. Но тишина не защищает. Защищаю я."
+   ],
+   "overlord": [
+    "Ты разделил то, что я держал одним куском. Интересно: стало ли тебя больше — или просто стало два?",
+    "Я раскололся первым. Ты повторяешь мой жест, но осознанно. Это уже не падение, а ремесло.",
+    "Швы — это тоже плетение. Просто нить идёт сквозь пустоту.",
+    "Смотри в оба: в одной из твоих вселенных я не сплю. И в этой — тоже."
+   ]
+  }
+ },
+ "map": {
+  "resourceIconSize": 11,
+  "resourceIconsMax": 6
+ }
+}
