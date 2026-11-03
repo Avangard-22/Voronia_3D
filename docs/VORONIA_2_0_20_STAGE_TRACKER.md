@@ -143,3 +143,20 @@
 - [x] Сохранение результатов исследования и связей тело → планета.
 - [ ] Полный Vitest / production build / браузерный WebGL / Android acceptance.
 - [ ] Перевод связи родительская система → орбитальное тело в first-class графовую топологию.
+
+### Stage 8.1 — CI Repair & Galaxy Connectivity (2026-11-03)
+- [x] `@types/three@^0.170.0` в devDependencies: `tsc` 30 → 0 ошибок, `eslint` 1089 → 0.
+- [x] Добиты 12 реальных ошибок типов (кортеж `Map` из `Uint32Array`, `faceIndex: number | null`, guard первой точки маршрута, `noUncheckedIndexedAccess` в `surfaceStreamingPolicy`, unused var, арифметика по `Uint32Array` в тесте).
+- [x] Транзитная маршрутизация (ADR-018): пролёт через неоткрытые системы с надбавкой 1.5×/2.5×, сжатие маршрута до остановок, `GalaxyRoute.transitNodeIds`.
+- [x] Валидация Stage 6.8 и роутер используют одну карту связности (`buildChartedComponents`).
+- [x] `kindFor`: геометрия важнее биома — мир «rift anomaly / void» снова tier-1 `rift` (стоимость цепочки экспедиций по реестру).
+- [x] `LogisticsService`: пустых стопок в грузе/депо не существует (контракт снапшота совпал с `hydrate`).
+- [x] `buildGalaxyRenderData` отбрасывает петли `a === b`.
+- [x] Восстановлены удалённые через веб `README.md`, `eslint.config.js`, `vite.config.single.ts`, `vitest.config.ts`; добавлен `.gitignore`; удалён `src/ui/styles.ts.tmp`.
+- [x] Контракт меша Stage 8.0.x и модель цвета неисследованных клеток зафиксированы тестами (golden 4023 для Феррума).
+- [x] Исправлены 3 дефектных теста (`flat()` по `Uint32Array[]`, разнообразие сторон на додекаэдре, фикстура недостижимости).
+- [x] **`npm run ci` зелёный целиком: lint 0 · typecheck×2 0 · check:arch OK · Vitest 356/356 · build 773.91 КБ · build:single 774.24 КБ · check:size 0.74 МБ.** Деплой на GitHub Pages разблокирован.
+- [ ] Браузерный WebGL / Android acceptance и замер TV-36 (как и на Этапах 5–8).
+- [ ] UI-подсказка «перелёт через неизученную систему» для `transitNodeIds`.
+- [ ] Тюнинг множителей транзита под доход энергии ранних этапов (замер на живом билде).
+- См. `docs/STAGE8_1_CI_REPAIR_REPORT.md`, `docs/adr/adr-018.md`.
