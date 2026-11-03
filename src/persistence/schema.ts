@@ -69,6 +69,8 @@ export interface SaveGameV2 {
   readonly sonarBonus?: { readonly planetId: string; readonly mult: number; readonly until: number; readonly accuracy: number };
   /** Этап 5 (опц.): спеки открытых миров (реплей при загрузке; ADR-017). */
   readonly discoveredSpecs?: readonly DiscoverySpec[];
+  /** Stage 7.4: состояние орбитальных исследований и связь тела с созданной планетой. */
+  readonly orbitalExploration?: Readonly<Record<string, { readonly scannedBodyIds: readonly string[]; readonly activatedBodies: Readonly<Record<string, string>> }>>;
 }
 
 export interface SaveValidation {
@@ -109,6 +111,35 @@ export function validateSaveV2(raw: unknown): SaveValidation {
     }
   }
   if (typeof s['activePlanetId'] !== 'string') problems.push('activePlanetId не строка');
+  if (s['orbitalExploration'] !== undefined) {
+    const systems = s['orbitalExploration'] as Record<string, unknown>;
+    const unlocked = new Set(Array.isArray(s['unlockedPlanets']) ? s['unlockedPlanets'].filter((id): id is string => typeof id === 'string') : []);
+    const specs = new Set(Array.isArray(s['discoveredSpecs']) ? (s['discoveredSpecs'] as unknown[]).flatMap((item) => item && typeof item === 'object' && typeof (item as Record<string, unknown>)['id'] === 'string' ? [(item as Record<string, unknown>)['id'] as string] : []) : []);
+    if (!systems || typeof systems !== 'object' || Array.isArray(systems)) problems.push('orbitalExploration невалиден');
+    else for (const [hostId, value] of Object.entries(systems)) {
+      const state = value as Record<string, unknown>;
+      if (!state || !Array.isArray(state['scannedBodyIds']) || !state['activatedBodies'] || typeof state['activatedBodies'] !== 'object' || Array.isArray(state['activatedBodies'])) {
+        problems.push(`orbitalExploration.${hostId} невалиден`);
+        continue;
+      }
+      const scanned = state['scannedBodyIds'] as unknown[];
+      const activated = state['activatedBodies'] as Record<string, unknown>;
+      if (!unlocked.has(hostId)) problems.push(`orbitalExploration.${hostId}: родительская планета не открыта`);
+      if (scanned.some((id) => typeof id !== 'string' || !id.startsWith(`body:${hostId}:`))) problems.push(`orbitalExploration.${hostId}: неверный идентификатор сканирования`);
+      if (new Set(scanned).size !== scanned.length) problems.push(`orbitalExploration.${hostId}: повторяющиеся scannedBodyIds`);
+      const mappedPlanets = new Set<string>();
+      for (const [bodyId, planetId] of Object.entries(activated)) {
+        if (typeof planetId !== 'string' || !bodyId.startsWith(`body:${hostId}:`) || !scanned.includes(bodyId)) {
+          problems.push(`orbitalExploration.${hostId}.${bodyId}: активация не соответствует исследованному телу`);
+          continue;
+        }
+        if (!unlocked.has(planetId)) problems.push(`orbitalExploration.${hostId}.${bodyId}: планета ${planetId} не открыта`);
+        if (!specs.has(planetId)) problems.push(`orbitalExploration.${hostId}.${bodyId}: отсутствует DiscoverySpec для ${planetId}`);
+        if (mappedPlanets.has(planetId)) problems.push(`orbitalExploration.${hostId}: планета ${planetId} привязана к нескольким телам`);
+        mappedPlanets.add(planetId);
+      }
+    }
+  }
   if (s['resolvedAnomalyIds'] !== undefined && (!Array.isArray(s['resolvedAnomalyIds']) || s['resolvedAnomalyIds'].some((id) => typeof id !== 'string'))) problems.push('resolvedAnomalyIds невалиден');
   if (s['sonarBonus'] !== undefined) {
     const b = s['sonarBonus'] as Record<string, unknown>;

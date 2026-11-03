@@ -36,6 +36,7 @@ import { AnomalyService, fmFor } from '../planets/anomalies';
 import { countDiscoverablePlanets, createStarterWorld, discoverPlanet as runDiscovery, type DiscoveryWorld } from './discovery';
 import { anomalyGateStatus, classifySignal, galaxyMilestone, galaxyProgressionStatus, galaxySector, layoutGalaxy } from '../galaxy/exploration';
 import { buildAnomalySites } from '../galaxy/anomalies';
+import { buildStarSystemCatalog } from '../galaxy/starSystems';
 import { buildRouteOptions, findGalaxyRoute, ROUTE_POLICY } from '../galaxy/routes';
 import { validateGalaxyIntegrity, type GalaxyIntegrityReport } from '../galaxy/validation';
 import { LogisticsService, type LogisticsPlanetContext } from '../logistics/service';
@@ -94,6 +95,7 @@ export class Game implements SaveSource {
   private world: DiscoveryWorld;
   /** Спеки открытых миров (детерминированный реплей при загрузке — ADR-017). */
   private discoverySpecs: DiscoverySpec[] = [];
+  private orbitalExploration = new Map<string, { scannedBodyIds: Set<string>; activatedBodies: Map<string, string> }>();
   private nextPreviewCache: { key: string; value: NonNullable<GameSnapshot['sonar']['nextPreview']> } | null = null;
 
   constructor(opts: GameOptions = {}) {
@@ -342,6 +344,18 @@ export class Game implements SaveSource {
         const p = payload as CommandMap['withdrawDepot'];
         return ret(this.logistics.withdraw(this.activePlanetIdValue, p.resource, p.amount));
       }
+      case 'scanOrbitalBody': {
+        const p = payload as CommandMap['scanOrbitalBody'];
+        return ret(this.scanOrbitalBody(p.hostPlanetId, p.bodyId));
+      }
+      case 'activateOrbitalBody': {
+        const p = payload as CommandMap['activateOrbitalBody'];
+        return ret(this.activateOrbitalBody(p.hostPlanetId, p.bodyId));
+      }
+      case 'travelWithinSystem': {
+        const p = payload as CommandMap['travelWithinSystem'];
+        return ret(this.travelWithinSystem(p.hostPlanetId, p.destinationId));
+      }
       case 'travelToPlanet': {
         const p = payload as CommandMap['travelToPlanet'];
         return ret(this.travelToPlanet(p.destinationId));
@@ -397,6 +411,7 @@ export class Game implements SaveSource {
     this.runtimes.clear();
     this.world = createStarterWorld(defaultGeneratorCtx(this.balance));
     this.discoverySpecs = [];
+    this.orbitalExploration.clear();
     this.nextPreviewCache = null;
     this.unlocked = [...this.balance.baseline.start.unlockedPlanets];
     this.activePlanetIdValue = this.balance.baseline.start.activePlanetId;
@@ -491,6 +506,81 @@ export class Game implements SaveSource {
    * (iron/kriogen/extraResources per-planet) — Этап 9 вместе c пер-планетными стоками (TV-25, ADR-017).
    */
   /** Stage 6.6: маршрут выполняется по одному ребру; цель может находиться за несколькими промежуточными узлами. */
+  /** Stage 7.4: платное раскрытие одной орбитальной сигнатуры. */
+  private scanOrbitalBody(hostPlanetId: string, bodyId: string): ActionResult<CommandResultMap['scanOrbitalBody']> {
+    const host = this.world.graph.nodes[hostPlanetId];
+    if (!host?.discovered || !this.unlocked.includes(hostPlanetId)) return fail('hidden', 'Звёздная система ещё не доступна для исследования');
+    const catalog = buildStarSystemCatalog(host);
+    const body = catalog?.bodies.find((item) => item.id === bodyId);
+    if (!body || body.orbitIndex === 0) return fail('unknown-cell', 'Орбитальное тело не найдено');
+    const state = this.orbitalExploration.get(hostPlanetId) ?? { scannedBodyIds: new Set<string>(), activatedBodies: new Map<string, string>() };
+    if (state.scannedBodyIds.has(bodyId)) return fail('state', 'Эта орбита уже исследована');
+    const energyCost = 500;
+    const researchCost = 100;
+    if (this.ledger.balance('energy') < energyCost || this.ledger.balance('research') < researchCost) return fail('cost', `Требуется ${energyCost} энергии и ${researchCost} исследований`);
+    const tx = this.ledger.tryCommit({ reason: `orbital:scan:${bodyId}`, scope: 'global', delta: { energy: -energyCost, research: -researchCost }, gameMs: this.clock.gameMsNow });
+    if (!tx.ok) return fail('cost', 'Недостаточно ресурсов для исследования орбиты');
+    state.scannedBodyIds.add(bodyId);
+    this.orbitalExploration.set(hostPlanetId, state);
+    return ok({ hostPlanetId, bodyId, energySpent: energyCost, researchSpent: researchCost });
+  }
+
+  /** Stage 7.4: создаёт полноценный runtime через существующий генератор планет и ADR-017 replay. */
+  private activateOrbitalBody(hostPlanetId: string, bodyId: string): ActionResult<CommandResultMap['activateOrbitalBody']> {
+    const host = this.world.graph.nodes[hostPlanetId];
+    if (!host?.discovered || !this.unlocked.includes(hostPlanetId)) return fail('hidden', 'Система недоступна');
+    const catalog = buildStarSystemCatalog(host);
+    const body = catalog?.bodies.find((item) => item.id === bodyId);
+    if (!body || body.orbitIndex === 0) return fail('unknown-cell', 'Орбитальное тело не найдено');
+    const state = this.orbitalExploration.get(hostPlanetId);
+    if (!state?.scannedBodyIds.has(bodyId)) return fail('state', 'Сначала исследуйте орбитальную сигнатуру');
+    const existing = state.activatedBodies.get(bodyId);
+    if (existing) return fail('state', `Тело уже активировано как ${existing}`);
+    const energyCost = 2000;
+    const researchCost = 500;
+    if (this.ledger.balance('energy') < energyCost || this.ledger.balance('research') < researchCost) return fail('cost', `Требуется ${energyCost} энергии и ${researchCost} исследований`);
+    const biomeByClass: Record<string, string> = { terrestrial: 'unknown', ice: 'krios', 'gas-giant': 'helium', dwarf: 'rocky', 'asteroid-belt': 'rocky' };
+    const seed = ((catalog!.seed ^ Math.imul(body.orbitIndex + 1, 0x45d9f3b) ^ 0x7a31c9) >>> 0) || 1;
+    const generated = runDiscovery({ name: `${host.name} · Орбита ${body.orbitIndex}`, biome: biomeByClass[body.bodyClass] ?? 'unknown', seed, geometry: host.geometry }, this.world, defaultGeneratorCtx(this.balance));
+    const tx = this.ledger.tryCommit({ reason: `orbital:activate:${bodyId}`, scope: 'global', delta: { energy: -energyCost, research: -researchCost }, gameMs: this.clock.gameMsNow });
+    if (!tx.ok) return fail('cost', 'Не удалось списать ресурсы для активации планеты');
+    const planet = generated.planet;
+    this.discoverySpecs.push({ id: planet.id, name: planet.name, seed: planet.seed >>> 0, f: planet.f, geometry: planet.geometry, biome: planet.biome, planetIndex: planet.planetIndex || this.discoverySpecs.length + 3 });
+    this.unlocked.push(planet.id);
+    const runtime = createPlanetRuntime(toPlanetData(planet));
+    applyStartState(runtime);
+    this.runtimes.set(planet.id, runtime);
+    state.activatedBodies.set(bodyId, planet.id);
+    this.orbitalExploration.set(hostPlanetId, state);
+    this.ledger.tryCommit({ reason: `orbital:activation-reward:${planet.id}`, scope: 'global', delta: { research: generated.researchReward }, gameMs: this.clock.gameMsNow });
+    this.bumpSession('planetsUnlocked');
+    this.bus.emit('planet:discovered', { id: planet.id, index: planet.planetIndex || 0, name: planet.name });
+    return ok({ hostPlanetId, bodyId, id: planet.id, index: planet.planetIndex || 0, name: planet.name, biome: planet.biome, armId: planet.armId ?? generated.node.armId, researchReward: generated.researchReward, node: { x: generated.node.x, y: generated.node.y, z: generated.node.z } });
+  }
+
+  orbitalExplorationState(hostPlanetId: string): { readonly scannedBodyIds: readonly string[]; readonly activatedBodies: Readonly<Record<string, string>> } {
+    const state = this.orbitalExploration.get(hostPlanetId);
+    return { scannedBodyIds: [...(state?.scannedBodyIds ?? [])], activatedBodies: Object.fromEntries(state?.activatedBodies ?? []) };
+  }
+
+  /** Stage 7.4.2: навигация между телами одной системы без межзвёздного расхода энергии. */
+  private travelWithinSystem(hostPlanetId: string, destinationId: string): ActionResult<CommandResultMap['travelWithinSystem']> {
+    const host = this.world.graph.nodes[hostPlanetId];
+    if (!host?.discovered || !this.unlocked.includes(hostPlanetId)) return fail('hidden', 'Звёздная система недоступна');
+    if (!this.runtimes.has(destinationId) || !this.unlocked.includes(destinationId)) return fail('state', 'Планета не активирована');
+    const state = this.orbitalExploration.get(hostPlanetId);
+    const catalog = buildStarSystemCatalog(host);
+    const belongsToSystem = [...(state?.activatedBodies.entries() ?? [])].some(([bodyId, planetId]) =>
+      planetId === destinationId && catalog?.bodies.some((body) => body.id === bodyId && body.orbitIndex > 0) === true,
+    );
+    if (!belongsToSystem && destinationId !== hostPlanetId) return fail('state', 'Планета не принадлежит этой звёздной системе');
+    const prev = this.activePlanetIdValue;
+    if (prev === destinationId) return fail('state', 'Эта планета уже активна');
+    this.activePlanetIdValue = destinationId;
+    this.bus.emit('planet:activated', { pid: destinationId, prev });
+    return ok({ pid: destinationId, prev, hostPlanetId });
+  }
+
   travelToPlanet(destinationId: string): ActionResult<CommandResultMap['travelToPlanet']> {
     const prev = this.activePlanetIdValue;
     if (destinationId === prev) return fail('state', 'Вы уже находитесь в этой системе');
@@ -840,6 +930,7 @@ export class Game implements SaveSource {
       resolvedAnomalyIds: [...this.resolvedAnomalyIds],
       ...(this.sonarBonusValue ? { sonarBonus: { ...this.sonarBonusValue } } : {}),
       discoveredSpecs: this.discoverySpecs.map((s) => ({ ...s })),
+      orbitalExploration: Object.fromEntries([...this.orbitalExploration].map(([id, state]) => [id, { scannedBodyIds: [...state.scannedBodyIds], activatedBodies: Object.fromEntries(state.activatedBodies) }])),
     };
   }
 
@@ -865,6 +956,7 @@ export class Game implements SaveSource {
     this.unlocked = [...save.unlockedPlanets];
     // Этап 5: открытые миры — детерминированный реплей спеков (тот же порядок → те же id/позиции/рукава/рёбра; ADR-017)
     this.discoverySpecs = (save.discoveredSpecs ?? []).map((s) => ({ ...s }));
+    this.orbitalExploration = new Map(Object.entries(save.orbitalExploration ?? {}).map(([id, state]) => [id, { scannedBodyIds: new Set(state.scannedBodyIds), activatedBodies: new Map(Object.entries(state.activatedBodies)) }]));
     this.world = createStarterWorld(defaultGeneratorCtx(this.balance));
     this.nextPreviewCache = null;
     for (const spec of this.discoverySpecs) {
