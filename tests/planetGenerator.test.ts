@@ -105,6 +105,51 @@ function nodeDump(n: GraphNode): Record<string, unknown> {
 }
 
 // ---------------------------------------------------------------------------
+// Сравнение с фикстурами 1.x: допуск на последний ULP
+// ---------------------------------------------------------------------------
+// Координаты узлов и вершины геометрии считаются через Math.hypot/atan2/log/pow,
+// а эти функции дают расхождение в 1 ULP (~1e-14 при |v|~17) между сборками V8:
+// Node 22 в GitHub Actions и Node в Codespace считают последние биты по-разному.
+// Логика 1.x при этом идентична, поэтому фикстуры сравниваются не побитово.
+//
+// POS_DIGITS = 10 → порог |delta| < 5e-11:
+//   - на ~4 порядка больше машинного ULP (шум платформы не ловит);
+//   - на ~4 порядка меньше любой реальной правки формул (регрессию ловит).
+// Строки, id, целые, массивы и вложенные объекты сравниваются строго — как
+// раньше, включая семантику toEqual по undefined-полям.
+const POS_DIGITS = 10;
+
+function expectNear(actual: unknown, expected: unknown): void {
+  if (typeof expected === 'number') {
+    expect(typeof actual).toBe('number');
+    // NaN/Infinity сравниваем как toEqual (там NaN === NaN), допуск неприменим
+    if (!Number.isFinite(expected) || !Number.isFinite(actual)) {
+      expect(actual).toEqual(expected);
+      return;
+    }
+    expect(actual as number).toBeCloseTo(expected, POS_DIGITS);
+    return;
+  }
+  if (Array.isArray(expected)) {
+    expect(Array.isArray(actual)).toBe(true);
+    const act = actual as unknown[];
+    expect(act).toHaveLength(expected.length);
+    expected.forEach((e, i) => expectNear(act[i], e));
+    return;
+  }
+  if (expected !== null && typeof expected === 'object') {
+    expect(actual !== null && typeof actual === 'object' && !Array.isArray(actual)).toBe(true);
+    const expObj = expected as Record<string, unknown>;
+    const actObj = actual as Record<string, unknown>;
+    // как toEqual: поля со значением undefined игнорируются с обеих сторон
+    const keys = new Set([...Object.keys(expObj), ...Object.keys(actObj).filter((k) => actObj[k] !== undefined)]);
+    for (const k of keys) expectNear(actObj[k], expObj[k]);
+    return;
+  }
+  expect(actual).toEqual(expected);
+}
+
+// ---------------------------------------------------------------------------
 // Мир (1.x oi()): ferrum+krios + начальный граф
 // ---------------------------------------------------------------------------
 
@@ -182,13 +227,13 @@ describe('planets/generator: стартовые планеты oi()', () => {
   it('ferrum (seed 15929600, f1) + initStart — полное совпадение с planet_ferrum_full.json (GS-02)', () => {
     const ferrum = buildPlanet({ ...STARTER_PLANET_SPECS.ferrum }, ctx);
     initPlanetStart(ferrum, false);
-    expect(planetDump(ferrum)).toEqual(ferrumFx);
+    expectNear(planetDump(ferrum), ferrumFx);
     expect([...ferrum.revealed]).toEqual([0, 2, 1, 3, 6, 7]);
   });
 
   it('krios (seed 13045769, f3, 92 клетки) — полное совпадение с planet_krios_full.json (TV-11)', () => {
     const krios = buildPlanet({ ...STARTER_PLANET_SPECS.krios }, ctx);
-    expect(planetDump(krios)).toEqual(kriosFx);
+    expectNear(planetDump(krios), kriosFx);
   });
 
   it('каталог: ferrum + krios, krios валиден и совпадает с фикстурой', () => {
@@ -208,8 +253,8 @@ describe('planets/generator: паритет discoverPlanet (planetgen_samples)',
     it(`seed ${s.seed}: планета и узел графа совпадают с сэмплом`, () => {
       const world = starterWorld();
       const { planet, node } = discoverPlanet({ seed: s.seed, name: 'Ген-Тест' }, world, ctx);
-      expect(planetDump(planet)).toEqual(s.planet);
-      expect(nodeDump(node)).toEqual(s.graph);
+      expectNear(planetDump(planet), s.planet);
+      expectNear(nodeDump(node), s.graph);
     });
   }
 
@@ -237,7 +282,7 @@ describe('planets/generator: авто-имена, позиции planet_04+, uni
       expect(planet.cells).toHaveLength(exp.cellCount);
       expect(planet.startingCellId).toBe(exp.startingCellId);
       expect(planet._mixed).toBe(exp._mixed);
-      expect({ x: node.x, y: node.y, z: node.z, armId: node.armId }).toEqual(exp.node);
+      expectNear({ x: node.x, y: node.y, z: node.z, armId: node.armId }, exp.node);
       expect(world.graph.edges.map((e) => [...e])).toEqual(exp.edgesAfter);
     }
   });
@@ -255,7 +300,7 @@ describe('planets/generator: авто-имена, позиции planet_04+, uni
       expect(planet.f).toBe(exp.f);
       expect([...planet.resourceList]).toEqual(exp.resourceList);
       expect(planet.cells).toHaveLength(exp.cellCount);
-      expect({ x: node.x, y: node.y, z: node.z, armId: node.armId }).toEqual(exp.node);
+      expectNear({ x: node.x, y: node.y, z: node.z, armId: node.armId }, exp.node);
       expect(world.graph.edges.map((e) => [...e])).toEqual(exp.edgesAfter);
     }
   });
