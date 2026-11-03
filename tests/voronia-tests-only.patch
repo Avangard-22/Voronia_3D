@@ -1,0 +1,459 @@
+diff --git a/.gitignore b/.gitignore
+new file mode 100644
+index 0000000..6ce364e
+--- /dev/null
++++ b/.gitignore
+@@ -0,0 +1,6 @@
++node_modules/
++dist/
++dist-single/
++coverage/
++*.tmp
++.DS_Store
+diff --git a/src/ui/styles.ts.tmp b/src/ui/styles.ts.tmp
+deleted file mode 100644
+index e69de29..0000000
+diff --git a/tests/stage5_discovery.test.ts b/tests/stage5_discovery.test.ts
+index 3ab1175..89b38ba 100644
+--- a/tests/stage5_discovery.test.ts
++++ b/tests/stage5_discovery.test.ts
+@@ -7,7 +7,7 @@
+  * setActive: guard «существует И открыта» (krios locked → false), своп storage 1.x On/yy — Этап 9 (TV-25).
+  */
+ import { describe, it, expect } from 'vitest';
+-import { makeGame, fixture } from './helpers';
++import { makeGame, fixture, grant } from './helpers';
+ import type { CellNode } from '../src/contracts/cells';
+ 
+ interface Stage5Audit {
+@@ -176,12 +176,24 @@ describe('discoverPlanet (аудит §discover)', () => {
+ });
+ 
+ describe('setActivePlanet (аудит §setActive)', () => {
++  // Отклонение 2.0 (ADR-018): setActivePlanet — алиас travelToPlanet, поэтому переключение стоит энергии
++  // первого перехода и возвращает сводку маршрута. Guard 1.x «существует И открыта» сохранён,
++  // но к нему добавлена доступность маршрута и оплата (Этап 6.6).
+   it('guard: открытая → ok; krios (не открыт) → false; неизвестная → false; обратно → ok', () => {
+     const { game } = makeGame(31337);
+     game.dispatch('discoverPlanet', { seed: 777001, name: 'Гелика-Прайм' });
++    grant(game, { energy: 1_000_000 });
++    const energyBefore = game.ledger.balance('energy');
+     const r1 = game.dispatch('setActivePlanet', { pid: 'planet_03' });
+     expect(r1.ok).toBe(true);
+-    if (r1.ok) expect(r1.value).toEqual({ pid: 'planet_03', prev: 'ferrum' });
++    if (r1.ok) {
++      expect(r1.value).toMatchObject({ pid: 'planet_03', prev: 'ferrum' });
++      // planet_03 висит на ещё не открытом Криосе: маршрут существует за счёт транзита без посадки.
++      expect(r1.value.path).toEqual(['ferrum', 'planet_03']);
++      expect(r1.value.transitNodeIds).toEqual(['krios']);
++      expect(r1.value.energyCost).toBeGreaterThan(0);
++    }
++    expect(game.ledger.balance('energy')).toBe(energyBefore - (r1.ok ? r1.value.energyCost : 0));
+     expect(fx.setActive.switchToDiscovered).toBe(true);
+     expect(game.activePlanetId()).toBe('planet_03');
+     expect(game.snapshot().activePlanetId).toBe('planet_03');
+@@ -193,7 +205,7 @@ describe('setActivePlanet (аудит §setActive)', () => {
+     const r3 = game.dispatch('setActivePlanet', { pid: 'nope' });
+     expect(r3.ok).toBe(false);
+     const r4 = game.dispatch('setActivePlanet', { pid: 'ferrum' });
+-    expect(r4.ok).toBe(true);
++    expect(r4.ok).toBe(true); // обратный перелёт тем же транзитным маршрутом
+     expect(game.activePlanetId()).toBe('ferrum');
+     const ev = game.bus.getHistory().filter((e) => e.type === 'planet:activated');
+     expect(ev.length).toBe(2);
+@@ -202,7 +214,8 @@ describe('setActivePlanet (аудит §setActive)', () => {
+   it('активная планета в снапшоте: cells/scan — от planet_03 после переключения', () => {
+     const { game } = makeGame(31337);
+     game.dispatch('discoverPlanet', { seed: 777001, name: 'Гелика-Прайм' });
+-    game.dispatch('setActivePlanet', { pid: 'planet_03' });
++    grant(game, { energy: 1_000_000 }); // перелёт платный (Этап 6.6, ADR-018)
++    expect(game.dispatch('setActivePlanet', { pid: 'planet_03' }).ok).toBe(true);
+     const snap = game.snapshot();
+     const view = snap.planets.find((p) => p.id === snap.activePlanetId);
+     expect(view?.id).toBe('planet_03');
+diff --git a/tests/stage5_renderer.test.ts b/tests/stage5_renderer.test.ts
+index 3aee5db..e1f4108 100644
+--- a/tests/stage5_renderer.test.ts
++++ b/tests/stage5_renderer.test.ts
+@@ -43,21 +43,34 @@ describe('parseColor (палитра 1.x: hsl/hex)', () => {
+ });
+ 
+ describe('buildPlanetMeshData (поли-сетка + граф соседства)', () => {
+-  it('ferrum: cellCount=12, facets=Σ(poly−2), edges=Σneighbors/2, размеры массивов согласованы', () => {
++  it('ferrum: cellCount=12, facets=9×сегменты сторон+надстройки, edges=Σneighbors/2, размеры массивов согласованы', () => {
+     const d = buildPlanetMeshData(ferrum);
+     expect(d.cellCount).toBe(ferrum.cells.length);
+     expect(d.cellCount).toBe(12); // GS-14: ferrum — 12 клеток
+     let edges = 0;
+     for (const c of ferrum.cells) edges += c.neighbors.length;
+-    expect(d.facetCount).toBe(ferrum.cells.reduce((sum, cell) => sum + cell.poly.length * 9 + ((cell.type === 2 ? 3 : cell.type === 4 ? 5 : cell.type === 6 ? 2 : cell.type === 7 ? 4 : 0) * 3), 0));
+-    expect(d.edgeCount).toBe(edges / 2); // граф неориентированный: каждое ребро один раз
++    // Контракт меша Stage 8.0.x (вместо Stage 5 «Σ poly×9 + шипы×3»):
++    // каждая сторона полигона тесселируется на segments = clamp(ceil(угол/0.12), 1, 12) общих сегментов,
++    // на сегмент приходится 9 треугольников склона (4 кольца × 2 + замыкающий на центр клетки).
++    const sides = ferrum.cells.reduce((sum, cell) => sum + cell.poly.length, 0);
++    const baseFacets = d.facetCount - d.featureTriangleCount;
++    expect(sides).toBe(60); // 12 пятиугольников
++    expect(d.sharedEdgeCount).toBe(edges / 2); // граф неориентированный: каждое ребро один раз
++    expect(d.edgeCount).toBe(edges / 2);
++    expect(sides).toBe(d.sharedEdgeCount * 2); // замкнутая поли-сетка: у каждого ребра ровно две клетки
++    expect(d.tessellatedEdgeSegmentCount).toBeGreaterThanOrEqual(d.sharedEdgeCount);
++    expect(baseFacets % 9).toBe(0);
++    expect(baseFacets).toBe(9 * 2 * d.tessellatedEdgeSegmentCount); // по 9 треугольников на сегмент с каждой из двух сторон ребра
++    expect(baseFacets).toBeGreaterThanOrEqual(sides * 9); // не меньше одного сегмента на сторону
++    expect(d.featureTriangleCount).toBeGreaterThan(0); // процедурные надстройки исследованных клеток
++    expect(d.facetCount).toBe(4023); // golden: детерминированная сборка Феррума (210 сегментов × 9 × 2 + 243 надстройки)
+     expect(d.positions.length).toBe(d.facetCount * 9);
+     expect(d.colors.length).toBe(d.facetCount * 9);
+     expect(d.cellCenters.length).toBe(d.cellCount * 3);
+     expect(d.cellColors.length).toBe(d.cellCount * 3);
+     expect(d.cellIds.length).toBe(d.cellCount);
+     expect(d.faceCellIds.length).toBe(d.facetCount);
+-    expect(Array.from(d.faceCellIds)).toEqual(ferrum.cells.flatMap((cell) => Array.from({ length: cell.poly.length * 5 }, () => cell.id)));
++    expect(Array.from(d.cellSideCounts)).toEqual(ferrum.cells.map((cell) => cell.poly.length));
+     expect(d.cellSurfaceCenters.length).toBe(d.cellCount * 3);
+     expect(d.cellHeights.length).toBe(d.cellCount);
+     expect(d.edgePositions.length).toBe(d.edgeCount * 6);
+@@ -135,10 +148,16 @@ describe('buildPlanetMeshData (поли-сетка + граф соседства
+ 
+   it('карта faceIndex → cellId сохраняется при рельефной триангуляции', () => {
+     const d = buildPlanetMeshData(ferrum);
++    // Точное число треугольников на клетку зависит от тесселяции её сторон и от процедурных надстроек,
++    // поэтому проверяется инвариант pickable-меша: треугольники каждой клетки идут сплошным блоком
++    // в порядке planet.cells, и блоки исчерпывают меш целиком.
+     let offset = 0;
+     for (const cell of ferrum.cells) {
+-      const extraSpikes = cell.type === 2 ? 3 : cell.type === 4 ? 5 : cell.type === 6 ? 2 : cell.type === 7 ? 4 : 0;
+-      for (let i = 0; i < cell.poly.length * 9 + extraSpikes * 3; i++) expect(d.faceCellIds[offset++]).toBe(cell.id);
++      const start = offset;
++      while (offset < d.faceCellIds.length && d.faceCellIds[offset] === cell.id) offset++;
++      const block = offset - start;
++      expect(block).toBeGreaterThanOrEqual(cell.poly.length * 9); // минимум один сегмент на сторону
++      expect(Array.from(d.faceCellIds.slice(start, offset)).every((id) => id === cell.id)).toBe(true);
+     }
+     expect(offset).toBe(d.facetCount);
+   });
+@@ -154,20 +173,30 @@ describe('buildPlanetMeshData (поли-сетка + граф соседства
+     expect(a.facetCount).toBe(b.facetCount);
+   });
+ 
+-  it('explored-опция: неисследованная клетка красится из unexplored-палитры', () => {
++  it('explored-опция: исследованная клетка — из explored-палитры, неисследованная — нейтральной (Stage 8.0.2)', () => {
+     const t0 = ferrum.cells.find((c) => c.type === 0)!;
+     const exploredColor = parseColor(ferrum.palette.explored[String(t0.type)] ?? ferrum.palette.border);
+     const unexploredColor = parseColor(ferrum.palette.unexplored[String(t0.type)] ?? ferrum.palette.border);
+     expect(exploredColor).not.toEqual(unexploredColor); // палитры 1.x различаются
+     const idx = ferrum.cells.indexOf(t0);
++    const rgbOf = (d: ReturnType<typeof buildPlanetMeshData>, i: number): number[] => [d.cellColors[i * 3]!, d.cellColors[i * 3 + 1]!, d.cellColors[i * 3 + 2]!];
++
+     const all = buildPlanetMeshData(ferrum); // без опции — все explored
+-    expect([all.cellColors[idx * 3]!, all.cellColors[idx * 3 + 1]!, all.cellColors[idx * 3 + 2]!]).toEqual([
+-      Math.fround(exploredColor[0]), Math.fround(exploredColor[1]), Math.fround(exploredColor[2]),
+-    ]);
++    expect(rgbOf(all, idx)).toEqual([Math.fround(exploredColor[0]), Math.fround(exploredColor[1]), Math.fround(exploredColor[2])]);
++
++    // Отклонение от 1.x (Stage 8.0.2): per-type unexplored-палитра раскрыла бы тип клетки до исследования.
++    // Неисследованная, но открытая для взаимодействия клетка получает единый нейтральный тон от palette.border.
++    const border = parseColor(ferrum.palette.border);
++    const revealedTint = [border[0] * 0.72 + 0.12, border[1] * 0.72 + 0.16, border[2] * 0.72 + 0.2];
+     const none = buildPlanetMeshData(ferrum, { explored: new Set() });
+-    expect([none.cellColors[idx * 3]!, none.cellColors[idx * 3 + 1]!, none.cellColors[idx * 3 + 2]!]).toEqual([
+-      Math.fround(unexploredColor[0]), Math.fround(unexploredColor[1]), Math.fround(unexploredColor[2]),
+-    ]);
++    expect(rgbOf(none, idx)).toEqual(revealedTint.map((v) => Math.fround(v)));
++    expect(new Set(ferrum.cells.map((_, i) => rgbOf(none, i).join(','))).size).toBe(1); // тип не читается из цвета
++
++    // Полностью скрытая клетка темнее и тоже одинакова для всех типов.
++    const dark = buildPlanetMeshData(ferrum, { explored: new Set(), revealed: new Set() });
++    expect(rgbOf(dark, idx)).toEqual([0.035, 0.055, 0.075].map((v) => Math.fround(v)));
++    expect(new Set(ferrum.cells.map((_, i) => rgbOf(dark, i).join(','))).size).toBe(1);
++    expect(rgbOf(dark, idx)).not.toEqual(rgbOf(none, idx));
+   });
+ });
+ 
+diff --git a/tests/stage6_6_expedition_routes.test.ts b/tests/stage6_6_expedition_routes.test.ts
+index 9f7495a..58bf893 100644
+--- a/tests/stage6_6_expedition_routes.test.ts
++++ b/tests/stage6_6_expedition_routes.test.ts
+@@ -1,10 +1,10 @@
+ import { describe, expect, it } from 'vitest';
+ import type { GraphNode, PlanetaryGraph } from '../src/contracts/galaxy';
+-import { buildRouteOptions, findGalaxyRoute, quoteRouteLeg } from '../src/galaxy/routes';
++import { buildRouteOptions, findGalaxyRoute, quoteRouteLeg, ROUTE_POLICY } from '../src/galaxy/routes';
+ import { makeGame, grant } from './helpers';
+ 
+-function node(id: string, x: number, z: number, biome = 'unknown', geometryName = 'icosahedron'): GraphNode {
+-  return { id, planetId: id, name: id.toUpperCase(), geometryName, biome, geometry: geometryName, frequency: 1, seed: x + z + 100, armId: 'core', x, y: 0, z, discovered: true };
++function node(id: string, x: number, z: number, biome = 'unknown', geometryName = 'icosahedron', discovered = true): GraphNode {
++  return { id, planetId: id, name: id.toUpperCase(), geometryName, biome, geometry: geometryName, frequency: 1, seed: x + z + 100, armId: 'core', x, y: 0, z, discovered };
+ }
+ 
+ function graph(nodes: GraphNode[], edges: [string, string][]): PlanetaryGraph {
+@@ -18,7 +18,38 @@ describe('Stage 6.6 — Expedition Routes', () => {
+     expect(route?.path).toEqual(['a', 'b', 'c']);
+     expect(route?.hops).toBe(2);
+     expect(route?.nextHop).toBe('b');
+-    expect(findGalaxyRoute(g, ['a', 'c'], 'a', 'c')).toBeNull();
++    expect(route?.transitNodeIds).toEqual([]);
++    // Контракт Этапа 6.6 сохранён за явным флагом: без транзита замкнутой цепочки открытых узлов нет.
++    expect(findGalaxyRoute(g, ['a', 'c'], 'a', 'c', 0, { allowTransit: false })).toBeNull();
++  });
++
++  it('Этап 8.1: допускает пролёт через неоткрытую систему без посадки и с надбавкой', () => {
++    const g = graph([node('a', 0, 0), node('b', 3, 0), node('c', 6, 0), node('locked', 3, 2)], [['a', 'b'], ['b', 'c'], ['a', 'locked'], ['locked', 'c']]);
++    const transit = findGalaxyRoute(g, ['a', 'c'], 'a', 'c');
++    // Транзитный узел не становится остановкой: activePlanetId всегда указывает на открытую планету с runtime.
++    expect(transit?.path).toEqual(['a', 'c']);
++    expect(transit?.hops).toBe(1);
++    expect(transit?.nextHop).toBe('c');
++    expect(transit?.firstLeg).toMatchObject({ from: 'a', to: 'c' });
++    expect(transit?.transitNodeIds).toEqual(['b']);
++    const rawThroughB = quoteRouteLeg(g.nodes['a']!, g.nodes['b']!).energyCost + quoteRouteLeg(g.nodes['b']!, g.nodes['c']!).energyCost;
++    expect(transit?.totalEnergy).toBeGreaterThan(rawThroughB);
++    expect(transit?.totalEnergy).toBeLessThanOrEqual(Math.ceil(rawThroughB * ROUTE_POLICY.lockedTransitMultiplier) + 2);
++    expect(transit?.firstLeg.energyCost).toBe(transit?.totalEnergy);
++    // Открытая планета без связи с остальным графом по-прежнему недостижима.
++    expect(findGalaxyRoute(graph([node('a', 0, 0), node('far', 40, 40)], []), ['a', 'far'], 'a', 'far')).toBeNull();
++  });
++
++  it('Этап 8.1: неизученная система как транзит стоит дороже нанесённой на карту', () => {
++    const charted = graph([node('a', 0, 0), node('c', 6, 0), node('mid', 3, 0)], [['a', 'mid'], ['mid', 'c']]);
++    const blind = graph([node('a', 0, 0), node('c', 6, 0), node('mid', 3, 0, 'unknown', 'icosahedron', false)], [['a', 'mid'], ['mid', 'c']]);
++    const chartedRoute = findGalaxyRoute(charted, ['a', 'c'], 'a', 'c');
++    const blindRoute = findGalaxyRoute(blind, ['a', 'c'], 'a', 'c');
++    expect(chartedRoute?.transitNodeIds).toEqual(['mid']);
++    expect(blindRoute?.transitNodeIds).toEqual(['mid']);
++    expect(chartedRoute?.totalDistance).toBe(blindRoute?.totalDistance);
++    expect(blindRoute!.totalEnergy).toBeGreaterThan(chartedRoute!.totalEnergy);
++    expect(blindRoute!.totalEnergy).toBeLessThanOrEqual(Math.ceil(chartedRoute!.totalEnergy * (ROUTE_POLICY.blindTransitMultiplier / ROUTE_POLICY.lockedTransitMultiplier)) + 2);
+   });
+ 
+   it('prices distance, destination sector and anomalous instability', () => {
+diff --git a/tests/stage6_8_galaxy_validation.test.ts b/tests/stage6_8_galaxy_validation.test.ts
+index cc797c6..d358bc2 100644
+--- a/tests/stage6_8_galaxy_validation.test.ts
++++ b/tests/stage6_8_galaxy_validation.test.ts
+@@ -35,14 +35,20 @@ describe('Stage 6.8 — Galaxy Validation', () => {
+       nodes: {
+         a: { id: 'a', planetId: 'a', name: 'A', geometryName: 'sphere', biome: 'x', geometry: 'sphere', frequency: 0.5, seed: 1, armId: 'arm-a', x: 0, y: 0, z: 0, discovered: true },
+         b: { id: 'b', planetId: 'b', name: 'B', geometryName: 'sphere', biome: 'x', geometry: 'sphere', frequency: 0.5, seed: 2, armId: 'arm-b', x: 1, y: 0, z: 0, discovered: true },
++        // Изолированная открытая планета: a и b связаны ребром (пусть и дублированным), поэтому недостижимость
++        // проверяется на узле без единого ребра — иначе issue 'unreachable-unlocked-planet' не может возникнуть.
++        c: { id: 'c', planetId: 'c', name: 'C', geometryName: 'sphere', biome: 'x', geometry: 'sphere', frequency: 0.5, seed: 3, armId: 'arm-c', x: 9, y: 0, z: 9, discovered: true },
+       },
+       edges: [['a', 'missing'], ['a', 'b'], ['b', 'a']] as [string, string][],
+     };
+-    const report = validateGalaxyIntegrity({ graph, unlockedPlanetIds: ['a', 'b'], activePlanetId: 'a', runtimePlanetIds: ['a', 'b'], routes: [], cargo: {}, depots: {} });
++    const report = validateGalaxyIntegrity({ graph, unlockedPlanetIds: ['a', 'b', 'c'], activePlanetId: 'a', runtimePlanetIds: ['a', 'b', 'c'], routes: [], cargo: {}, depots: {} });
+     expect(report.ok).toBe(false);
+     expect(report.issues.map((issue) => issue.code)).toContain('dangling-edge');
+     expect(report.issues.map((issue) => issue.code)).toContain('duplicate-edge');
+     expect(report.issues.map((issue) => issue.code)).toContain('unreachable-unlocked-planet');
++    expect(report.issues.find((issue) => issue.code === 'unreachable-unlocked-planet')?.message).toContain('c');
++    // Транзит через неоткрытые системы разрешён (Этап 8.1): достижимость a ↔ b сохраняется.
++    expect(report.issues.filter((issue) => issue.code === 'unreachable-unlocked-planet')).toHaveLength(1);
+   });
+ 
+   it('detects invalid cargo amounts and orphan planetary depots', () => {
+diff --git a/tests/stage7_4_6_persistence.test.ts b/tests/stage7_4_6_persistence.test.ts
+index 41f4705..b2c10d3 100644
+--- a/tests/stage7_4_6_persistence.test.ts
++++ b/tests/stage7_4_6_persistence.test.ts
+@@ -7,7 +7,7 @@ describe('Stage 7.4.6 system exploration persistence', () => {
+   function activatedGame() {
+     const game = new Game({ rngSeed: 7406 });
+     game.dispatch('grant', { delta: { energy: 10000, research: 3000 }, reason: 'stage7.4.6-test' });
+-    const body = buildStarSystemCatalog(game.galaxyGraph().nodes['ferrum']!)!.bodies[1]!;
++    const body = buildStarSystemCatalog(game.galaxyGraph().nodes['ferrum'])!.bodies[1]!;
+     expect(game.dispatch('scanOrbitalBody', { hostPlanetId: 'ferrum', bodyId: body.id }).ok).toBe(true);
+     const activation = game.dispatch('activateOrbitalBody', { hostPlanetId: 'ferrum', bodyId: body.id });
+     expect(activation.ok).toBe(true);
+diff --git a/tests/stage7_4_orbital_discovery.test.ts b/tests/stage7_4_orbital_discovery.test.ts
+index 175f8d8..562f54c 100644
+--- a/tests/stage7_4_orbital_discovery.test.ts
++++ b/tests/stage7_4_orbital_discovery.test.ts
+@@ -40,7 +40,7 @@ describe('Stage 7.4 orbital discovery and activation', () => {
+   it('does not activate an unscanned orbital body', () => {
+     const game = new Game({ rngSeed: 79 });
+     game.dispatch('grant', { delta: { energy: 10000, research: 3000 }, reason: 'stage7.4-test' });
+-    const body = buildStarSystemCatalog(game.galaxyGraph().nodes['ferrum']!)!.bodies[1]!;
++    const body = buildStarSystemCatalog(game.galaxyGraph().nodes['ferrum'])!.bodies[1]!;
+     const result = game.dispatch('activateOrbitalBody', { hostPlanetId: 'ferrum', bodyId: body.id });
+     expect(result.ok).toBe(false);
+   });
+diff --git a/tests/stage8_0_13_surface_chunks.test.ts b/tests/stage8_0_13_surface_chunks.test.ts
+index 315a479..c2bb306 100644
+--- a/tests/stage8_0_13_surface_chunks.test.ts
++++ b/tests/stage8_0_13_surface_chunks.test.ts
+@@ -10,7 +10,7 @@ describe('Stage 8.0.13 surface chunks', () => {
+     cellCenters: new Float32Array([1,1,1, -1,-1,-1]),
+   });
+   it('partitions triangles and preserves per-face cell identity and vertex attributes', async () => {
+-    const chunks = await buildSurfaceChunksAsync(fixture(), { yieldControl: async () => undefined });
++    const chunks = await buildSurfaceChunksAsync(fixture(), { yieldControl: () => Promise.resolve() });
+     expect(chunks).toHaveLength(2);
+     expect(chunks.reduce((sum, chunk) => sum + chunk.triangleCount, 0)).toBe(2);
+     expect(chunks.flatMap((chunk) => [...chunk.faceCellIds]).sort()).toEqual([10, 20]);
+diff --git a/tests/stage8_0_15_polygon_streaming.test.ts b/tests/stage8_0_15_polygon_streaming.test.ts
+index 3600f46..d9e1ccd 100644
+--- a/tests/stage8_0_15_polygon_streaming.test.ts
++++ b/tests/stage8_0_15_polygon_streaming.test.ts
+@@ -13,7 +13,9 @@ describe('Stage 8.0.15 polygon-aware surface streaming', () => {
+     expect(plan.minPolygonSides).toBe(4);
+     expect(plan.maxPolygonSides).toBe(9);
+     expect(plan.polygonSideHistogram).toEqual({ 4: 1, 5: 1, 6: 1, 7: 1, 9: 1 });
+-    expect([...plan.chunkCellIds].flat().sort((a, b) => a - b)).toEqual([10, 20, 30, 40, 50]);
++    // chunkCellIds — Uint32Array[]: Array.prototype.flat не разворачивает типизированные массивы,
++    // поэтому приводим к number[] явно (иначе sort((a, b) => a - b) сравнивал NaN и ничего не проверял).
++    expect(plan.chunkCellIds.flatMap((ids) => Array.from(ids)).sort((a, b) => a - b)).toEqual([10, 20, 30, 40, 50]);
+   });
+   it('uses adjacency and exposes cross-chunk seams without splitting cells', () => {
+     const plan = buildPolygonSurfaceChunkPlan(input, 2);
+diff --git a/tests/stage8_0_2_cell_visual_states.test.ts b/tests/stage8_0_2_cell_visual_states.test.ts
+index d4d3b01..03ebd6d 100644
+--- a/tests/stage8_0_2_cell_visual_states.test.ts
++++ b/tests/stage8_0_2_cell_visual_states.test.ts
+@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
+ import { buildPlanetMeshData } from '../src/renderer/planetMesh';
+ import { buildPlanet } from '../src/planets/generator';
+ import { STARTER_PLANET_SPECS, armsFromBalance } from '../src/planets/catalog';
++import { createStarterWorld, discoverPlanet } from '../src/core/discovery';
+ import { loadBalance } from '../src/config/loader';
+ import type { GeneratorCtx } from '../src/planets/generator';
+ 
+@@ -14,7 +15,14 @@ describe('Stage 8.0.2 — polygon cell visual states', () => {
+     const expectedSegments = planet.cells.reduce((sum, cell) => sum + cell.poly.length, 0);
+     expect(data.boundaryPositions).toHaveLength(expectedSegments * 6);
+     expect(data.boundaryColors).toHaveLength(expectedSegments * 6);
+-    expect(new Set(planet.cells.map((cell) => cell.poly.length)).size).toBeGreaterThan(1);
++    expect(Array.from(data.cellSideCounts)).toEqual(planet.cells.map((cell) => cell.poly.length));
++    // Феррум — строгий додекаэдр: все 12 клеток пятиугольные, поэтому разнообразие сторон проверяется
++    // на сгенерированном мире. Инвариант Stage 8.0.2: меш повторяет исходные poly, а не сводит их к hex-сетке.
++    const generated = discoverPlanet({ seed: 777001, name: 'Гелика-Прайм' }, createStarterWorld(ctx), ctx).planet;
++    expect(new Set(generated.cells.map((cell) => cell.poly.length)).size).toBeGreaterThan(1);
++    const generatedData = buildPlanetMeshData(generated);
++    expect(Array.from(generatedData.cellSideCounts)).toEqual(generated.cells.map((cell) => cell.poly.length));
++    expect(generatedData.boundarySegmentCount).toBe(generated.cells.reduce((sum, cell) => sum + cell.poly.length, 0));
+   });
+ 
+   it('distinguishes hidden, revealed and explored states without exposing hidden cell types', () => {
+diff --git a/tests/stage8_1_galaxy_transit.test.ts b/tests/stage8_1_galaxy_transit.test.ts
+new file mode 100644
+index 0000000..b88cdd5
+--- /dev/null
++++ b/tests/stage8_1_galaxy_transit.test.ts
+@@ -0,0 +1,114 @@
++/**
++ * Этап 8.1 — регрессия связности галактики (ADR-018).
++ *
++ * Баг, закрытый этим этапом: `discoverPlanet`/`activateOrbitalBody` вешали новый мир на узел,
++ * который игрок ещё не открыл (например, на скрытый Криос-9), а `findGalaxyRoute` требовал
++ * непрерывной цепочки из unlocked-узлов. В итоге:
++ *   - открытая планета была недостижима (`setActivePlanet`/`travelToPlanet` → «Маршрут отсутствует»);
++ *   - `validateIntegrity()` помечал легально полученное состояние как `unreachable-unlocked-planet`;
++ *   - это состояние сохранялось в save и восстанавливалось из него.
++ *
++ * Решение: транзит через неоткрытые системы разрешён (без посадки, с надбавкой), маршрут сжимается
++ * до остановок, поэтому `activePlanetId` всегда указывает на открытую планету c runtime.
++ */
++import { describe, expect, it } from 'vitest';
++import { Game } from '../src/core/game';
++import { ManualDriver } from '../src/core/gameClock';
++import { MemoryStorage } from '../src/persistence/storage';
++import { buildStarSystemCatalog } from '../src/galaxy/starSystems';
++import { findGalaxyRoute } from '../src/galaxy/routes';
++import { makeGame, grant } from './helpers';
++
++describe('Этап 8.1 — транзит через неоткрытые системы', () => {
++  function discoveredGame(seed = 31337) {
++    const { game } = makeGame(seed);
++    grant(game, { energy: 1_000_000, research: 100_000 });
++    const discovered = game.dispatch('discoverPlanet', { seed: 777001, name: 'Гелика-Прайм' });
++    if (!discovered.ok) throw new Error(`discoverPlanet отвергнут: ${discovered.detail ?? discovered.reason}`);
++    return { game, planetId: discovered.value.id };
++  }
++
++  it('открытый мир достижим, даже если он висит на ещё не открытом узле', () => {
++    const { game, planetId } = discoveredGame();
++    const graph = game.galaxyGraph();
++    // Предусловие бага: единственный сосед нового мира — скрытый Криос-9.
++    const neighbours = (graph.edges ?? []).filter(([a, b]) => a === planetId || b === planetId).map(([a, b]) => (a === planetId ? b : a));
++    expect(neighbours).toEqual(['krios']);
++    expect(graph.nodes['krios']?.discovered).toBe(false);
++    expect(game.snapshot().unlockedPlanets).not.toContain('krios');
++
++    // Без транзита маршрута нет — это и был баг.
++    expect(findGalaxyRoute(graph, game.snapshot().unlockedPlanets, 'ferrum', planetId, 0, { allowTransit: false })).toBeNull();
++    const route = findGalaxyRoute(graph, game.snapshot().unlockedPlanets, 'ferrum', planetId);
++    expect(route?.path).toEqual(['ferrum', planetId]);
++    expect(route?.transitNodeIds).toEqual(['krios']);
++
++    const travel = game.dispatch('setActivePlanet', { pid: planetId });
++    expect(travel.ok).toBe(true);
++    expect(game.activePlanetId()).toBe(planetId);
++    expect(game.runtime(planetId)).toBeDefined();
++    expect(game.validateIntegrity().ok).toBe(true);
++  });
++
++  it('возврат возможен: activePlanetId никогда не остаётся на транзитном узле', () => {
++    const { game, planetId } = discoveredGame();
++    expect(game.dispatch('setActivePlanet', { pid: planetId }).ok).toBe(true);
++    const back = game.dispatch('travelToPlanet', { destinationId: 'ferrum' });
++    expect(back.ok).toBe(true);
++    if (!back.ok) return;
++    expect(back.value.pid).toBe('ferrum');
++    expect(back.value.transitNodeIds).toEqual(['krios']);
++    expect(game.activePlanetId()).toBe('ferrum');
++    expect(game.validateIntegrity().ok).toBe(true);
++    // Транзитная система не становится активной и не получает runtime.
++    expect(game.snapshot().unlockedPlanets).not.toContain('krios');
++    expect(game.runtime('krios')).toBeUndefined();
++  });
++
++  it('нельзя прилететь в транзитную систему как в точку назначения', () => {
++    const { game } = discoveredGame();
++    const result = game.dispatch('travelToPlanet', { destinationId: 'krios' });
++    expect(result.ok).toBe(false);
++    if (!result.ok) expect(result.reason).toBe('state');
++    expect(game.activePlanetId()).toBe('ferrum');
++  });
++
++  it('активированное орбитальное тело не оставляет недостижимых планет ни в runtime, ни в save', () => {
++    const game = new Game({ storage: new MemoryStorage(), clockDriver: new ManualDriver(), rngSeed: 7406 });
++    grant(game, { energy: 1_000_000, research: 100_000 });
++    const body = buildStarSystemCatalog(game.galaxyGraph().nodes['ferrum'])!.bodies[1]!;
++    expect(game.dispatch('scanOrbitalBody', { hostPlanetId: 'ferrum', bodyId: body.id }).ok).toBe(true);
++    const activation = game.dispatch('activateOrbitalBody', { hostPlanetId: 'ferrum', bodyId: body.id });
++    expect(activation.ok).toBe(true);
++    if (!activation.ok) return;
++    const planetId = activation.value.id;
++
++    expect(game.dispatch('travelWithinSystem', { hostPlanetId: 'ferrum', destinationId: planetId }).ok).toBe(true);
++    expect(game.validateIntegrity().ok).toBe(true); // было: unreachable-unlocked-planet (ferrum)
++    expect(game.dispatch('travelToPlanet', { destinationId: 'ferrum' }).ok).toBe(true);
++    expect(game.activePlanetId()).toBe('ferrum');
++
++    const exported = game.dispatch('exportSave', {});
++    expect(exported.ok).toBe(true);
++    if (!exported.ok) return;
++    const restored = new Game({ storage: new MemoryStorage(), clockDriver: new ManualDriver(), rngSeed: 1 });
++    expect(restored.dispatch('importSave', { payload: exported.value.payload }).ok).toBe(true);
++    expect(restored.validateIntegrity().ok).toBe(true);
++    expect(restored.validateIntegrity().issues).toEqual([]);
++  });
++
++  it('транзит стоит дороже и не раскрывает метаданные пролётной системы', () => {
++    const { game, planetId } = discoveredGame();
++    const graph = game.galaxyGraph();
++    const unlocked = game.snapshot().unlockedPlanets;
++    const transit = findGalaxyRoute(graph, unlocked, 'ferrum', planetId);
++    expect(transit).not.toBeNull();
++    // Надбавка применяется к каждому ребру, у которого хотя бы один конец не открыт (ADR-018).
++    expect(transit!.totalEnergy).toBe(transit!.firstLeg.energyCost);
++    expect(transit!.hops).toBe(1);
++    const node = graph.nodes['krios']!;
++    expect(node.discovered).toBe(false);
++    // Снапшот не выдаёт имя/биом скрытого узла как доступные для перелёта.
++    expect(game.snapshot().galaxy.routes.every((entry) => unlocked.includes(entry.destinationId))).toBe(true);
++  });
++});
