@@ -72,7 +72,7 @@ export async function benchmarkPlanetSurface(planet: GeneratedPlanet, options: S
       cellIds: mesh.cellIds,
       cellCenters: mesh.cellCenters,
       cellChunkIds: plan.cellChunkIds,
-    }, { trianglesPerSlice: 4096, yieldControl: async () => undefined });
+    }, { trianglesPerSlice: 4096, yieldControl: () => Promise.resolve() });
     const chunkBuildMs = elapsed(chunkStart);
 
     const lodStart = now();

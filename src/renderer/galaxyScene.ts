@@ -206,8 +206,8 @@ export function createGalaxyViewer(canvas: HTMLCanvasElement, initial: GalaxyRen
   let flightStartedAt = 0;
   let flightDuration = 0;
   let flightPoints: THREE.Vector3[] = [];
-  let focusFrom = new THREE.Vector3();
-  let focusTo = new THREE.Vector3();
+  const focusFrom = new THREE.Vector3();
+  const focusTo = new THREE.Vector3();
   let focusStartedAt = 0;
   let focusDuration = 0;
   const nodeByInstance: string[] = [];
@@ -438,14 +438,15 @@ export function createGalaxyViewer(canvas: HTMLCanvasElement, initial: GalaxyRen
 
   function animateRoute(path: readonly string[], durationMs = 2400): void {
     flightPoints = resolveGalaxyRoute(currentData, path).map((node) => new THREE.Vector3(node.x, node.y, node.z));
-    if (flightPoints.length < 2) return;
+    const flightStart = flightPoints[0];
+    if (flightPoints.length < 2 || !flightStart) return;
     if (!flightMarker) {
       flightMarker = new THREE.Mesh(new THREE.SphereGeometry(0.085, 12, 10), new THREE.MeshBasicMaterial({ color: '#ffffff' }));
       scene.add(flightMarker);
     }
     flightStartedAt = performance.now(); flightDuration = Math.max(500, durationMs);
     flightMarker.visible = true;
-    flightMarker.position.copy(flightPoints[0]);
+    flightMarker.position.copy(flightStart);
   }
 
   let dragging = false;

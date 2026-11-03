@@ -607,6 +607,7 @@ export class Game implements SaveSource {
       hopsRemaining: Math.max(0, route.hops - 1),
       distance: leg.distance,
       energyCost: leg.energyCost,
+      transitNodeIds: route.transitNodeIds ?? [],
     });
   }
 
@@ -660,7 +661,9 @@ export class Game implements SaveSource {
     const ferrum = this.runtimes.get('ferrum');
     if (!ferrum || ferrum.explored.size < ferrum.data.cells.length) return fail('state', 'Сначала исследуйте все клетки Феррума');
     const cfg = this.balance.registry.sonar;
-    if (!Array.isArray(scores) || scores.length !== cfg.difficulty.baseRounds || scores.some((v) => !Number.isFinite(v) || v < 0 || v > 1)) {
+    // Array.isArray сужает readonly number[] до any[], поэтому нормализуем вход в отдельную типизированную ссылку.
+    const rounds: readonly number[] = Array.isArray(scores) ? scores : [];
+    if (rounds.length !== cfg.difficulty.baseRounds || rounds.some((v) => !Number.isFinite(v) || v < 0 || v > 1)) {
       return fail('state', `Сонар требует ${cfg.difficulty.baseRounds} корректных сигналов`);
     }
     const planet = this.world.planets['krios'];
@@ -668,7 +671,7 @@ export class Game implements SaveSource {
     const cost = cfg.hintEnergy;
     const tx = this.ledger.tryCommit({ reason: 'sonar:unlock-krios', scope: 'global', delta: { energy: -cost }, gameMs: this.clock.gameMsNow });
     if (!tx.ok) return fail('energy', `Требуется ${cost} энергии`);
-    const accuracy = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length * 100);
+    const accuracy = Math.round(rounds.reduce((sum, value) => sum + value, 0) / rounds.length * 100);
     let mult = 1;
     if (accuracy >= 90) mult = cfg.rewardPerfect;
     else if (accuracy >= 70) mult = cfg.rewardGood;
@@ -962,7 +965,7 @@ export class Game implements SaveSource {
     for (const spec of this.discoverySpecs) {
       runDiscovery({ name: spec.name, biome: spec.biome, seed: spec.seed, geometry: spec.geometry, frequency: spec.f }, this.world, defaultGeneratorCtx(this.balance));
     }
-    if (this.unlocked.includes('krios') && this.world.graph.nodes['krios']) this.world.graph.nodes['krios'] = { ...this.world.graph.nodes['krios']!, discovered: true };
+    if (this.unlocked.includes('krios') && this.world.graph.nodes['krios']) this.world.graph.nodes['krios'] = { ...this.world.graph.nodes['krios'], discovered: true };
     this.runtimes.clear();
     for (const pid of this.unlocked) {
       const generated = this.world.planets[pid];

@@ -48,7 +48,7 @@ export function buildGalaxyRenderData(input: {
     sectorId: node.discovered ? (node.sectorId ?? 'outer') : 'outer',
     signalClass: node.discovered ? (node.signalClass ?? 'unknown') : 'unknown',
   }));
-  const edges = input.edges.filter(([a, b]) => ids.has(a) && ids.has(b) && discoveredIds.has(a) && discoveredIds.has(b));
+  const edges = input.edges.filter(([a, b]) => a !== b && ids.has(a) && ids.has(b) && discoveredIds.has(a) && discoveredIds.has(b));
   const bounds = Math.max(1, ...nodes.map((node) => Math.hypot(node.x, node.y, node.z)));
   return { nodes, edges, bounds };
 }

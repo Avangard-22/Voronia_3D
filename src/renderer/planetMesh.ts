@@ -354,7 +354,7 @@ export function buildPlanetMeshData(planet: GeneratedPlanet, opts: MeshBuildOpti
         const key = vertexKey(point);
         const entry = sharedVertexAccum.get(key);
         if (entry) { entry.heightSum += h; entry.count++; }
-        else sharedVertexAccum.set(key, { point: [point[0]!, point[1]!, point[2]!], heightSum: h, count: 1 });
+        else sharedVertexAccum.set(key, { point: [point[0], point[1], point[2]], heightSum: h, count: 1 });
       }
       const key = edgeKey(a, b);
       const existing = edgeAccum.get(key);
@@ -366,7 +366,7 @@ export function buildPlanetMeshData(planet: GeneratedPlanet, opts: MeshBuildOpti
       // делились чаще, а короткие сохраняли исходную топологию без лишних треугольников.
       const segments = Math.max(1, Math.min(12, Math.ceil(angle / 0.12)));
       if (existing) { existing.heightSum += h; existing.count++; existing.segments = Math.max(existing.segments, segments); }
-      else edgeAccum.set(key, { a: [a[0]!, a[1]!, a[2]!], b: [b[0]!, b[1]!, b[2]!], heightSum: h, count: 1, segments });
+      else edgeAccum.set(key, { a: [a[0], a[1], a[2]], b: [b[0], b[1], b[2]], heightSum: h, count: 1, segments });
     }
   }
   const sharedBoundaryPoints = new Map<string, [number, number, number]>();

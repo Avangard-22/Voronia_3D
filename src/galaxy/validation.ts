@@ -1,6 +1,7 @@
 /** Stage 6.8 — независимая проверка целостности состояния галактики. */
 import type { PlanetaryGraph, GalaxyRoute } from '../contracts/galaxy';
 import type { ResourceAmounts } from '../contracts/resources';
+import { buildChartedComponents } from './routes';
 
 export interface GalaxyIntegrityInput {
   readonly graph: PlanetaryGraph;
@@ -45,6 +46,9 @@ export function validateGalaxyIntegrity(input: GalaxyIntegrityInput): GalaxyInte
   const nodes = graph.nodes ?? {};
   const nodeIds = new Set(Object.keys(nodes));
   const edgeKeys = new Set<string>();
+  // Карта переходов общая с маршрутизацией (Этап 8.1, ADR-018): транзит через неоткрытые системы разрешён,
+  // поэтому достижимость считается по компонентам связности графа, а не только по открытым узлам.
+  const components = buildChartedComponents(graph);
 
   if (unlocked.size !== input.unlockedPlanetIds.length) {
     issues.push({ code: 'duplicate-unlocked-planet', severity: 'error', message: 'Список открытых планет содержит дубликаты' });
@@ -83,21 +87,13 @@ export function validateGalaxyIntegrity(input: GalaxyIntegrityInput): GalaxyInte
     edgeKeys.add(key);
   }
 
-  // Все открытые миры должны быть достижимы друг от друга по рёбрам только через открытые узлы.
+  // Все открытые миры должны быть достижимы из активной планеты по карте переходов (транзит — без посадки).
   if (unlocked.has(input.activePlanetId) && nodes[input.activePlanetId]) {
-    const adjacency = new Map<string, string[]>();
-    for (const [a, b] of graph.edges ?? []) {
-      if (!unlocked.has(a) || !unlocked.has(b) || !nodes[a]?.discovered || !nodes[b]?.discovered) continue;
-      adjacency.set(a, [...(adjacency.get(a) ?? []), b]);
-      adjacency.set(b, [...(adjacency.get(b) ?? []), a]);
+    const home = components.get(input.activePlanetId);
+    for (const id of unlocked) {
+      if (home !== undefined && components.get(id) === home) continue;
+      issues.push({ code: 'unreachable-unlocked-planet', severity: 'error', message: `Открытая планета ${id} недостижима из ${input.activePlanetId} по карте переходов` });
     }
-    const reached = new Set<string>([input.activePlanetId]);
-    const queue = [input.activePlanetId];
-    while (queue.length) {
-      const current = queue.shift()!;
-      for (const next of adjacency.get(current) ?? []) if (!reached.has(next)) { reached.add(next); queue.push(next); }
-    }
-    for (const id of unlocked) if (!reached.has(id)) issues.push({ code: 'unreachable-unlocked-planet', severity: 'error', message: `Открытая планета ${id} недостижима из ${input.activePlanetId} по открытым маршрутам` });
   }
 
   for (const route of input.routes) {
@@ -110,8 +106,11 @@ export function validateGalaxyIntegrity(input: GalaxyIntegrityInput): GalaxyInte
     }
     for (const id of route.path) if (!unlocked.has(id) || !nodes[id]?.discovered) issues.push({ code: 'route-uses-locked-node', severity: 'error', message: `Маршрут к ${route.destinationId} использует закрытый узел ${id}` });
     for (let i = 1; i < route.path.length; i++) {
-      const key = [route.path[i - 1], route.path[i]].sort().join('|');
-      if (!edgeKeys.has(key)) issues.push({ code: 'route-uses-nonedge', severity: 'error', message: `Маршрут к ${route.destinationId} использует отсутствующее ребро ${route.path[i - 1]} ↔ ${route.path[i]}` });
+      const from = route.path[i - 1]!;
+      const to = route.path[i]!;
+      // Соседние остановки не обязаны быть соединены ребром напрямую: между ними возможен транзит (Этап 8.1).
+      const linked = edgeKeys.has([from, to].sort().join('|')) || (components.get(from) !== undefined && components.get(from) === components.get(to));
+      if (!linked) issues.push({ code: 'route-uses-nonedge', severity: 'error', message: `Маршрут к ${route.destinationId} использует несвязанный переход ${from} ↔ ${to}` });
     }
     if (![route.totalDistance, route.totalEnergy, route.firstLeg.energyCost].every((n) => Number.isFinite(n) && n >= 0)) {
       issues.push({ code: 'invalid-route-cost', severity: 'error', message: `Маршрут к ${route.destinationId} содержит некорректную стоимость/дистанцию` });

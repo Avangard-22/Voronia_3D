@@ -19,6 +19,14 @@ const RESOURCE_SET = new Set<string>(TRANSPORTABLE);
 function cleanAmount(value: number): number {
   return Math.floor(value * 1000) / 1000;
 }
+/** Контракт снапшота/сейва: пустых стопок не существует — `cargo.iron === undefined`, а не `0` (Stage 6.7). */
+function pruneEmpty(amounts: ResourceAmounts): ResourceAmounts {
+  const out: ResourceAmounts = {};
+  for (const [key, value] of Object.entries(amounts)) {
+    if (typeof value === 'number' && Number.isFinite(value) && value > 0) out[key as LedgerResourceKey] = cleanAmount(value);
+  }
+  return out;
+}
 function massOf(amounts: ResourceAmounts, specialization: readonly string[] = []): number {
   return Object.entries(amounts).reduce((mass, [key, value]) => {
     const weight = cargoWeight(key as LedgerResourceKey);
@@ -68,8 +76,8 @@ export class LogisticsService {
     const nextMass = massOf(next, context.specializedResources);
     const capacity = this.depotCapacity(context);
     if (nextMass > capacity + 1e-9) return fail('max', `Депо заполнено: ${nextMass.toFixed(2)}/${capacity.toFixed(2)} т`);
-    this.cargoValue = { ...this.cargoValue, [key]: cleanAmount(available - amount) };
-    this.depotsValue[planetId] = next;
+    this.cargoValue = pruneEmpty({ ...this.cargoValue, [key]: cleanAmount(available - amount) });
+    this.depotsValue[planetId] = pruneEmpty(next);
     return ok({ planetId, resource: key, amount, depotMass: nextMass });
   }
 
@@ -82,7 +90,9 @@ export class LogisticsService {
     if (!Number.isFinite(requested) || amount <= 0 || amount > available + 1e-9) return fail('cost', `В депо доступно ${available} ${key}`);
     const tx = this.ledger.tryCommit({ reason: `logistics:withdraw:${planetId}:${key}`, scope: 'global', delta: { [key]: amount }, gameMs: this.gameMs() });
     if (!tx.ok) return fail('state', 'Не удалось вернуть ресурс в общий запас');
-    this.depotsValue[planetId] = { ...current, [key]: cleanAmount(available - amount) };
+    const rest = pruneEmpty({ ...current, [key]: cleanAmount(available - amount) });
+    if (Object.keys(rest).length) this.depotsValue[planetId] = rest;
+    else delete this.depotsValue[planetId];
     return ok({ planetId, resource: key, amount });
   }
 

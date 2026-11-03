@@ -25,11 +25,20 @@ const KIND_META: Readonly<Record<AnomalyKind, { title: string; energy: number; r
   'living-void': { title: 'Живая пустота', energy: 20000, research: 10000, darkMatter: 8, relic: 3, essence: 2 },
 };
 
+/**
+ * Приоритет классификации: геометрия мира важнее биома, биом важнее порядкового номера цепочки.
+ * Иначе мир «rift anomaly» в биоме «void» получал бы вид living-void (20000⚡/10000🔬 вместо
+ * 2500⚡/500🔬 tier-1) — стоимость экспедиции расходилась с заявленной цепочкой (Stage 6.5, GS-16).
+ */
 function kindFor(node: GraphNode, ordinal: number): AnomalyKind {
-  const text = `${node.geometryName} ${node.biome}`.toLowerCase();
-  if (/void|пустот|living/.test(text)) return 'living-void';
-  if (/singular|black.?hole|сингуляр/.test(text)) return 'singularity';
-  if (/echo|reson|эхо/.test(text)) return 'echo';
+  const geometry = node.geometryName.toLowerCase();
+  const biome = node.biome.toLowerCase();
+  if (/rift|разлом|трещин/.test(geometry)) return 'rift';
+  if (/singular|black.?hole|сингуляр/.test(geometry)) return 'singularity';
+  if (/echo|reson|эхо/.test(geometry)) return 'echo';
+  if (/void|пустот|living/.test(`${geometry} ${biome}`)) return 'living-void';
+  if (/singular|black.?hole|сингуляр/.test(biome)) return 'singularity';
+  if (/echo|reson|эхо/.test(biome)) return 'echo';
   return (['rift', 'echo', 'singularity', 'living-void'] as const)[Math.min(ordinal, 3)]!;
 }
 

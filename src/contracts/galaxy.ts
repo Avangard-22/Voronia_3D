@@ -75,10 +75,13 @@ export interface RouteLeg {
 export interface GalaxyRoute {
   readonly destinationId: string;
   readonly destinationName: string;
+  /** Только остановки — открытые (unlocked) планеты. Транзитные системы проезжаются без посадки (Этап 8.1). */
   readonly path: readonly string[];
   readonly nextHop: string;
   readonly hops: number;
   readonly totalDistance: number;
   readonly totalEnergy: number;
   readonly firstLeg: RouteLeg;
+  /** Системы без остановки на маршруте: нанесённые на карту, но не открытые, либо неизученные. */
+  readonly transitNodeIds?: readonly string[];
 }

@@ -25,7 +25,7 @@ export function prioritizeSurfaceChunks(input: SurfaceChunkPriorityInput): Surfa
   const maxChunk = input.cellChunkIds.reduce((max, id) => Math.max(max, id), -1);
   if (maxChunk < 0) return [];
   const length = maxChunk + 1;
-  const sums = Array.from({ length }, () => [0, 0, 0]);
+  const sums: [number, number, number][] = Array.from({ length }, (): [number, number, number] => [0, 0, 0]);
   const counts = new Uint32Array(length);
   const indexById = new Map<number, number>();
   for (let i = 0; i < input.cellIds.length; i++) {
@@ -34,7 +34,7 @@ export function prioritizeSurfaceChunks(input: SurfaceChunkPriorityInput): Surfa
     sums[chunk]![0] += input.cellCenters[i * 3] ?? 0;
     sums[chunk]![1] += input.cellCenters[i * 3 + 1] ?? 0;
     sums[chunk]![2] += input.cellCenters[i * 3 + 2] ?? 0;
-    counts[chunk]++;
+    counts[chunk] = (counts[chunk] ?? 0) + 1;
   }
   const activeIndex = input.activeCellId == null ? undefined : indexById.get(input.activeCellId);
   const activeChunk = activeIndex === undefined ? -1 : input.cellChunkIds[activeIndex]!;
@@ -52,8 +52,8 @@ export function prioritizeSurfaceChunks(input: SurfaceChunkPriorityInput): Surfa
   for (let chunkId = 0; chunkId < length; chunkId++) {
     if (!counts[chunkId]) continue;
     const center = sums[chunkId]!;
-    const centerLength = Math.hypot(center[0]!, center[1]!, center[2]!) || 1;
-    const facing = (center[0]! * vx + center[1]! * vy + center[2]! * vz) / (centerLength * viewLength);
+    const centerLength = Math.hypot(center[0], center[1], center[2]) || 1;
+    const facing = (center[0] * vx + center[1] * vy + center[2] * vz) / (centerLength * viewLength);
     const containsActiveCell = chunkId === activeChunk;
     const containsActiveNeighbor = activeNeighbors.has(chunkId);
     const score = facing + (containsActiveCell ? 3 : 0) + (containsActiveNeighbor ? boost : 0);

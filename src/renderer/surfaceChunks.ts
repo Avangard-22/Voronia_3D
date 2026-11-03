@@ -54,7 +54,7 @@ export async function buildSurfaceChunksAsync(input: SurfaceChunkInput, options:
     if (!triangles.length) continue;
     const positions = new Float32Array(triangles.length * 9);
     const attributes: Record<string, Float32Array> = {};
-    for (const [name, values] of Object.entries(input.attributes)) attributes[name] = new Float32Array(triangles.length * 9);
+    for (const name of Object.keys(input.attributes)) attributes[name] = new Float32Array(triangles.length * 9);
     const faceCellIds = new Uint32Array(triangles.length);
     triangles.forEach((sourceTriangle, targetTriangle) => {
       const src = sourceTriangle * 9;

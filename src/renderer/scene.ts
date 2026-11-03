@@ -198,9 +198,9 @@ export function createPlanetViewer(canvas: HTMLCanvasElement, initial: PlanetMes
     g.setAttribute('geologicalMotionSpeed', new THREE.BufferAttribute(data.geologicalMotionSpeed, 1));
     const material = createGeologicalSurfaceMaterial();
     surfaceMaterial = material;
-    const originalCompile = material.onBeforeCompile;
+    const originalCompile = material.onBeforeCompile.bind(material);
     material.onBeforeCompile = (shader, rendererInstance) => {
-      originalCompile.call(material, shader, rendererInstance);
+      originalCompile(shader, rendererInstance);
       material.userData.shader = shader;
     };
     surface = new THREE.Mesh(g, material);
@@ -247,7 +247,7 @@ export function createPlanetViewer(canvas: HTMLCanvasElement, initial: PlanetMes
     // every chunk is ready, so loading never leaves a blank planet or interrupts interaction.
     const token = ++surfaceBuildToken;
     const polygonPlan = buildPolygonSurfaceChunkPlan({ cellIds: data.cellIds, cellSideCounts: data.cellSideCounts, neighborOffsets: data.neighborOffsets, neighborIds: data.neighborIds });
-    runtimeCellChunkById = new Map(data.cellIds.map((id, index) => [id, polygonPlan.cellChunkIds[index]!]));
+    runtimeCellChunkById = new Map(Array.from(data.cellIds, (id, index): [number, number] => [id, polygonPlan.cellChunkIds[index]!]));
     const initialView = new THREE.Vector3(0, 0, 1).applyQuaternion(planetGroup.quaternion.clone().invert());
     const priorityOrder = prioritizeSurfaceChunks({ cellIds: data.cellIds, cellCenters: data.cellCenters, cellChunkIds: polygonPlan.cellChunkIds, neighborOffsets: data.neighborOffsets, neighborIds: data.neighborIds, viewDirection: [initialView.x, initialView.y, initialView.z], activeCellId: selectedCellId }).map((entry) => entry.chunkId);
     const chunkInput = {
@@ -324,7 +324,7 @@ export function createPlanetViewer(canvas: HTMLCanvasElement, initial: PlanetMes
     if (surface) {
       const hit = raycaster.intersectObject(surface, false)[0];
       const faceIndex = hit?.faceIndex;
-      if (faceIndex === undefined) return;
+      if (faceIndex == null) return;
       const cellId = currentData.faceCellIds[faceIndex];
       if (cellId === undefined) return;
       const cellIndex = cellIndexById.get(cellId);
@@ -335,9 +335,10 @@ export function createPlanetViewer(canvas: HTMLCanvasElement, initial: PlanetMes
     }
     const hits = raycaster.intersectObjects(surfaceChunks.map((item) => item.mesh), false);
     const hit = hits[0];
-    if (hit?.faceIndex === undefined || !hit.object) return;
+    const hitFaceIndex = hit?.faceIndex;
+    if (hitFaceIndex == null || !hit?.object) return;
     const chunk = surfaceChunks.find((item) => item.mesh === hit.object);
-    const cellId = chunk?.faceCellIds[hit.faceIndex];
+    const cellId = chunk?.faceCellIds[hitFaceIndex];
     if (cellId === undefined) return;
     const cellIndex = cellIndexById.get(cellId);
     if (cellIndex === undefined || currentData.cellSelectable[cellIndex] !== 1) return;

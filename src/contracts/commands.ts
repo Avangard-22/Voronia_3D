@@ -4,6 +4,7 @@
  */
 import type { ResourceAmounts } from './resources';
 import type { ChooseBranchResult, DischargeResult, UpgradeAnomalyResult } from './anomalies';
+import type { GameSnapshot } from './snapshot';
 
 export const REJECT_REASONS = ['state', 'energy', 'cost', 'max', 'type', 'cooldown', 'hidden', 'unknown-cell', 'not-implemented'] as const;
 export type RejectReason = (typeof REJECT_REASONS)[number];
@@ -75,6 +76,8 @@ export interface TravelToPlanetResult {
   readonly hopsRemaining: number;
   readonly distance: number;
   readonly energyCost: number;
+  /** Системы, через которые пройден перелёт без посадки (транзит, Этап 8.1 — ADR-018). */
+  readonly transitNodeIds: readonly string[];
 }
 
 export interface NewGameOptions {
@@ -154,7 +157,7 @@ export interface CommandResultMap {
   unloadCargo: { readonly planetId: string; readonly resource: string; readonly amount: number; readonly depotMass: number };
   withdrawDepot: { readonly planetId: string; readonly resource: string; readonly amount: number };
   unlockKrios: { readonly pid: 'krios'; readonly accuracy: number; readonly bonusMult: number; readonly bonusUntil: number };
-  rerollDiscovery: { readonly preview: NonNullable<import('./snapshot').GameSnapshot['sonar']['nextPreview']>; readonly rerolls: number; readonly energyBurned: number; readonly chargesSpent: number };
+  rerollDiscovery: { readonly preview: NonNullable<GameSnapshot['sonar']['nextPreview']>; readonly rerolls: number; readonly energyBurned: number; readonly chargesSpent: number };
   resolveAnomaly: { readonly planetId: string; readonly reward: ResourceAmounts };
   grant: void;
   save: { readonly sizeBytes: number };
