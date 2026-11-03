@@ -1,0 +1,2323 @@
+From 687ed8feead86090af020b6a90e3c9b8a8561c5c Mon Sep 17 00:00:00 2001
+From: Qwen <qwen@arena.local>
+Date: Tue, 3 Nov 2026 10:36:29 +0000
+Subject: [PATCH] stage9.0
+
+---
+ README.md                                   |  15 +-
+ docs/STAGE9_0_REPORT.md                     | 104 +++++++
+ docs/adr/adr-019.md                         |  70 +++++
+ package.json                                |   2 +-
+ src/contracts/galaxy.ts                     |  61 ++++
+ src/galaxy/index.ts                         |  27 +-
+ src/galaxy/starMap.ts                       | 310 ++++++++++++++++++++
+ src/galaxy/starSystems.ts                   | 180 +++++++++---
+ src/galaxy/status.ts                        |   4 +-
+ src/main.ts                                 | 103 ++++++-
+ src/renderer/galaxyModel.ts                 | 215 +++++++++++++-
+ src/renderer/galaxyScene.ts                 | 268 ++++++++++++++++-
+ src/renderer/index.ts                       |  13 +-
+ src/ui/app.ts                               |   2 +-
+ tests/stage9_0_galaxy_system_render.test.ts | 177 +++++++++++
+ tests/stage9_0_integration.test.ts          | 145 +++++++++
+ tests/stage9_0_star_map.test.ts             | 204 +++++++++++++
+ 17 files changed, 1829 insertions(+), 71 deletions(-)
+ create mode 100644 docs/STAGE9_0_REPORT.md
+ create mode 100644 docs/adr/adr-019.md
+ create mode 100644 src/galaxy/starMap.ts
+ create mode 100644 tests/stage9_0_galaxy_system_render.test.ts
+ create mode 100644 tests/stage9_0_integration.test.ts
+ create mode 100644 tests/stage9_0_star_map.test.ts
+
+diff --git a/README.md b/README.md
+index aa25ad1..bec1316 100644
+--- a/README.md
++++ b/README.md
+@@ -1,15 +1,22 @@
+ # VORONIA 2.0 · Проектная папка
+ 
+-> **Статус на 2026-11-03 (Этап 8.1):** `npm run ci` зелёный целиком — lint 0, typecheck (app+node) 0,
+-> `check:arch` OK (104 файла), **Vitest 356/356**, `build` 773.91 КБ (gzip 219.61 КБ), `build:single` 774.24 КБ,
+-> `check:size` 0.74 МБ ≤ 6 МБ. Версия `2.0.0-stage8.1.0` (базовый код — Этап 8.0.24 + ремонтный Этап 8.1).
++> **Статус на 2026-11-03 (Этап 9.0):** `npm run ci` зелёный целиком — lint 0, typecheck (app+node) 0,
++> `check:arch` OK (105 файлов), **Vitest 388/388**, `build` 789.57 КБ (gzip 225.11 КБ),
++> `check:size` 0.75 МБ ≤ 6 МБ. Версия `2.0.0-stage9.0.0`.
++> **Этап 9.0 — слой звёздных систем:** галактика теперь состоит из **39 звёздных систем и 112 планет** (центральная звезда-аналог Солнца +
++> системы игровых планет + 36 фоновых систем на спиральных рукавах), в каждой **1–5 планет на орбитах** вокруг
++> звезды с реальными орбитальными элементами и кеплеровыми периодами. Диск галактики, ядро и дистанция камеры
++> строятся от фактического радиуса карты систем (раньше — от константы 18, из-за чего галактика выглядела пустой).
++> Подробно: `docs/STAGE9_0_REPORT.md` · решения: `docs/adr/adr-019.md`.
++>
++> **Этап 8.1 (предыдущий):** `npm run ci` впервые зелёный целиком — Vitest 356/356, `build` 773.91 КБ.
+ > Починено: отсутствующий `@types/three` (из-за него падал `tsc`, а вместе с ним шаг «Build game» в GitHub Actions
+ > и деплой на Pages), баг связности галактики (открытая планета была недостижима, а `validateIntegrity()` помечал
+ > легальное состояние как `unreachable-unlocked-planet`), классификация аномалий, контракт снапшота логистики,
+ > 13 падавших тестов. Восстановлены удалённые через веб-интерфейс `eslint.config.js`, `vite.config.single.ts`,
+ > `vitest.config.ts`, `README.md`; добавлен `.gitignore`.
+ > Подробно: `docs/STAGE8_1_CI_REPAIR_REPORT.md` · решения: `docs/adr/adr-018.md`.
+-> Ниже — историческая шапка Этапа 6 (частично устарела: трекер и отчёты ведутся до Этапа 8.1).
++> Ниже — историческая шапка Этапа 6 (частично устарела: трекер и отчёты ведутся до Этапа 9.0).
+ 
+ **Стадия:** Этап 6 — **ЧАСТИЧНО**. Stage 6.7 добавляет грузовой трюм, локальные планетарные депо и топливную надбавку за перевозимый груз; Stage 6.6 добавляет поиск маршрутов по открытому графу и оплату прыжков; Stage 6.5 добавляет последовательные аномальные экспедиции с атомарной оплатой и уникальными наградами; Stage 6.4 добавляет цепочки экспедиционных лицензий и доменные скидки на открытие миров; Stage 6.2 добавил классификацию сонарных сигналов, карту XZ галактики, прогресс рубежей и журнал экспедиции; Stage 6.1 — экономику зарядов/пересборок, Stage 6.0 — трёхраундовый сонар, открытие Криос-9 и бонус добычи; полный CI и мобильная приёмка ещё не подтверждены. Stage 5.1 исправляет жизненный цикл Canvas, Stage 5.2 добавляет Raycaster/выбор клетки, Stage 5.3 вводит радиальный рельеф, Stage 5.5 — террасы и типовые кристаллические/аномальные надстройки; Stage 5.6 — runtime hardening, event-driven rebuild и мобильный DPR guard. Сквозной игровой цикл покрыт новым интеграционным тестом, но полный CI и браузерная приёмка ещё не подтверждены · **Дата:** 2026-11-02
+ **⚠️ ВОССТАНОВЛЕНИЕ (2026-11-02):** исходники voronia2 были утрачены; каркас, домены, тесты и документы Этапов 0–2 восстановлены по сохранившимся README/VERDICT/STAGE1_REPORT, фикстурам runtime-извлечения и харнессу (пересобран из baseline-монолита); затем **Этап 3 закрыт заново** (генератор планет + галактика, 18 тестов), **Этап 4** (заряды/surge/ветви/мутанты/deep/синтез, 56 тестов) и **Этап 5** (type7/discovery/setActivePlanet/3D-прототип, 21 тест). Текущее покрытие — **199 тестов** (оригинал на конец Этапа 2: 148; дельта — `docs/STAGE2_REPORT.md` §5). Legacy v39-миграция реализована раньше плана (оригинал: Этап 14).
+diff --git a/docs/STAGE9_0_REPORT.md b/docs/STAGE9_0_REPORT.md
+new file mode 100644
+index 0000000..192d4f5
+--- /dev/null
++++ b/docs/STAGE9_0_REPORT.md
+@@ -0,0 +1,104 @@
++# Этап 9.0 — Звёздные системы: «галактика → звезда → планеты на орбитах»
++
++**Дата:** 2026-11-03 · **Ветка:** `fix/ci-green-and-tests` · **ADR:** [adr-019.md](adr/adr-019.md)
++**Версия:** `2.0.0-stage9.0.0` · **CI:** зелёный · **Тесты:** 388/388 (было 356, добавлено 32)
++
++## Запрос владельца
++
++> «Центр Галактики — некая звезда (как Солнце), а все планеты должны располагаться по орбитам от неё,
++> либо на руках. Сейчас на карте галактика, и на ней нет планет — выглядит неправдоподобно.
++> Давай сделаем Системы со своими планетами внутри текущей Галактики, планеты посадим на орбиты
++> вокруг Звёзд, причём в одной системе может быть и пять и одна планета, а систем таких может быть
++> много в одной Галактике.»
++
++## Что было не так (измерено, не «на глаз»)
++
++| Симптом | Причина | Числа до |
++|---|---|---|
++| «Галактика есть, планет на ней нет» | Декоративный диск строился от константы, а не от данных | `galaxyRadius = max(18, bounds × 1.8)` при `bounds ≈ 4–8` → декорации в **2–4 раза** больше области с игровыми объектами |
++| Планеты не разглядеть | Узел = сфера `0.105 × (0.72…2.2)` без свечения | ~3–8 px на дистанции камеры 17 |
++| Систем «мало» | Узел графа = одна планета; систем в новой игре ровно 2 | `ferrum`, `krios` |
++| Планет в системе мало | `buildStarSystemCatalog` давал host + 1…3 тела | 2–4 тела, из них игровых — 1 |
++| Орбит не видно | Орбиты рисовались только в `setSystemFocus`/`setOrbitalTopology` | на карте галактики — 0 колец |
++
++## Что сделано
++
++### Домен (`src/galaxy/`)
++
++- **`starMap.ts` (новый, 300 строк).** `buildGalaxyStarMap({ nodes, spiral, outerRadius, thickness })` → `GalaxyStarMap`:
++  центральная звезда `sys:core` + `sys:<nodeId>` на каждый узел графа + 36 фоновых систем `sys:bg:<i>`
++  на спиральных рукавах. **39 систем, 112 планет на первом кадре.** Позиции фоновых систем — та же
++  логарифмическая спираль, что в `galaxy/position.ts`, с `minSystemSeparation = 9` и детерминированным
++  fallback на золотой угол.
++- **`starSystems.ts`.** `SYSTEM_POLICY` (единый блок баланса), экспорт `classifyStar` → `StarDescriptor`
++  с цветом и радиусом, `buildSystemOrbits` (a, e, i, фаза, период), `orbitalPeriodDays` — III закон
++  Кеплера `P = 365.25·√(a³/M★)`, `systemPlanetCount`. Каталог системы игровой планеты теперь
++  **2–5 планет** (было 2–4), фоновой — **1–5**. `validateStarSystemCatalog` дополнительно проверяет
++  монотонность полуосей и потолок планет.
++- **Контракты.** `StarDescriptor`, `SystemPlanetOrbit`, `StarSystemDescriptor`, `OrbitBodyClass`,
++  `StarSpectralClass` — в `contracts/galaxy.ts` (R2: домены не импортируют друг друга).
++
++### Рендерер (`src/renderer/`)
++
++- **`galaxyModel.ts`.** `GalaxyRenderSystem`/`GalaxyRenderOrbit`, `GALAXY_RENDER_POLICY`,
++  `discRadius` вместо `bounds` для декораций, сжатие орбит `a^0.5`, гарантия «звезда внутри первой
++  орбиты» (`starToInnerOrbitRatio = 0.55`), `UNCHARTED_STAR_COLOR`, `findRenderSystem(ByNode)`.
++  Обратная совместимость: без `systems` результат identical Этапу 7.
++- **`galaxyScene.ts`.** Звёзды (`InstancedMesh`) + аддитивное гало (оно же — расширенная область
++  клика), **один** `LineSegments` на все орбитальные кольца галактики, **один** `InstancedMesh`
++  на все планеты с кеплеровой анимацией (оборот землеподобной ≈ 12 с), кольцо выделения системы,
++  `setSystemSelectHandler` / `setSelectedSystem` / `focusSystem`. Диск, ядро и дистанция камеры —
++  от `discRadius`. Слои Этапа 7 (`nodeMesh`, `systemCoreMesh`) скрываются при наличии карты систем.
++
++### Composition root (`src/main.ts`)
++
++- `starMapOf()` с мемоизацией по ключу узлов (пересборка только при изменении графа),
++  `revealedOrbitsOf()` — какие орбиты уже исследованы/активированы (не раскрывать класс тела раньше времени).
++- Карточка системы:designation, класс/температура/светимость звезды, число планет и **список орбит**
++  (а.е., период в сутках/годах, эксцентриситет) с прежними командами `ИССЛЕДОВАТЬ / АКТИВИРОВАТЬ / ПЕРЕЙТИ`.
++- Карточка неизученной системы (клик по фоновой звезде): звезда, планеты на орбитах, статус
++  «подтверждённых миров нет», кнопка «ПРИБЛИЗИТЬСЯ».
++- Подпись сцены: `GALAXY · 39 СИСТЕМ · 118 ПЛАНЕТ` (фактические значения из карты).
++
++## Проверка
++
++```
++npm run ci  → exit 0
++  eslint              0 ошибок
++  tsc (app)           0
++  tsc (node)          0
++  check:arch          OK (105 файлов)
++  vitest              63 файла, 388/388
++  vite build          789.57 КБ (gzip 225.11 КБ)
++  check:size          0.75 МБ ≤ 6 МБ
++```
++
++Новые тесты: `tests/stage9_0_star_map.test.ts` (15), `tests/stage9_0_galaxy_system_render.test.ts` (10),
++`tests/stage9_0_integration.test.ts` (7 — реальная `Game` → карта → рендер-модель).
++Фактические значения карты на новой игре: **39 систем, 112 планет**, радиус диска 95;
++распределение планет по системам — 1:7, 2:9, 3:12, 4:4, 5:7; рукава — core 3, forge 6, inter 9,
++frost 7, life 8, void 6; классы звёзд — orange 18, yellow 7, red 6, white 5, blue 3;
++центральная звезда — жёлтая, 5772 K, 1.02 L☉.
++
++Покрыто: детерминизм карты, состав (ядро + узлы + фон), 1–5 планет и наличие систем с одной и с пятью,
++**стабильность фоновых систем при открытии мира** (регрессия, найденная интеграционным тестом),
++стабильность радиуса диска и обозначений, save/load без записи карты в сейв,
++монотонность орбит, кеплеровы периоды, согласованность каталога Этапа 7.4 с картой, координаты систем
++игровых планет = координаты узлов, неразведанные орбиты не раскрывают класс, неоткрытый узел не наносится
++на карту, `discRadius` = радиус карты × scale, звезда помещается внутри первой орбиты, система не вылезает
++за отведённый шаг, обратная совместимость проекции без карты систем.
++
++## Что осталось на Этап 9.1+
++
++1. **Привязка открытий к орбитам.** `discoverPlanet`/`activateOrbitalBody` должны занимать свободную
++   орбиту фоновой системы, а не размещать узел в свободной точке галактики. Сейчас фоновые системы —
++   картографический слой: видны, но миры в них не создаются.
++2. **Валидация.** `galaxy/validation.ts`: «каждый узел имеет систему и орбиту», «в системе ≤ 5 планет»,
++   «две планеты не делят одну орбиту».
++3. **Реестр баланса.** Перенос `STAR_MAP_POLICY`/`SYSTEM_POLICY` в `registry.json` (`galaxy.systems.*`)
++   с обязательными путями в `config/loader.ts`.
++4. **UI-схема орбит** (Этап 12): сейчас список орбит, нужна кольцевая диаграмма и счётчик свободных орбит.
++5. **Межсистемные перелёты** считаются между звёздами; внутри системы перелёт уже бесплатен
++   (`travelWithinSystem`).
++6. **Бюджет производительности на Android** (TV-36): 39 систем — это ~200 орбитальных колец и ~120
++   инстансов планет; замер FPS на реальном устройстве не проводился.
+diff --git a/docs/adr/adr-019.md b/docs/adr/adr-019.md
+new file mode 100644
+index 0000000..0345c15
+--- /dev/null
++++ b/docs/adr/adr-019.md
+@@ -0,0 +1,70 @@
++# ADR-019 — Этап 9.0: слой звёздных систем «галактика → звезда → планеты на орбитах»
++
++**Дата:** 2026-11-03 · **Статус:** принят · **Контекст:** замечание владельца продукта: «центр Галактики — звезда, планеты должны располагаться по орбитам от неё либо на рукавах; сейчас на карте галактика, и на ней нет планет — выглядит неправдоподобно. Нужны Системы со своими планетами внутри Галактики, планеты на орбитах вокруг звёзд, в системе от одной до пяти планет, систем много». Отчёт: `docs/STAGE9_0_REPORT.md`.
++
++## Диагноз (почему галактика выглядела пустой)
++
++1. **Декорации не совпадали с данными.** `galaxyScene` строил спиральные рукава, туманность и скопления радиусом `max(18, bounds × 1.8)`, тогда как `bounds` — это максимум по узлам графа, умноженным на `scale = 0.08`. При `galaxy.gen.outerRadius = 95` облако узлов даёт `bounds ≈ 4–8`, то есть декоративный диск был **в 2–4 раза больше** реальной области с игровыми объектами. Все планеты помещались в крошечном пятне в центре, а «галактика» вокруг была чистой декорацией.
++2. **Узел графа = планета, а не система.** Узлы рисовались сферами радиуса `0.105 × (0.72…2.2)` без свечения — на дистанции камеры ~17 это 3–8 пикселей. Звезда у узла существовала только в `galaxySystemDetail` (Этап 7.3) и показывалась одной планетой, и только при `setSystemFocus`.
++3. **Система была декоративной.** `buildStarSystemCatalog` (Этап 7.4) давал 2–4 тела, из них ровно одно — игровой мир; орбиты не рисовались на карте галактики вообще.
++
++## Решения
++
++1. **Галактика — это множество звёздных систем.** Новый доменный модуль `galaxy/starMap.ts` строит `GalaxyStarMap`: центральная звезда (`sys:core`) + по одной системе на каждый узел `PlanetaryGraph` (`sys:<nodeId>`) + `STAR_MAP_POLICY.backgroundSystems = 36` фоновых систем (`sys:bg:<index>`), распределённых по спиральным рукавам той же логарифмической спиралью, что и `galaxy/position.ts`. Итого 39 систем и 100+ планет на карте с первого кадра.
++
++2. **Система игровой планеты наследует координаты узла.** Позиция `sys:<nodeId>` берётся **дословно** из `GraphNode.x/y/z` — никакой перегенерации координат. Поэтому маршруты Этапа 6.6/8.1, валидация Этапа 6.8, фикстуры паритета Этапа 3 и сохранения не меняются: слой систем **надстроен** над графом, а не заменяет его.
++
++3. **1–5 планет на орбитах вокруг звезды.** `SYSTEM_POLICY`: система с подтверждённым миром — `hostMinPlanets = 2 … hostMaxPlanets = 5` (орбита 0 занята игровой планетой, остальные — кандидаты на `scanOrbitalBody`/`activateOrbitalBody`); фоновая система — `freeMinPlanets = 1 … freeMaxPlanets = 5`, то есть одиночные планеты тоже встречаются. Орбитальные элементы: большая полуось (шаг `orbitSpacingAu` + детерминированный джиттер), эксцентриситет ≤ 0.2, наклонение ≤ 0.14 рад, фаза, сидерический период по III закону Кеплера `P = 365.25 · √(a³/M★)` с массой звезды по спектральному классу. Инвариант «полуоси монотонно растут» проверяется и доменом (`validateStarMap`), и рендер-моделью (тест).
++
++4. **Один источник правды о звезде.** `classifyStar(seed)` возвращает `StarDescriptor { class, temperatureK, luminosity, color, radiusScale }` и используется и каталогом Этапа 7.4, и картой Этапа 9.0. Тест фиксирует согласованность: `buildStarSystemCatalog(node).star === starMap.systems[sys:node].star`, полуоси совпадают поэлементно.
++
++5. **Типы — в `contracts/galaxy.ts`.** Карту строят `galaxy`, а потребляет `renderer`; R2 (ADR-012) запрещает доменам импортировать друг друга, поэтому `StarSystemDescriptor`, `SystemPlanetOrbit`, `StarDescriptor`, `OrbitBodyClass` живут в contracts. Имена систем генерируются локально в `starMap.ts` (`generateSystemName`), а не импортом `planets/generator.genName` — по той же причине.
++
++6. **Детерминизм без записи в сейв.** Карта выводится из `GALAXY_SEED = 0x564f524f` и seed узлов, поэтому не хранится в сохранении и не может с ним разойтись (принцип Этапа 6.4: «прогресс выводится из фактов, не дублируется»). Фоновые системы размещаются с `placementTries = 64` и детерминированным fallback на золотой угол — как в `generatePosition`. Порядок систем стабилен: ядро → узлы графа (сортировка по id) → фоновые (по индексу).
++
++7. **Диск галактики строится от данных.** `GalaxyRenderData.discRadius` = максимум по узлам **и** системам; `galaxyScene` использует его для радиуса рукавов/туманности/скоплений, размера ядра и стартовой дистанции камеры (`discRadius × 2.45`). Константа 18 удалена. Регрессия зафиксирована тестом: `discRadius ≈ starMap.radius × scale`, а без переданных систем поведение Этапа 7 сохраняется (`systems: []`, `discRadius === bounds`).
++
++8. **Визуальный масштаб орбит — явный приём, а не «физика».** `orbitScale = spacing × orbitFillRatio / maxA^0.5`, радиус орбиты = `a^0.5 × orbitScale`. Степень 0.5 сжимает внешние орбиты, иначе внутренняя орбита (0.72 а.е.) неразличима рядом со звездой. Радиус звезды ограничен `starToInnerOrbitRatio = 0.55` от радиуса первой орбиты — звезда гарантированно помещается внутри своей системы. `spacing` берётся из `STAR_MAP_POLICY.minSystemSeparation` (передаёт composition root), а не из минимума попарных расстояний: в ядре феррум/криос стоят в 2.6–3.1 единицах от центра и занижали бы масштаб всей галактики. Реальные полуоси в а.е. сохранены в `semiMajorAxisAu` для UI.
++
++9. **Неразведанное не раскрывается.** Планета на орбите видна всегда (это и есть «планеты на орбитах»), но её класс — только если орбита 0 (игровой мир) либо тело исследовано `scanOrbitalBody`/`activateOrbitalBody`. Composition root передаёт `revealedOrbits: systemId → orbitIndex[]`, рендер-модель подменяет класс на `unknown` и красит в нейтральный цвет. Система неоткрытого узла не наносится на карту (`charted: false`) и рисуется тусклым цветом `UNCHARTED_STAR_COLOR` с именем «Неизвестный сигнал».
++
++10. **Звёзды — кликабельный слой.** `starMesh` + аддитивное гало `starGlowMesh` (оно же — расширенная область попадания), один `LineSegments` на все орбитальные кольца галактики, один `InstancedMesh` на все планеты с кеплеровой анимацией (`ORBIT_DAYS_PER_MS = 0.03`, оборот землеподобной планеты ≈ 12 с). Клик по звезде: есть подтверждённый мир → прежний `onSelect(nodeId)`; нет → новый `onSystemSelect(systemId)` и карточка неизученной системы. `nodeMesh`/`systemCoreMesh` Этапа 7 скрываются, если передана карта систем (иначе двойное изображение), и остаются рабочими без неё.
++
++11. **Фоновые системы не зависят от узлов графа — карта не «прыгает».** `placeSystems` размещает фоновые
++системы, отталкиваясь только от `GALAXY_SEED` и позиции ядра. Первая реализация учитывала также позиции
++игровых узлов, из-за чего **каждое открытие мира сдвигало все 36 фоновых систем** (их id сохранялись,
++координаты — нет). Баг пойман интеграционным тестом `tests/stage9_0_integration.test.ts`
++(«открытие мира добавляет ровно одну систему и не двигает остальные») и зафиксирован регрессионным
++тестом в `tests/stage9_0_star_map.test.ts`. Побочное следствие: фоновая звезда может оказаться рядом
++с системой игровой планеты — это читается как кратная система и допустимо.
++
++12. **Радиус диска — конфигурационная величина.** `GalaxyStarMap.radius = galaxy.gen.outerRadius`
++(95), а не максимум по фактическим позициям систем, и `GalaxyRenderData.discRadius` принимает его
++отдельным входом. Иначе диск и стартовая дистанция камеры пересчитывались бы при каждом открытии мира
++(«дыхание» галактики). `bounds` сохраняется как максимум по узлам/системам — для совместимости с Этапом 7.
++
++13. **Центральная звезда — аналог Солнца.** `STAR_MAP_POLICY.coreStarSeed = 153086` подобран так, что
++`classifyStar` даёт жёлтый класс, 5772 K и 1.02 L☉ — буквально «звезда, как Солнце» из запроса владельца.
++Константа документирована; это не «магическое число», а рукотворный объект карты (у ядра галактики
++в игре одна и та же звезда во всех прохождениях).
++
++14. **Обозначения систем стабильны.** `designation` строится из рукава и порядкового номера, который для
++системы игровой планеты выводится из `mix32(node.seed) % 900`, а не из позиции в списке: иначе открытие
++мира меняло бы обозначения уже показанных систем.
++
++## Альтернативы (отклонены)
++
++- **Узел графа = система, планеты генерируются заново внутри системы.** Ломает паритет 1.x (`fixtures/planetgen_samples.json`: координаты узла, `armId`, ребро), схему сохранения v2, маршруты и `validateGalaxyIntegrity`. Отложено: привязка сонарного открытия к свободной орбите фоновой системы — Этап 9.1.
++- **Реалистичный масштаб орбит (без сжатия `a^0.5`).** Внутренние планеты сливаются со звездой, система читается как точка; цель этапа — именно читаемость «звезда + планеты на орбитах».
++- **Хранить карту систем в сейве.** Дублирование выводимых данных — риск расхождения при миграциях (ADR-011/017). Карта детерминирована и пересобирается за ~1 мс.
++- **Рисовать каждую орбиту отдельным `LineLoop`.** ~200 draw-call'ов на галактику вместо одного; на мобильных (ТЗ §16.2 G3, 30 FPS/p95 < 33 мс) это неприемлемо.
++
++## Баланс и точки настройки
++
++Все числа — в двух константных блоках: `SYSTEM_POLICY` (`galaxy/starSystems.ts`) и `STAR_MAP_POLICY` (`galaxy/starMap.ts`), визуальные — в `GALAXY_RENDER_POLICY` (`renderer/galaxyModel.ts`). Перенос в `registry.json` (секция `galaxy.systems`) запланирован на Этап 9.1 вместе с привязкой открытий к орбитам: сейчас значения не влияют на экономику, только на состав и геометрию карты.
++
++## Следствия для следующих этапов
++
++- **9.1** — `discoverPlanet`/`activateOrbitalBody` выбирают свободную орбиту фоновой системы вместо свободного размещения узла; `galaxy/validation.ts` получает проверку «каждый узел имеет систему и орбиту».
++- **9.2** — межсистемные перелёты считаются между звёздами, внутри системы — бесплатно (уже есть `travelWithinSystem`).
++- **12** — UI-карточка системы получает схему орбит (сейчас список) и индикатор «свободных орбит».
+diff --git a/package.json b/package.json
+index f4f4ec8..8cfd1c7 100644
+--- a/package.json
++++ b/package.json
+@@ -1,7 +1,7 @@
+ {
+   "name": "voronia2",
+   "private": true,
+-  "version": "2.0.0-stage8.1.0",
++  "version": "2.0.0-stage9.0.0",
+   "type": "module",
+   "description": "Voronia 2.0 — модульный rewrite монолита v0.0.41 (ТЗ ред. 1.0). Баланс меняется только через ledger (ТЗ §15).",
+   "engines": {
+diff --git a/src/contracts/galaxy.ts b/src/contracts/galaxy.ts
+index 2d5090d..2373cf1 100644
+--- a/src/contracts/galaxy.ts
++++ b/src/contracts/galaxy.ts
+@@ -61,6 +61,67 @@ export interface NodeRenderConfig {
+   readonly THICK: number;
+ }
+ 
++/* ——————————————————— Этап 9.0: слой звёздных систем (ADR-019) ———————————————————
++ * Галактика = множество звёздных систем. В центре системы — звезда, вокруг неё 1–5 планет
++ * на орбитах. Типы живут в contracts, потому что слой используют два домена (galaxy — генерация,
++ * renderer — проекция), а R2 запрещает доменам импортировать друг друга.
++ */
++
++/** Спектральный класс звезды (согласован с `galaxy/starSystems.ts`, Этап 7.4). */
++export type StarSpectralClass = 'blue' | 'white' | 'yellow' | 'orange' | 'red';
++
++/** Класс орбитального тела. `terrestrial|ice|gas-giant|dwarf|asteroid-belt` — из Этапа 7.4. */
++export type OrbitBodyClass = 'terrestrial' | 'ice' | 'gas-giant' | 'dwarf' | 'asteroid-belt' | 'unknown';
++
++/** Звезда — центр системы. `radiusScale` — относительный визуальный радиус (1.0 = звезда типа Солнца). */
++export interface StarDescriptor {
++  readonly class: StarSpectralClass;
++  readonly temperatureK: number;
++  readonly luminosity: number;
++  /** CSS-цвет для рендерера; домен не знает про three.js. */
++  readonly color: string;
++  readonly radiusScale: number;
++}
++
++/** Статус планеты в системе: привязана к игровому миру или ещё не исследована. */
++export type SystemPlanetStatus = 'bound' | 'candidate';
++
++/** Одна планета на орбите звезды. Орбитальные элементы — в астрономических единицах и радианах. */
++export interface SystemPlanetOrbit {
++  readonly orbitIndex: number;
++  readonly semiMajorAxis: number;
++  readonly eccentricity: number;
++  readonly inclination: number;
++  readonly orbitalPhase: number;
++  /** Сидерический период в сутках (III закон Кеплера, масса звезды в массах Солнца). */
++  readonly periodDays: number;
++  readonly bodyClass: OrbitBodyClass;
++  /** id игровой планеты (GraphNode.id) либо null, если мир ещё не подтверждён. */
++  readonly planetId: string | null;
++  readonly status: SystemPlanetStatus;
++}
++
++export interface StarSystemDescriptor {
++  /** `sys:<nodeId>` для системы игровой планеты, `sys:bg:<index>` для фоновой, `sys:core` для ядра. */
++  readonly id: string;
++  readonly name: string;
++  /** Каталогическое обозначение (например `VOR-α-114`) — стабильно, не зависит от открытия. */
++  readonly designation: string;
++  readonly seed: number;
++  readonly star: StarDescriptor;
++  readonly position: GalaxyPos;
++  readonly armId: string;
++  readonly sectorId: 'core' | 'inner' | 'mid' | 'outer';
++  /** Узел планетарного графа, живущий в системе (null — система без подтверждённого мира). */
++  readonly hostNodeId: string | null;
++  /** Нанесена ли система на карту (видна на карте галактики). */
++  readonly charted: boolean;
++  /** Центральная звезда галактики. */
++  readonly core: boolean;
++  /** 1–5 планет, отсортированы по orbitIndex. */
++  readonly planets: readonly SystemPlanetOrbit[];
++}
++
+ /** Расчётная смета одного межпланетного перехода (Stage 6.6). */
+ export interface RouteLeg {
+   readonly from: string;
+diff --git a/src/galaxy/index.ts b/src/galaxy/index.ts
+index a8aaa4c..7e37667 100644
+--- a/src/galaxy/index.ts
++++ b/src/galaxy/index.ts
+@@ -13,7 +13,32 @@ export { createPlanetaryGraph, createInitialGraph, hasEdge, nodeDegree, addEdge,
+ 
+ export { ROUTE_POLICY, quoteRouteLeg, findGalaxyRoute, buildRouteOptions } from './routes';
+ 
+-export { buildStarSystemCatalog, validateStarSystemCatalog, type StarSystemCatalog, type StarSystemBody, type StarClass, type SystemBodyClass, type SystemBodyStatus } from './starSystems';
++export {
++  buildStarSystemCatalog,
++  validateStarSystemCatalog,
++  buildSystemOrbits,
++  classifyStar,
++  orbitalPeriodDays,
++  systemPlanetCount,
++  SYSTEM_POLICY,
++  type StarSystemCatalog,
++  type StarSystemBody,
++  type StarClass,
++  type SystemBodyClass,
++  type SystemBodyStatus,
++} from './starSystems';
++export {
++  GALAXY_SEED,
++  CORE_SYSTEM_ID,
++  STAR_MAP_POLICY,
++  buildGalaxyStarMap,
++  systemForNode,
++  validateStarMap,
++  generateSystemName,
++  systemDesignation,
++  type GalaxyStarMap,
++  type StarMapInput,
++} from './starMap';
+ export { buildStarSystemExploration, type StarSystemExplorationView, type SystemWorldView, type SystemBodyCandidateView } from './systemExploration';
+ 
+ export * from './systemTopology';
+diff --git a/src/galaxy/starMap.ts b/src/galaxy/starMap.ts
+new file mode 100644
+index 0000000..7715634
+--- /dev/null
++++ b/src/galaxy/starMap.ts
+@@ -0,0 +1,310 @@
++/**
++ * Этап 9.0 — карта звёздных систем галактики (ADR-019).
++ *
++ * Модель: **Галактика = множество звёздных систем**. В центре каждой системы — звезда,
++ * вокруг неё 1–5 планет на орбитах. Системы распределены по спиральным рукавам и ядру,
++ * центральная звезда галактики находится в начале координат.
++ *
++ * Два класса систем:
++ *  1. **Системы игровых планет** (`sys:<nodeId>`) — позиция берётся из узла PlanetaryGraph,
++ *     орбита 0 занята подтверждённым миром, остальные орбиты — кандидаты на исследование.
++ *  2. **Фоновые системы** (`sys:bg:<index>`) — звёзды, нанесённые на карту, но без подтверждённых
++ *     миров. Именно они делают галактику населённой: их много, у каждой 1–5 планет.
++ *
++ * Всё детерминировано от `GALAXY_SEED` и seed узлов: карта не зависит от порядка открытий
++ * и не хранится в сейве (выводится заново, как и остальные доменные проекции).
++ */
++import { mulberry32 } from '../contracts/rng';
++import type { GalaxyPos, GraphNode, SpiralConfig, StarSystemDescriptor, SystemPlanetOrbit } from '../contracts/galaxy';
++import { armIdAt } from './position';
++import { galaxySector } from './exploration';
++import { buildSystemOrbits, classifyStar, SYSTEM_POLICY } from './starSystems';
++
++/** Seed карты галактики. Фиксирован: одна и та же галактика в каждом прохождении (детерминизм R7). */
++export const GALAXY_SEED = 0x564f524f; // 'VORO'
++
++export const CORE_SYSTEM_ID = 'sys:core';
++
++/**
++ * Политика карты звёздных систем. Единственное место, где настраивается населённость галактики
++ * (ТЗ §15: баланс — через config/константы политики, не размазывать по коду).
++ */
++/** Буквы каталожных обозначений: рукав → греческая литера. */
++const ARM_DESIGNATORS: Readonly<Record<string, string>> = Object.freeze({
++  core: 'Α', inter: 'Ζ', forge: 'Β', frost: 'Γ', life: 'Δ', void: 'Ε',
++});
++
++export const STAR_MAP_POLICY = Object.freeze({
++  /** Сколько фоновых систем наносить на карту сверх систем игровых планет. */
++  backgroundSystems: 36,
++  /** Минимальное расстояние между системами, мировые единицы (согласовано с galaxy.nodeRender.MIN_DIST). */
++  minSystemSeparation: 9,
++  /** Попыток размещения системы до перехода на запасную сетку. */
++  placementTries: 64,
++  /** Доля радиуса галактики, внутри которой фоновые системы плотнее (рукава у ядра). */
++  coreBias: 0.22,
++  /**
++   * Центральная звезда галактики. Seed подобран так, что ядро — аналог Солнца:
++   * жёлтый класс, 5772 K, 1.02 L☉ (запрос владельца: «центр Галактики — некая звезда, как Солнце»).
++   */
++  coreStarSeed: 153086,
++  corePlanetCount: 5,
++  /** Буквы каталожных обозначений по рукавам. */
++  armDesignators: ARM_DESIGNATORS,
++} as const);
++
++export interface GalaxyStarMap {
++  readonly seed: number;
++  readonly systems: readonly StarSystemDescriptor[];
++  readonly byId: Readonly<Record<string, StarSystemDescriptor>>;
++  /** Индекс по узлу планетарного графа: nodeId → его система. */
++  readonly byHostNode: Readonly<Record<string, StarSystemDescriptor>>;
++  readonly coreSystemId: string;
++  /** Радиус галактического диска в мировых единицах — стабильная величина для масштаба рендера. */
++  readonly radius: number;
++  readonly systemCount: number;
++  readonly planetTotal: number;
++}
++
++export interface StarMapInput {
++  readonly nodes: readonly GraphNode[];
++  readonly spiral: SpiralConfig;
++  readonly outerRadius: number;
++  readonly thickness: number;
++  readonly seed?: number;
++  readonly policy?: Partial<typeof STAR_MAP_POLICY>;
++}
++
++function mix32(value: number): number {
++  let x = value >>> 0;
++  x ^= x >>> 16; x = Math.imul(x, 0x7feb352d);
++  x ^= x >>> 15; x = Math.imul(x, 0x846ca68b);
++  x ^= x >>> 16;
++  return x >>> 0;
++}
++
++/* ——————————————————— имена и обозначения (локально: R2 запрещает импорт из planets) ————— */
++
++const NAME_START = ['Вор', 'Ке', 'Тар', 'Си', 'Оль', 'Ма', 'Ре', 'Га', 'Ни', 'Зе', 'Уль', 'Ха', 'Те', 'Ли'] as const;
++const NAME_MID = ['ан', 'ор', 'и', 'ы', 'э', 'ал', 'ен', 'ир', 'ум', 'ос'] as const;
++const NAME_END = ['ия', 'ос', 'ум', 'ар', 'ея', 'он', 'ида', 'ор', 'ант', 'ея-9'] as const;
++
++/** Короткое собственное имя системы; детерминировано от seed. */
++export function generateSystemName(seed: number): string {
++  const rnd = mulberry32(mix32(seed ^ 0x2f6e2b1));
++  const start = NAME_START[Math.floor(rnd() * NAME_START.length)]!;
++  const mid = NAME_MID[Math.floor(rnd() * NAME_MID.length)]!;
++  const end = NAME_END[Math.floor(rnd() * NAME_END.length)]!;
++  return `${start}${mid}${end}`;
++}
++
++/** Каталогическое обозначение: `VOR-<буква рукава>-<номер>`. */
++export function systemDesignation(armId: string, ordinal: number): string {
++  const letter = STAR_MAP_POLICY.armDesignators[armId] ?? 'Ζ';
++  return `VOR-${letter}-${(100 + (ordinal % 900)).toString()}`;
++}
++
++/* ——————————————————— размещение систем по рукавам ————————————————— */
++
++/**
++ * Позиция фоновой системы на спиральном рукаве (та же логарифмическая спираль, что и в
++ * `galaxy/position.ts`, но без привязки к существующим узлам графа).
++ */
++function armPosition(random: () => number, spiral: SpiralConfig, outerRadius: number, thickness: number, coreBias: number): GalaxyPos {
++  const armIndex = Math.floor(random() * Math.max(1, spiral.arms));
++  const t = coreBias * random() + (1 - coreBias) * Math.pow(random(), 0.72);
++  const r = Math.max(spiral.r0 * 0.6, spiral.r0 + t * Math.max(1, outerRadius - spiral.r0));
++  const wind = Math.log(Math.max(0.1, r / spiral.r0)) / Math.max(0.05, spiral.b);
++  const spread = (random() - 0.5) * (spiral.width / Math.max(1, r)) * 2.6;
++  const angle = armIndex * ((Math.PI * 2) / Math.max(1, spiral.arms)) + wind + spread;
++  return {
++    x: Math.cos(angle) * r,
++    y: (random() - 0.5) * thickness * (1.15 - Math.min(1, r / Math.max(1, outerRadius)) * 0.55),
++    z: Math.sin(angle) * r,
++  };
++}
++
++function distance2d(a: GalaxyPos, b: GalaxyPos): number {
++  return Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
++}
++
++function placeSystems(
++  seed: number,
++  count: number,
++  taken: readonly GalaxyPos[],
++  spiral: SpiralConfig,
++  outerRadius: number,
++  thickness: number,
++  minSeparation: number,
++  tries: number,
++  coreBias: number,
++): GalaxyPos[] {
++  const placed: GalaxyPos[] = [];
++  const occupied = [...taken];
++  for (let index = 0; index < count; index++) {
++    const random = mulberry32(mix32(seed ^ Math.imul(index + 1, 0x9e3779b1)));
++    let position: GalaxyPos | null = null;
++    for (let attempt = 0; attempt < tries; attempt++) {
++      const candidate = armPosition(random, spiral, outerRadius, thickness, coreBias);
++      if (occupied.every((other) => distance2d(other, candidate) >= minSeparation)) {
++        position = candidate;
++        break;
++      }
++    }
++    if (!position) {
++      // Запасная детерминированная сетка: золотой угол, как fallback в galaxy/position.ts.
++      const golden = (index + 1) * 2.399963229728653;
++      const r = spiral.r0 + ((index + 1) / Math.max(1, count)) * Math.max(1, outerRadius - spiral.r0);
++      position = { x: Math.cos(golden) * r, y: ((index % 5) - 2) * thickness * 0.2, z: Math.sin(golden) * r };
++    }
++    occupied.push(position);
++    placed.push(position);
++  }
++  return placed;
++}
++
++/* ——————————————————— сборка карты ————————————————— */
++
++function makeSystem(input: {
++  id: string;
++  seed: number;
++  position: GalaxyPos;
++  spiral: SpiralConfig;
++  hostNodeId: string | null;
++  hostName?: string | null;
++  charted: boolean;
++  core: boolean;
++  ordinal: number;
++  planets: readonly SystemPlanetOrbit[];
++}): StarSystemDescriptor {
++  const star = classifyStar(input.seed);
++  const armId = input.core ? 'core' : armIdAt(input.position, input.spiral);
++  return {
++    id: input.id,
++    name: input.core ? 'Центральная звезда' : (input.hostName ?? generateSystemName(input.seed)),
++    designation: input.core ? 'VOR-Α-001' : systemDesignation(armId, input.ordinal),
++    seed: input.seed,
++    star,
++    position: input.position,
++    armId,
++    sectorId: galaxySector(input.position).id,
++    hostNodeId: input.hostNodeId,
++    charted: input.charted,
++    core: input.core,
++    planets: input.planets,
++  };
++}
++
++/**
++ * Собирает полную карту звёздных систем галактики.
++ * Порядок систем стабилен: ядро → системы узлов графа (по id) → фоновые системы (по индексу).
++ */
++export function buildGalaxyStarMap(input: StarMapInput): GalaxyStarMap {
++  const policy = { ...STAR_MAP_POLICY, ...(input.policy ?? {}) };
++  const seed = Number.isFinite(input.seed) ? (input.seed as number) >>> 0 : GALAXY_SEED;
++  const systems: StarSystemDescriptor[] = [];
++
++  // 1. Центральная звезда галактики — якорь всей карты.
++  const coreStar = classifyStar(policy.coreStarSeed);
++  systems.push(makeSystem({
++    id: CORE_SYSTEM_ID,
++    seed: policy.coreStarSeed,
++    position: { x: 0, y: 0, z: 0 },
++    spiral: input.spiral,
++    hostNodeId: null,
++    charted: true,
++    core: true,
++    ordinal: 0,
++    planets: buildSystemOrbits(policy.coreStarSeed, coreStar, { min: policy.corePlanetCount, max: policy.corePlanetCount }),
++  }));
++
++  // 2. Системы игровых планет: позиция — ровно из узла графа (никакой перегенерации координат).
++  const nodes = [...(input.nodes ?? [])].filter((node) => node && node.id).sort((a, b) => a.id.localeCompare(b.id));
++  for (const node of nodes) {
++    const systemSeed = mix32((node.seed >>> 0) ^ 0x51a7e);
++    const star = classifyStar(systemSeed);
++    const planets = buildSystemOrbits(systemSeed, star, {
++      host: { planetId: node.id },
++      min: SYSTEM_POLICY.hostMinPlanets,
++      max: SYSTEM_POLICY.hostMaxPlanets,
++    });
++    systems.push(makeSystem({
++      id: `sys:${node.id}`,
++      seed: systemSeed,
++      position: { x: node.x, y: node.y, z: node.z },
++      spiral: input.spiral,
++      hostNodeId: node.id,
++      hostName: node.discovered ? node.name : null,
++      charted: node.discovered,
++      core: false,
++      ordinal: mix32(node.seed >>> 0) % 900,
++      planets,
++    }));
++  }
++
++  // 3. Фоновые системы: много звёзд на рукавах, у каждой 1–5 планет, ни одна не подтверждена.
++  // ВАЖНО: размещение зависит ТОЛЬКО от seed карты и позиции ядра, но не от узлов графа —
++  // иначе каждое открытие мира сдвигало бы все фоновые системы (регрессия поймана интеграционным тестом).
++  const positions = placeSystems(
++    seed, policy.backgroundSystems, [{ x: 0, y: 0, z: 0 }], input.spiral, input.outerRadius, input.thickness,
++    policy.minSystemSeparation, policy.placementTries, policy.coreBias,
++  );
++  positions.forEach((position, index) => {
++    const systemSeed = mix32(seed ^ Math.imul(index + 1, 0x85ebca6b));
++    const star = classifyStar(systemSeed);
++    systems.push(makeSystem({
++      id: `sys:bg:${index}`,
++      seed: systemSeed,
++      position,
++      spiral: input.spiral,
++      hostNodeId: null,
++      charted: true,
++      core: false,
++      ordinal: index + 1,
++      planets: buildSystemOrbits(systemSeed, star, {
++        min: SYSTEM_POLICY.freeMinPlanets,
++        max: SYSTEM_POLICY.freeMaxPlanets,
++      }),
++    }));
++  });
++
++  const byId: Record<string, StarSystemDescriptor> = {};
++  const byHostNode: Record<string, StarSystemDescriptor> = {};
++  let planetTotal = 0;
++  let maxOccupied = 1;
++  for (const system of systems) {
++    byId[system.id] = system;
++    if (system.hostNodeId) byHostNode[system.hostNodeId] = system;
++    planetTotal += system.planets.length;
++    maxOccupied = Math.max(maxOccupied, Math.hypot(system.position.x, system.position.y, system.position.z));
++  }
++  // Радиус диска — конфигурационный внешний радиус галактики: он не меняется при открытии миров,
++  // поэтому масштаб сцены и дистанция камеры стабильны от кадра к кадру.
++  const radius = Math.max(input.outerRadius, maxOccupied);
++  return { seed, systems, byId, byHostNode, coreSystemId: CORE_SYSTEM_ID, radius, systemCount: systems.length, planetTotal };
++}
++
++/** Система узла планетарного графа (или null, если узел неизвестен карте). */
++export function systemForNode(map: GalaxyStarMap, nodeId: string | null | undefined): StarSystemDescriptor | null {
++  if (!nodeId) return null;
++  return map.byHostNode[nodeId] ?? null;
++}
++
++/** Инварианты карты — проверяются тестами и `galaxy/validation.ts`. */
++export function validateStarMap(map: GalaxyStarMap): readonly string[] {
++  const issues: string[] = [];
++  const ids = new Set<string>();
++  for (const system of map.systems) {
++    if (ids.has(system.id)) issues.push(`duplicate-system:${system.id}`);
++    ids.add(system.id);
++    if (system.planets.length < SYSTEM_POLICY.freeMinPlanets) issues.push(`too-few-planets:${system.id}`);
++    if (system.planets.length > SYSTEM_POLICY.freeMaxPlanets) issues.push(`too-many-planets:${system.id}`);
++    if (!Number.isFinite(system.position.x) || !Number.isFinite(system.position.z)) issues.push(`invalid-position:${system.id}`);
++    const axes = system.planets.map((planet) => planet.semiMajorAxis);
++    if (axes.some((value, index) => index > 0 && value <= axes[index - 1]!)) issues.push(`orbits-not-monotonic:${system.id}`);
++    if (system.planets.some((planet) => planet.orbitIndex < 0)) issues.push(`invalid-orbit-index:${system.id}`);
++    if (system.core && system.hostNodeId) issues.push('core-system-must-not-have-host');
++  }
++  if (!map.byId[CORE_SYSTEM_ID]) issues.push('missing-core-system');
++  return issues;
++}
+diff --git a/src/galaxy/starSystems.ts b/src/galaxy/starSystems.ts
+index 580bf2f..b32f860 100644
+--- a/src/galaxy/starSystems.ts
++++ b/src/galaxy/starSystems.ts
+@@ -1,14 +1,48 @@
+-/** Stage 7.4 — детерминированный доменный каталог тел звёздной системы.
+- * Каталог вычисляется из seed узла PlanetaryGraph: одинаковый seed всегда даёт одинаковую систему.
+- * Первый мир — существующая игровая планета; дополнительные тела пока являются неразведанными
+- * кандидатами без runtime и не могут быть посещены до отдельного этапа орбитального исследования.
++/** Stage 7.4 / Этап 9.0 — детерминированный доменный каталог тел звёздной системы.
++ *
++ * Каталог вычисляется из seed: одинаковый seed всегда даёт одинаковую систему (ADR-019).
++ * Этап 9.0 вводит физическую модель «звезда в центре → 1–5 планет на орбитах»:
++ *  - `classifyStar` — спектральный класс, температура, светимость, цвет и радиус звезды;
++ *  - `buildSystemOrbits` — орбитальные элементы планет (a, e, i, фаза, период по III закону Кеплера);
++ *  - `buildStarSystemCatalog` — прежный игровой каталог (Этап 7.4), теперь собираемый из тех же орбит.
++ *
++ * Первый мир системы — существующая игровая планета; остальные тела остаются неразведанными
++ * кандидатами до команд `scanOrbitalBody` / `activateOrbitalBody`.
+  */
+-import type { GraphNode } from '../contracts/galaxy';
++import type { GraphNode, OrbitBodyClass, StarDescriptor, StarSpectralClass, SystemPlanetOrbit } from '../contracts/galaxy';
+ 
+-export type StarClass = 'blue' | 'white' | 'yellow' | 'orange' | 'red';
+-export type SystemBodyClass = 'terrestrial' | 'ice' | 'gas-giant' | 'dwarf' | 'asteroid-belt';
++export type StarClass = StarSpectralClass;
++export type SystemBodyClass = OrbitBodyClass;
+ export type SystemBodyStatus = 'confirmed' | 'unscanned';
+ 
++/**
++ * Единый блок политики звёздных систем (ТЗ §15: баланс только через config/константы политики).
++ * Все числа Этапа 9.0 меняются здесь и больше нигде.
++ */
++export const SYSTEM_POLICY = Object.freeze({
++  /** Система с подтверждённой игровой планетой: host + 1..4 неразведанные орбиты. */
++  hostMinPlanets: 2,
++  hostMaxPlanets: 5,
++  /** Фоновая система галактики: бывает и одна планета, и пять. */
++  freeMinPlanets: 1,
++  freeMaxPlanets: 5,
++  /** Большая полуось первой орбиты, а.е. */
++  innerOrbitAu: 0.72,
++  /** Шаг между соседними орбитами, а.е. */
++  orbitSpacingAu: 0.78,
++  /** Случайный разброс полуоси, а.е. */
++  orbitJitterAu: 0.3,
++  maxEccentricity: 0.2,
++  /** Наклонение орбиты, рад (±). */
++  maxInclinationRad: 0.14,
++  /** Масса звезды в массах Солнца по спектральному классу — для периода обращения. */
++  starMassByClass: Object.freeze({ blue: 6.2, white: 2.0, yellow: 1.0, orange: 0.72, red: 0.45 }),
++  /** Визуальный радиус звезды относительно солнечного. */
++  starRadiusByClass: Object.freeze({ blue: 1.9, white: 1.35, yellow: 1.0, orange: 0.78, red: 0.52 }),
++  /** Цвет звезды для рендерера (домен не знает про three.js — отдаёт CSS-строку). */
++  starColorByClass: Object.freeze({ blue: '#8bdcff', white: '#e8f4ff', yellow: '#ffe39a', orange: '#ffb66e', red: '#ff806f' }),
++} as const);
++
+ export interface StarSystemBody {
+   readonly id: string;
+   readonly hostPlanetId: string;
+@@ -27,7 +61,7 @@ export interface StarSystemCatalog {
+   readonly id: string;
+   readonly seed: number;
+   readonly hostPlanetId: string;
+-  readonly star: { readonly class: StarClass; readonly temperatureK: number; readonly luminosity: number };
++  readonly star: StarDescriptor;
+   readonly bodies: readonly StarSystemBody[];
+   readonly generatedAtVersion: 1;
+ }
+@@ -44,47 +78,117 @@ function random01(seed: number, salt: number): number {
+   return mix32(seed ^ Math.imul(salt + 1, 0x9e3779b1)) / 0x1_0000_0000;
+ }
+ 
+-function classifyStar(seed: number): StarSystemCatalog['star'] {
++/** Спектральный класс звезды по seed: распределение 1.x-подобное (8/12/36/28/16 %). */
++export function classifyStar(seed: number): StarDescriptor {
+   const roll = random01(seed, 1);
+-  if (roll < 0.08) return { class: 'blue', temperatureK: 10000 + Math.round(random01(seed, 2) * 12000), luminosity: 8 + random01(seed, 3) * 22 };
+-  if (roll < 0.2) return { class: 'white', temperatureK: 7500 + Math.round(random01(seed, 2) * 2500), luminosity: 2 + random01(seed, 3) * 5 };
+-  if (roll < 0.56) return { class: 'yellow', temperatureK: 5200 + Math.round(random01(seed, 2) * 1300), luminosity: 0.65 + random01(seed, 3) * 1.1 };
+-  if (roll < 0.84) return { class: 'orange', temperatureK: 3700 + Math.round(random01(seed, 2) * 1300), luminosity: 0.12 + random01(seed, 3) * 0.5 };
+-  return { class: 'red', temperatureK: 2400 + Math.round(random01(seed, 2) * 1300), luminosity: 0.01 + random01(seed, 3) * 0.12 };
++  const klass: StarSpectralClass = roll < 0.08 ? 'blue'
++    : roll < 0.2 ? 'white'
++      : roll < 0.56 ? 'yellow'
++        : roll < 0.84 ? 'orange'
++          : 'red';
++  const temperatureK = klass === 'blue' ? 10000 + Math.round(random01(seed, 2) * 12000)
++    : klass === 'white' ? 7500 + Math.round(random01(seed, 2) * 2500)
++      : klass === 'yellow' ? 5200 + Math.round(random01(seed, 2) * 1300)
++        : klass === 'orange' ? 3700 + Math.round(random01(seed, 2) * 1300)
++          : 2400 + Math.round(random01(seed, 2) * 1300);
++  const luminosity = klass === 'blue' ? 8 + random01(seed, 3) * 22
++    : klass === 'white' ? 2 + random01(seed, 3) * 5
++      : klass === 'yellow' ? 0.65 + random01(seed, 3) * 1.1
++        : klass === 'orange' ? 0.12 + random01(seed, 3) * 0.5
++          : 0.01 + random01(seed, 3) * 0.12;
++  return {
++    class: klass,
++    temperatureK,
++    luminosity,
++    color: SYSTEM_POLICY.starColorByClass[klass],
++    radiusScale: SYSTEM_POLICY.starRadiusByClass[klass],
++  };
+ }
+ 
+-/** Создаёт стабильную систему только для существующего узла; скрытые узлы отклоняются. */
+-export function buildStarSystemCatalog(node: Pick<GraphNode, 'id' | 'name' | 'seed' | 'discovered'> | null | undefined): StarSystemCatalog | null {
+-  if (!node?.discovered || !node.id || !Number.isFinite(node.seed)) return null;
+-  const seed = mix32(node.seed ^ 0x51a7e);
+-  const extraCount = 1 + Math.floor(random01(seed, 4) * 3);
+-  const bodies: StarSystemBody[] = [{
+-    id: `body:${node.id}:0`, hostPlanetId: node.id, name: node.name,
+-    bodyClass: 'terrestrial', status: 'confirmed', orbitIndex: 0,
+-    semiMajorAxis: 0.8 + random01(seed, 5) * 0.9,
+-    eccentricity: 0, inclination: 0, orbitalPhase: random01(seed, 6) * Math.PI * 2,
+-    sourcePlanetId: node.id,
+-  }];
+-  const classes: readonly SystemBodyClass[] = ['terrestrial', 'ice', 'gas-giant', 'dwarf', 'asteroid-belt'];
+-  for (let index = 1; index <= extraCount; index++) {
++/** III закон Кеплера: P[сут] = 365.25 · √(a³ / M★). */
++export function orbitalPeriodDays(semiMajorAxis: number, star: Pick<StarDescriptor, 'class'>): number {
++  const mass = SYSTEM_POLICY.starMassByClass[star.class] ?? 1;
++  const a = Math.max(0.01, semiMajorAxis);
++  return 365.25 * Math.sqrt((a * a * a) / Math.max(0.05, mass));
++}
++
++/** Число планет в системе: детерминированно от seed, в пределах [min, max]. */
++export function systemPlanetCount(seed: number, min: number, max: number, salt = 4): number {
++  const lo = Math.max(1, Math.min(min, max));
++  const hi = Math.max(lo, max);
++  return lo + Math.floor(random01(seed, salt) * (hi - lo + 1));
++}
++
++const BODY_CLASSES: readonly OrbitBodyClass[] = ['terrestrial', 'ice', 'gas-giant', 'dwarf', 'asteroid-belt'];
++
++export interface OrbitBuildOptions {
++  /** Планета-хост на орбите 0 (игровая планета системы). Без хоста все орбиты — кандидаты. */
++  readonly host?: { readonly planetId: string } | null;
++  /** Границы числа планет; по умолчанию — фоновая система (1–5). */
++  readonly min?: number;
++  readonly max?: number;
++}
++
++/**
++ * Орбитальные элементы планет системы. Орбита 0 — мир-хост (круговая, без наклона),
++ * остальные — неразведанные кандидаты. Всё детерминировано от seed системы.
++ */
++export function buildSystemOrbits(seed: number, star: StarDescriptor, options: OrbitBuildOptions = {}): readonly SystemPlanetOrbit[] {
++  const policy = SYSTEM_POLICY;
++  const total = systemPlanetCount(seed, options.min ?? policy.freeMinPlanets, options.max ?? policy.freeMaxPlanets, 4);
++  const orbits: SystemPlanetOrbit[] = [];
++  for (let index = 0; index < total; index++) {
++    const isHost = index === 0 && Boolean(options.host?.planetId);
++    const semiMajorAxis = index === 0
++      ? policy.innerOrbitAu + random01(seed, 5) * 0.9
++      : policy.innerOrbitAu + index * policy.orbitSpacingAu + random01(seed, 20 + index) * policy.orbitJitterAu + 0.55;
+     const roll = random01(seed, 10 + index);
+-    bodies.push({
+-      id: `body:${node.id}:${index}`, hostPlanetId: node.id, name: null,
+-      bodyClass: classes[Math.floor(roll * classes.length)]!, status: 'unscanned', orbitIndex: index,
+-      semiMajorAxis: 1.25 + index * 0.85 + random01(seed, 20 + index) * 0.65,
+-      eccentricity: random01(seed, 30 + index) * 0.18,
+-      inclination: (random01(seed, 40 + index) - 0.5) * 0.28,
++    orbits.push({
++      orbitIndex: index,
++      semiMajorAxis,
++      eccentricity: isHost ? 0 : random01(seed, 30 + index) * policy.maxEccentricity,
++      inclination: isHost ? 0 : (random01(seed, 40 + index) - 0.5) * 2 * policy.maxInclinationRad,
+       orbitalPhase: random01(seed, 50 + index) * Math.PI * 2,
+-      sourcePlanetId: null,
++      periodDays: orbitalPeriodDays(semiMajorAxis, star),
++      bodyClass: isHost ? 'terrestrial' : BODY_CLASSES[Math.floor(roll * BODY_CLASSES.length)] ?? 'terrestrial',
++      planetId: isHost ? options.host!.planetId : null,
++      status: isHost ? 'bound' : 'candidate',
+     });
+   }
+-  return { id: `system:${node.id}`, seed, hostPlanetId: node.id, star: classifyStar(seed), bodies, generatedAtVersion: 1 };
++  return orbits;
++}
++
++/** Создаёт стабильную систему только для существующего узла; скрытые узлы отклоняются. */
++export function buildStarSystemCatalog(node: Pick<GraphNode, 'id' | 'name' | 'seed' | 'discovered'> | null | undefined): StarSystemCatalog | null {
++  if (!node?.discovered || !node.id || !Number.isFinite(node.seed)) return null;
++  const seed = mix32(node.seed ^ 0x51a7e);
++  const star = classifyStar(seed);
++  const orbits = buildSystemOrbits(seed, star, {
++    host: { planetId: node.id },
++    min: SYSTEM_POLICY.hostMinPlanets,
++    max: SYSTEM_POLICY.hostMaxPlanets,
++  });
++  const bodies: readonly StarSystemBody[] = orbits.map((orbit) => ({
++    id: `body:${node.id}:${orbit.orbitIndex}`,
++    hostPlanetId: node.id,
++    name: orbit.status === 'bound' ? node.name : null,
++    bodyClass: orbit.bodyClass,
++    status: orbit.status === 'bound' ? 'confirmed' : 'unscanned',
++    orbitIndex: orbit.orbitIndex,
++    semiMajorAxis: orbit.semiMajorAxis,
++    eccentricity: orbit.eccentricity,
++    inclination: orbit.inclination,
++    orbitalPhase: orbit.orbitalPhase,
++    sourcePlanetId: orbit.status === 'bound' ? node.id : null,
++  }));
++  return { id: `system:${node.id}`, seed, hostPlanetId: node.id, star, bodies, generatedAtVersion: 1 };
+ }
+ 
+ /** Проверяет инварианты каталога перед передачей в UI/рендерер. */
+ export function validateStarSystemCatalog(catalog: StarSystemCatalog): readonly string[] {
+   const issues: string[] = [];
+-  if (catalog.bodies.length < 2) issues.push('system-has-no-orbital-candidates');
++  if (catalog.bodies.length < 1) issues.push('system-has-no-bodies');
++  if (catalog.bodies.length > SYSTEM_POLICY.hostMaxPlanets) issues.push('system-exceeds-planet-cap');
+   const ids = new Set<string>();
+   for (const body of catalog.bodies) {
+     if (ids.has(body.id)) issues.push(`duplicate-body:${body.id}`);
+@@ -95,5 +199,7 @@ export function validateStarSystemCatalog(catalog: StarSystemCatalog): readonly
+     if (body.status === 'unscanned' && (body.sourcePlanetId || body.name)) issues.push(`unscanned-body-leaks-identity:${body.id}`);
+   }
+   if (catalog.bodies[0]?.status !== 'confirmed' || catalog.bodies[0]?.sourcePlanetId !== catalog.hostPlanetId) issues.push('host-world-not-first-confirmed-body');
++  const axes = catalog.bodies.map((body) => body.semiMajorAxis);
++  if (axes.some((value, index) => index > 0 && value <= axes[index - 1]!)) issues.push('orbits-not-monotonic');
+   return issues;
+ }
+diff --git a/src/galaxy/status.ts b/src/galaxy/status.ts
+index 98aa85f..30b14e9 100644
+--- a/src/galaxy/status.ts
++++ b/src/galaxy/status.ts
+@@ -7,6 +7,6 @@ import type { DomainStatus } from '../contracts/ports';
+ export const GALAXY_STATUS: DomainStatus = Object.freeze({
+   domain: 'galaxy',
+   status: 'PARTIAL',
+-  stage: 3,
+-  note: 'позиции/рукава/граф — готовы (Этап 3); карта, навигация, маршруты — Этап 5',
++  stage: 9,
++  note: 'позиции/рукава/граф — Этап 3; карта, навигация, маршруты — Этап 5; транзит — Этап 8.1; карта звёздных систем (39 систем, 1–5 планет на орбитах) — Этап 9.0. Не закрыто: привязка сонарных открытий к свободным орбитам фоновых систем (Этап 9.1)',
+ });
+diff --git a/src/main.ts b/src/main.ts
+index 438c442..4556b80 100644
+--- a/src/main.ts
++++ b/src/main.ts
+@@ -1,4 +1,5 @@
+ import { buildStarSystemExploration } from './galaxy/systemExploration';
++import { STAR_MAP_POLICY, buildGalaxyStarMap, systemForNode, type GalaxyStarMap } from './galaxy/starMap';
+ import { buildStarSystemTopology } from './galaxy/systemTopology';
+ /**
+  * main.ts — точка входа браузера: сборка Game (RafDriver + LocalStorage), старт, авто-сейв,
+@@ -103,9 +104,47 @@ try {
+       cellLevels: new Map([...(rt?.cellStates ?? new Map<number, CellState>())].map(([id, state]) => [id, state.level])),
+     }) : null;
+   };
++  // ——— Этап 9.0: карта звёздных систем (звезда + 1–5 планет на орбитах). ———
++  const galaxyRegistry = game.balance.registry.galaxy;
++  let starMapCache: { key: string; map: GalaxyStarMap } | null = null;
++  const starMapOf = (): GalaxyStarMap => {
++    const snap = game.snapshot();
++    const key = snap.galaxy.nodes.map((node) => `${node.id}:${node.seed}:${node.discovered ? 1 : 0}`).join('|');
++    if (starMapCache?.key === key) return starMapCache.map;
++    const map = buildGalaxyStarMap({
++      nodes: snap.galaxy.nodes,
++      spiral: galaxyRegistry.arms,
++      outerRadius: galaxyRegistry.gen.outerRadius,
++      thickness: galaxyRegistry.nodeRender.THICK,
++    });
++    starMapCache = { key, map };
++    return map;
++  };
++  /** Исследованные/активированные орбиты: systemId → orbitIndex (чтобы не раскрывать класс тела раньше времени). */
++  const revealedOrbitsOf = (): Record<string, number[]> => {
++    const snap = game.snapshot();
++    const revealed: Record<string, number[]> = {};
++    for (const node of snap.galaxy.nodes) {
++      const state = game.orbitalExplorationState(node.id);
++      const indexes = [...state.scannedBodyIds, ...Object.keys(state.activatedBodies)]
++        .map((bodyId) => Number(bodyId.split(':').pop()))
++        .filter((index) => Number.isFinite(index) && index > 0);
++      if (indexes.length) revealed[`sys:${node.id}`] = [...new Set(indexes)];
++    }
++    return revealed;
++  };
+   const galaxyData = (): ReturnType<typeof buildGalaxyRenderData> => {
+     const snap = game.snapshot();
+-    return buildGalaxyRenderData({ nodes: snap.galaxy.nodes, edges: snap.galaxy.edges, unlockedIds: snap.unlockedPlanets, activeId: snap.activePlanetId });
++    return buildGalaxyRenderData({
++      nodes: snap.galaxy.nodes,
++      edges: snap.galaxy.edges,
++      unlockedIds: snap.unlockedPlanets,
++      activeId: snap.activePlanetId,
++      systems: starMapOf().systems,
++      systemSpacing: STAR_MAP_POLICY.minSystemSeparation,
++      discRadius: starMapOf().radius,
++      revealedOrbits: revealedOrbitsOf(),
++    });
+   };
+   let selectedGalaxyNodeId: string | null = null;
+   const escapeHtml = (value: string): string => value.replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch] ?? ch);
+@@ -121,15 +160,54 @@ try {
+     const systemDetail = buildGalaxySystemDetail(renderNode);
+     const system = buildStarSystemExploration({ ...node, unlocked, active });
+     const routeLabel = route ? `${route.hops} прыжк. · ${route.totalDistance.toFixed(1)} ед. · ${Math.ceil(route.totalEnergy).toLocaleString('ru-RU')} ⚡` : 'Нет доступного маршрута';
+-    const world = system?.worlds[0];
++    const starSystem = systemForNode(starMapOf(), node.id);
++    const orbitalState = game.orbitalExplorationState(node.id);
++    const bodyLabel = (bodyClass: string): string => ({ terrestrial: 'Землеподобная', ice: 'Ледяная', 'gas-giant': 'Газовый гигант', dwarf: 'Карлик', 'asteroid-belt': 'Пояс астероидов', unknown: 'Не идентифицировано' } as Record<string, string>)[bodyClass] ?? bodyClass;
++    const orbitPeriod = (days: number): string => (days < 365.25 ? `${Math.round(days)} сут` : `${(days / 365.25).toFixed(2)} г.`);
++    const orbitRows = (starSystem?.planets ?? []).map((planet) => {
++      const bodyId = `body:${node.id}:${planet.orbitIndex}`;
++      const host = planet.status === 'bound';
++      const scanned = orbitalState.scannedBodyIds.includes(bodyId);
++      const activatedId = orbitalState.activatedBodies[bodyId];
++      const known = host || scanned || Boolean(activatedId);
++      const label = known ? bodyLabel(planet.bodyClass) : 'Неидентифицированное орбитальное тело';
++      const title = host ? node.name : activatedId ? activatedId : `Орбита ${planet.orbitIndex + 1}`;
++      const meta = `${planet.semiMajorAxis.toFixed(2)} а.е. · период ${orbitPeriod(planet.periodDays)} · e ${planet.eccentricity.toFixed(2)}`;
++      const action = host
++        ? (active ? '<strong>АКТИВНА</strong>' : unlocked ? `<button type="button" class="galaxy-orbit-action" data-system-travel="${escapeHtml(node.id)}">ПЕРЕЙТИ</button>` : '<strong>ЗАКРЫТА</strong>')
++        : !unlocked ? '<strong>СИСТЕМА ЗАКРЫТА</strong>'
++          : activatedId ? `<button type="button" class="galaxy-orbit-action" data-system-travel="${escapeHtml(activatedId)}">ПЕРЕЙТИ</button>`
++            : scanned ? `<button type="button" class="galaxy-orbit-action" data-orbit-activate="${escapeHtml(bodyId)}">АКТИВИРОВАТЬ · 2 000 ⚡ / 500 🔬</button>`
++              : `<button type="button" class="galaxy-orbit-action" data-orbit-scan="${escapeHtml(bodyId)}">ИССЛЕДОВАТЬ · 500 ⚡ / 100 🔬</button>`;
++      return `<div class="galaxy-world-row${host ? '' : ' galaxy-world-candidate'}"><span class="galaxy-world-orbit">${host ? '◎' : scanned ? '◍' : '◌'}</span><span><b>${escapeHtml(title)}</b><em>${escapeHtml(label)} · ${escapeHtml(meta)}</em></span>${action}</div>`;
++    }).join('');
+     const worldAction = active
+       ? `<button type="button" class="galaxy-travel-button" data-enter-world="${escapeHtml(node.id)}">ОТКРЫТЬ ПОВЕРХНОСТЬ ПЛАНЕТЫ</button>`
+       : unlocked && route
+         ? `<button type="button" class="galaxy-travel-button" data-galaxy-travel="${escapeHtml(node.id)}" ${(snap.resources.energy ?? 0) < route.firstLeg.energyCost ? 'disabled' : ''}>ПЕРЕЛЁТ К ПЛАНЕТЕ · ${Math.ceil(route.firstLeg.energyCost).toLocaleString('ru-RU')} ⚡</button>`
+         : '<div class="galaxy-panel-status">Мир обнаружен, но ещё не открыт. Завершите сонарное открытие.</div>';
+-    galaxyPanel.innerHTML = `<button class="galaxy-panel-close" type="button" aria-label="Закрыть карточку">×</button><div class="galaxy-panel-kicker">${active ? 'АКТИВНАЯ СИСТЕМА' : unlocked ? 'ОТКРЫТАЯ СИСТЕМА' : 'ОБНАРУЖЕННЫЙ СИГНАЛ'}</div><div class="galaxy-nav-actions"><button type="button" data-system-view>ОТКРЫТЬ СИСТЕМУ</button><button type="button" data-galaxy-return>К ГАЛАКТИКЕ</button></div><h3>${escapeHtml(node.name)}</h3><div class="galaxy-panel-meta">${escapeHtml(node.biome)} · ${escapeHtml(node.geometryName)}</div><div class="galaxy-system-summary"><span class="galaxy-system-star" style="--star-color:${systemDetail?.starColor ?? '#d8e8f5'}"></span><div><small>ЦЕНТРАЛЬНАЯ ЗВЕЗДА · ${escapeHtml(systemDetail?.starClass.toUpperCase() ?? 'UNKNOWN')}</small><b>${escapeHtml(systemDetail?.title ?? 'UNKNOWN')}</b><em>Каталог: ${escapeHtml(system?.catalog.star.class.toUpperCase() ?? 'UNKNOWN')} · ${system?.catalog.star.temperatureK ?? 0} K</em></div></div><div class="galaxy-panel-grid"><span>Рукав <b>${escapeHtml(node.armId)}</b></span><span>Сектор <b>${escapeHtml(node.sectorLabel)}</b></span><span>Координаты <b>${node.x.toFixed(1)}, ${node.y.toFixed(1)}, ${node.z.toFixed(1)}</b></span><span>Состояние <b>${active ? 'Здесь' : unlocked ? 'Доступна' : 'Не открыта'}</b></span></div><div class="galaxy-world-list"><small>ПОДТВЕРЖДЁННЫЕ ПЛАНЕТЫ · ${system?.confirmedWorldCount ?? 0}</small>${world ? `<div class="galaxy-world-row"><span class="galaxy-world-orbit">◎</span><span><b>${escapeHtml(world.name)}</b><em>${escapeHtml(world.biome)} · ${escapeHtml(world.geometry)}</em></span><strong>${world.active ? 'АКТИВНА' : world.unlocked ? 'ОТКРЫТА' : 'ЗАКРЫТА'}</strong></div>` : ''}<div class="galaxy-orbital-signatures"><small>НЕРАЗВЕДАННЫЕ ОРБИТЫ · ${system?.candidateCount ?? 0}</small>${(system?.candidates ?? []).map((body) => { const orbital = game.orbitalExplorationState(node.id); const activatedId = orbital.activatedBodies[body.id]; const scanned = orbital.scannedBodyIds.includes(body.id); return `<div class="galaxy-world-row galaxy-world-candidate"><span class="galaxy-world-orbit">◌</span><span><b>${scanned ? (system?.catalog.bodies.find((item) => item.id === body.id)?.bodyClass ?? 'Орбитальное тело') : body.label}</b><em>Орбита ${body.orbitIndex} · ${body.orbitRadius.toFixed(2)} а.е.</em></span>${!unlocked ? '<strong>СИСТЕМА ЗАКРЫТА</strong>' : activatedId ? `<strong>${escapeHtml(activatedId)}</strong><button type="button" class="galaxy-orbit-action" data-system-travel="${escapeHtml(activatedId)}">ПЕРЕЙТИ</button>` : scanned ? `<button type="button" class="galaxy-orbit-action" data-orbit-activate="${escapeHtml(body.id)}">АКТИВИРОВАТЬ · 2 000 ⚡ / 500 🔬</button>` : `<button type="button" class="galaxy-orbit-action" data-orbit-scan="${escapeHtml(body.id)}">ИССЛЕДОВАТЬ · 500 ⚡ / 100 🔬</button>`}</div>`; }).join('')}</div></div>${anomaly ? `<div class="galaxy-panel-anomaly">✧ ${escapeHtml(anomaly.title)} · ${anomaly.resolved ? 'исследована' : anomaly.available ? 'экспедиция доступна' : 'условия не выполнены'}</div>` : ''}<div class="galaxy-panel-route"><small>МАРШРУТ ОТ ТЕКУЩЕЙ ПЛАНЕТЫ</small><b>${routeLabel}</b>${route ? `<span>${route.path.map((id) => escapeHtml(snap.galaxy.nodes.find((item) => item.id === id)?.name ?? id)).join(' → ')}</span>` : ''}</div>${worldAction}`;
++    galaxyPanel.innerHTML = `<button class="galaxy-panel-close" type="button" aria-label="Закрыть карточку">×</button><div class="galaxy-panel-kicker">${active ? 'АКТИВНАЯ СИСТЕМА' : unlocked ? 'ОТКРЫТАЯ СИСТЕМА' : 'ОБНАРУЖЕННЫЙ СИГНАЛ'}</div><div class="galaxy-nav-actions"><button type="button" data-system-view>ОТКРЫТЬ СИСТЕМУ</button><button type="button" data-galaxy-return>К ГАЛАКТИКЕ</button></div><h3>${escapeHtml(node.name)}</h3><div class="galaxy-panel-meta">${escapeHtml(node.biome)} · ${escapeHtml(node.geometryName)}</div><div class="galaxy-system-summary"><span class="galaxy-system-star" style="--star-color:${systemDetail?.starColor ?? '#d8e8f5'}"></span><div><small>ЦЕНТРАЛЬНАЯ ЗВЕЗДА · ${escapeHtml(systemDetail?.starClass.toUpperCase() ?? 'UNKNOWN')}</small><b>${escapeHtml(systemDetail?.title ?? 'UNKNOWN')}</b><em>${escapeHtml(starSystem?.designation ?? '')} · ${escapeHtml(system?.catalog.star.class.toUpperCase() ?? 'UNKNOWN')} · ${system?.catalog.star.temperatureK ?? 0} K · ${(system?.catalog.star.luminosity ?? 0).toFixed(2)} L☉ · планет ${starSystem?.planets.length ?? 0}</em></div></div><div class="galaxy-panel-grid"><span>Рукав <b>${escapeHtml(node.armId)}</b></span><span>Сектор <b>${escapeHtml(node.sectorLabel)}</b></span><span>Координаты <b>${node.x.toFixed(1)}, ${node.y.toFixed(1)}, ${node.z.toFixed(1)}</b></span><span>Состояние <b>${active ? 'Здесь' : unlocked ? 'Доступна' : 'Не открыта'}</b></span></div>${orbitRows}${anomaly ? `<div class="galaxy-panel-anomaly">✧ ${escapeHtml(anomaly.title)} · ${anomaly.resolved ? 'исследована' : anomaly.available ? 'экспедиция доступна' : 'условия не выполнены'}</div>` : ''}<div class="galaxy-panel-route"><small>МАРШРУТ ОТ ТЕКУЩЕЙ ПЛАНЕТЫ</small><b>${routeLabel}</b>${route ? `<span>${route.path.map((id) => escapeHtml(snap.galaxy.nodes.find((item) => item.id === id)?.name ?? id)).join(' → ')}</span>` : ''}</div>${worldAction}`;
++    galaxyPanel.hidden = false;
++  };
++  /**
++   * Этап 9.0 — карточка системы без подтверждённого мира (фоновая система или центр галактики).
++   * Показывает звезду и планеты на орбитах, но не раскрывает то, что ещё не исследовано.
++   */
++  const paintStarSystemPanel = (systemId: string): void => {
++    const system = starMapOf().byId[systemId];
++    if (!system) { galaxyPanel.hidden = true; galaxyPanel.innerHTML = ''; return; }
++    const orbitPeriod = (days: number): string => (days < 365.25 ? `${Math.round(days)} сут` : `${(days / 365.25).toFixed(2)} г.`);
++    galaxyPanel.innerHTML = `<button class="galaxy-panel-close" type="button" aria-label="Закрыть карточку">×</button>`
++      + `<div class="galaxy-panel-kicker">${system.core ? 'ЦЕНТР ГАЛАКТИКИ' : 'НЕИЗУЧЕННАЯ СИСТЕМА'}</div>`
++      + `<div class="galaxy-nav-actions"><button type="button" data-system-zoom="${escapeHtml(system.id)}">ПРИБЛИЗИТЬСЯ</button><button type="button" data-galaxy-return>К ГАЛАКТИКЕ</button></div>`
++      + `<h3>${escapeHtml(system.name)}</h3>`
++      + `<div class="galaxy-panel-meta">${escapeHtml(system.designation)} · рукав ${escapeHtml(system.armId)} · сектор ${escapeHtml(system.sectorId)}</div>`
++      + `<div class="galaxy-system-summary"><span class="galaxy-system-star" style="--star-color:${escapeHtml(system.star.color)}"></span><div><small>ЦЕНТРАЛЬНАЯ ЗВЕЗДА · ${escapeHtml(system.star.class.toUpperCase())}</small><b>${system.star.temperatureK.toLocaleString('ru-RU')} K</b><em>Светимость ${system.star.luminosity.toFixed(2)} L☉ · планет на орбитах: ${system.planets.length}</em></div></div>`
++      + `<div class="galaxy-world-list"><small>ПЛАНЕТЫ НА ОРБИТАХ · ${system.planets.length}</small>${system.planets.map((planet) => `<div class="galaxy-world-row galaxy-world-candidate"><span class="galaxy-world-orbit">◌</span><span><b>Орбита ${planet.orbitIndex + 1}</b><em>${planet.semiMajorAxis.toFixed(2)} а.е. · период ${orbitPeriod(planet.periodDays)} · e ${planet.eccentricity.toFixed(2)}</em></span><strong>НЕ ПОДТВЕРЖДЕНА</strong></div>`).join('')}</div>`
++      + `<div class="galaxy-panel-status">Система нанесена на карту, подтверждённых миров нет. Сонарное открытие привяжет новую планету к одной из свободных орбит (Этап 9.1).</div>`;
+     galaxyPanel.hidden = false;
+   };
++
+   const showSystemView = (nodeId: string): void => {
+     const snap = game.snapshot();
+     const node = snap.galaxy.nodes.find((item) => item.id === nodeId);
+@@ -157,7 +235,8 @@ try {
+   const showGalaxyView = (): void => {
+     activeScene = 'galaxy'; sceneHost.hidden = true; galaxyHost.hidden = false;
+     galaxyViewer?.setOrbitalTopology(null, null); galaxyViewer?.setSystemFocus(null);
+-    galaxyCaption.textContent = 'GALAXY · PLANETARY GRAPH';
++    galaxyViewer?.setSelectedSystem(null);
++    galaxyCaption.textContent = `GALAXY · ${starMapOf().systemCount} СИСТЕМ · ${starMapOf().planetTotal} ПЛАНЕТ`
+     sceneSwitch.querySelectorAll('button').forEach((item) => item.classList.toggle('active', (item).dataset['scene'] === 'galaxy'));
+     galaxyViewer?.resize(); startRenderLoop();
+   };
+@@ -165,8 +244,22 @@ try {
+   if (first) {
+     viewer = createPlanetViewer(canvas, first);
+     galaxyViewer = createGalaxyViewer(galaxyCanvas, galaxyData());
++    galaxyViewer.setSystemSelectHandler((systemId) => {
++      selectedGalaxyNodeId = null;
++      galaxyViewer?.setSelectedNode(null);
++      galaxyViewer?.setSelectedSystem(systemId);
++      galaxyViewer?.focusSystem(systemId);
++      activeScene = 'galaxy';
++      sceneHost.hidden = true;
++      galaxyHost.hidden = false;
++      sceneSwitch.querySelectorAll('button').forEach((item) => item.classList.toggle('active', (item).dataset['scene'] === 'galaxy'));
++      galaxyCaption.textContent = `STAR SYSTEM · ${starMapOf().byId[systemId]?.designation ?? ''}`;
++      paintStarSystemPanel(systemId);
++      startRenderLoop();
++    });
+     galaxyViewer.setNodeSelectHandler((nodeId) => {
+       selectedGalaxyNodeId = nodeId;
++      galaxyViewer?.setSelectedSystem(null);
+       const current = game.snapshot();
+       const route = current.galaxy.routes.find((item) => item.destinationId === nodeId);
+       galaxyViewer?.setSelectedNode(nodeId);
+@@ -180,6 +273,8 @@ try {
+       const target = event.target as HTMLElement;
+       if (target.closest('.galaxy-panel-close')) { galaxyPanel.hidden = true; return; }
+       if (target.closest('[data-system-view]')) { if (selectedGalaxyNodeId) showSystemView(selectedGalaxyNodeId); return; }
++      const zoomButton = target.closest<HTMLButtonElement>('[data-system-zoom]');
++      if (zoomButton) { galaxyViewer?.focusSystem(zoomButton.dataset['systemZoom'] ?? ''); return; }
+       if (target.closest('[data-galaxy-return]')) { showGalaxyView(); return; }
+       const enter = target.closest<HTMLButtonElement>('[data-enter-world]');
+       if (enter) {
+diff --git a/src/renderer/galaxyModel.ts b/src/renderer/galaxyModel.ts
+index b0837fe..977ff80 100644
+--- a/src/renderer/galaxyModel.ts
++++ b/src/renderer/galaxyModel.ts
+@@ -1,5 +1,11 @@
+-/** Stage 7.0 — чистая проекция реального PlanetaryGraph в координаты 3D-сцены. */
+-import type { GraphNode } from '../contracts/galaxy';
++/** Stage 7.0 / Этап 9.0 — чистая проекция реального PlanetaryGraph и карты звёздных систем
++ * в координаты 3D-сцены. Никакой генерации координат: позиции берутся из игровых данных.
++ *
++ * Этап 9.0 (ADR-019): галактика рисуется как множество звёздных систем — звезда в центре и
++ * 1–5 планет на орбитах. Визуальный масштаб орбит подбирается так, чтобы системы не слипались,
++ * а звезда гарантированно помещалась внутри первой орбиты.
++ */
++import type { GraphNode, StarSystemDescriptor } from '../contracts/galaxy';
+ 
+ export interface GalaxyRenderNode {
+   readonly id: string;
+@@ -16,21 +22,137 @@ export interface GalaxyRenderNode {
+   readonly signalClass: 'anomaly' | 'energy' | 'cryo' | 'resource' | 'unknown';
+ }
+ 
++/** Одна орбита системы в координатах сцены (радиус — в тех же единицах, что x/y/z). */
++export interface GalaxyRenderOrbit {
++  readonly orbitIndex: number;
++  /** Большая полуось в единицах сцены. */
++  readonly radius: number;
++  /** Большая полуось в а.е. — для подписей в UI. */
++  readonly semiMajorAxisAu: number;
++  readonly eccentricity: number;
++  readonly inclination: number;
++  readonly phase: number;
++  readonly periodDays: number;
++  readonly bodyClass: string;
++  readonly color: string;
++  readonly size: number;
++  readonly planetId: string | null;
++  readonly status: 'bound' | 'candidate';
++  /** Показывать ли планету: неразведанные орбиты не раскрывают класс тела. */
++  readonly revealed: boolean;
++}
++
++export interface GalaxyRenderSystem {
++  readonly id: string;
++  readonly name: string;
++  readonly designation: string;
++  readonly x: number;
++  readonly y: number;
++  readonly z: number;
++  readonly starColor: string;
++  readonly starRadius: number;
++  readonly glowRadius: number;
++  readonly starClass: string;
++  readonly temperatureK: number;
++  readonly charted: boolean;
++  readonly core: boolean;
++  readonly hostNodeId: string | null;
++  readonly discovered: boolean;
++  readonly unlocked: boolean;
++  readonly active: boolean;
++  readonly planetCount: number;
++  readonly orbits: readonly GalaxyRenderOrbit[];
++}
++
+ export interface GalaxyRenderData {
+   readonly nodes: readonly GalaxyRenderNode[];
+   readonly edges: readonly (readonly [string, string])[];
++  /** Звёздные системы (Этап 9.0). Пусто, если вызывающая сторона ещё не передаёт карту. */
++  readonly systems: readonly GalaxyRenderSystem[];
+   readonly bounds: number;
++  /** Визуальный радиус галактического диска — рендер строит декорации по нему, а не по константе. */
++  readonly discRadius: number;
++  readonly scale: number;
++}
++
++/** Палитра орбитальных тел (согласована с палитрой системы Этапа 7.4). */
++/** Цвет звезды системы, ещё не нанесённой на карту (скрытый сигнал). */
++export const UNCHARTED_STAR_COLOR = '#33505f';
++
++export const ORBIT_BODY_COLORS: Readonly<Record<string, string>> = Object.freeze({
++  terrestrial: '#55b8a0',
++  ice: '#9fe8ff',
++  'gas-giant': '#d9a66c',
++  dwarf: '#b6a8c9',
++  'asteroid-belt': '#8b929d',
++  unknown: '#5d7488',
++});
++
++export const GALAXY_RENDER_POLICY = Object.freeze({
++  defaultScale: 0.08,
++  /**
++   * Визуальный радиус орбиты = orbitScale · a^orbitCompressionExponent.
++   * Степень < 1 (сжатие) — осознанный приём: в реальном масштабе внутренние орбиты
++   * неразличимы рядом со звездой, а так система читается как «звезда + кольца планет».
++   */
++  orbitCompressionExponent: 0.5,
++  /** Доля расстояния между системами, отведённая под самую дальнюю орбиту. */
++  orbitFillRatio: 0.46,
++  minOrbitScale: 0.02,
++  maxOrbitScale: 1.2,
++  /** Звезда не может быть больше этой доли от радиуса первой орбиты. */
++  starToInnerOrbitRatio: 0.55,
++  starBaseRadius: 0.09,
++  coreStarBoost: 1.8,
++  glowMultiplier: 3.4,
++  /** Гало центральной звезды дополнительно усилено — это визуальный центр галактики. */
++  coreGlowBoost: 2.2,
++  planetBaseSize: 0.042,
++  planetSizeStep: 0.005,
++  planetMinSize: 0.024,
++  /** Запасной шаг между системами, если он не передан явно (мировые единицы). */
++  fallbackSystemSpacing: 9,
++} as const);
++
++const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
++
++/** Квантиль попарных расстояний между системами — устойчивая оценка шага (минимум шумит в ядре). */
++function spacingQuantile(positions: readonly { x: number; y: number; z: number }[], q: number): number {
++  if (positions.length < 2) return 1;
++  const distances: number[] = [];
++  for (let i = 0; i < positions.length; i++) {
++    for (let j = i + 1; j < positions.length; j++) {
++      const a = positions[i]!;
++      const b = positions[j]!;
++      const d = Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
++      if (d > 1e-6) distances.push(d);
++    }
++  }
++  if (!distances.length) return 1;
++  distances.sort((left, right) => left - right);
++  return distances[Math.min(distances.length - 1, Math.max(0, Math.floor(q * distances.length)))] ?? 1;
+ }
+ 
+-/** Координаты X/Y/Z не генерируются заново: берутся непосредственно из узлов игрового графа. */
+ export function buildGalaxyRenderData(input: {
+   readonly nodes: readonly (GraphNode & { readonly signalClass?: GalaxyRenderNode['signalClass']; readonly sectorId?: GalaxyRenderNode['sectorId'] })[];
+   readonly edges: readonly (readonly [string, string])[];
+   readonly unlockedIds: readonly string[];
+   readonly activeId: string;
+   readonly scale?: number;
++  /** Карта звёздных систем из `galaxy/starMap.ts` (composition root передаёт её целиком). */
++  readonly systems?: readonly StarSystemDescriptor[];
++  /** Какие орбитальные сигнатуры уже исследованы игроком: systemId → orbitIndex. */
++  readonly revealedOrbits?: Readonly<Record<string, readonly number[]>>;
++  /** Шаг между системами в мировых единицах (STAR_MAP_POLICY.minSystemSeparation) — для масштаба орбит. */
++  readonly systemSpacing?: number;
++  /**
++   * Радиус галактического диска в мировых единицах (`GalaxyStarMap.radius`). Передаётся из
++   * конфигурации, а не вычисляется по текущим узлам: иначе диск и дистанция камеры «дышали» бы
++   * при каждом открытии мира.
++   */
++  readonly discRadius?: number;
+ }): GalaxyRenderData {
+-  const scale = Number.isFinite(input.scale) && (input.scale ?? 0) > 0 ? input.scale! : 0.08;
++  const scale = Number.isFinite(input.scale) && (input.scale ?? 0) > 0 ? input.scale! : GALAXY_RENDER_POLICY.defaultScale;
+   const unlocked = new Set(input.unlockedIds);
+   const ids = new Set(input.nodes.map((node) => node.id));
+   const discoveredIds = new Set(input.nodes.filter((node) => node.discovered).map((node) => node.id));
+@@ -49,6 +171,87 @@ export function buildGalaxyRenderData(input: {
+     signalClass: node.discovered ? (node.signalClass ?? 'unknown') : 'unknown',
+   }));
+   const edges = input.edges.filter(([a, b]) => a !== b && ids.has(a) && ids.has(b) && discoveredIds.has(a) && discoveredIds.has(b));
+-  const bounds = Math.max(1, ...nodes.map((node) => Math.hypot(node.x, node.y, node.z)));
+-  return { nodes, edges, bounds };
++
++  const sourceSystems = input.systems ?? [];
++  const projected = sourceSystems.map((system) => ({
++    system,
++    x: system.position.x * scale,
++    y: system.position.y * scale,
++    z: system.position.z * scale,
++  }));
++  const exponent = GALAXY_RENDER_POLICY.orbitCompressionExponent;
++  const maxSemiMajor = Math.max(1, ...sourceSystems.flatMap((system) => system.planets.map((planet) => planet.semiMajorAxis)));
++  const spacing = Number.isFinite(input.systemSpacing) && (input.systemSpacing ?? 0) > 0
++    ? input.systemSpacing! * scale
++    : spacingQuantile(projected, 0.2);
++  const orbitScale = clamp((spacing * GALAXY_RENDER_POLICY.orbitFillRatio) / Math.pow(maxSemiMajor, exponent), GALAXY_RENDER_POLICY.minOrbitScale, GALAXY_RENDER_POLICY.maxOrbitScale);
++  const revealed = input.revealedOrbits ?? {};
++
++  const systems: GalaxyRenderSystem[] = projected.map(({ system, x, y, z }) => {
++    const hostNodeId = system.hostNodeId;
++    /** `discovered` — в системе есть подтверждённый игровой мир; `charted` — система нанесена на карту. */
++    const discovered = hostNodeId ? discoveredIds.has(hostNodeId) : system.core;
++    const charted = system.charted || discovered;
++    const innerOrbitRadius = Math.max(1e-4, Math.pow(system.planets[0]?.semiMajorAxis ?? 1, exponent) * orbitScale);
++    const boost = system.core ? GALAXY_RENDER_POLICY.coreStarBoost : 1;
++    const starRadius = clamp(
++      GALAXY_RENDER_POLICY.starBaseRadius * system.star.radiusScale * boost,
++      0.018,
++      innerOrbitRadius * GALAXY_RENDER_POLICY.starToInnerOrbitRatio,
++    );
++    const orbits: GalaxyRenderOrbit[] = system.planets.map((planet) => {
++      const bodyClass = planet.status === 'bound' || (revealed[system.id] ?? []).includes(planet.orbitIndex) ? planet.bodyClass : 'unknown';
++      return {
++        orbitIndex: planet.orbitIndex,
++        radius: Math.pow(planet.semiMajorAxis, exponent) * orbitScale,
++        semiMajorAxisAu: planet.semiMajorAxis,
++        eccentricity: planet.eccentricity,
++        inclination: planet.inclination,
++        phase: planet.orbitalPhase,
++        periodDays: planet.periodDays,
++        bodyClass,
++        color: ORBIT_BODY_COLORS[bodyClass] ?? ORBIT_BODY_COLORS['unknown']!,
++        size: Math.max(GALAXY_RENDER_POLICY.planetMinSize, GALAXY_RENDER_POLICY.planetBaseSize - planet.orbitIndex * GALAXY_RENDER_POLICY.planetSizeStep),
++        planetId: planet.planetId,
++        status: planet.status,
++        revealed: bodyClass !== 'unknown',
++      };
++    });
++    return {
++      id: system.id,
++      name: charted ? system.name : 'Неизвестный сигнал',
++      designation: system.designation,
++      x, y, z,
++      starColor: charted ? system.star.color : UNCHARTED_STAR_COLOR,
++      starRadius,
++      glowRadius: starRadius * GALAXY_RENDER_POLICY.glowMultiplier * (system.core ? GALAXY_RENDER_POLICY.coreGlowBoost : 1),
++      starClass: system.star.class,
++      temperatureK: system.star.temperatureK,
++      charted,
++      core: system.core,
++      hostNodeId,
++      discovered,
++      unlocked: hostNodeId ? unlocked.has(hostNodeId) : false,
++      active: hostNodeId ? hostNodeId === input.activeId : false,
++      planetCount: system.planets.length,
++      orbits,
++    };
++  });
++
++  const radii = [...nodes.map((node) => Math.hypot(node.x, node.y, node.z)), ...systems.map((system) => Math.hypot(system.x, system.y, system.z))];
++  const bounds = Math.max(1, ...(radii.length ? radii : [1]));
++  const configured = Number.isFinite(input.discRadius) && (input.discRadius ?? 0) > 0 ? input.discRadius! * scale : 0;
++  return { nodes, edges, systems, bounds, discRadius: Math.max(bounds, configured), scale };
++}
++
++/** Система по узлу графа — для панели UI и перехода «система → поверхность». */
++export function findRenderSystem(data: GalaxyRenderData, systemId: string | null | undefined): GalaxyRenderSystem | null {
++  if (!systemId) return null;
++  return data.systems.find((system) => system.id === systemId) ?? null;
++}
++
++/** Система, в которой живёт игровая узел (планета). */
++export function findRenderSystemByNode(data: GalaxyRenderData, nodeId: string | null | undefined): GalaxyRenderSystem | null {
++  if (!nodeId) return null;
++  return data.systems.find((system) => system.hostNodeId === nodeId) ?? null;
+ }
+diff --git a/src/renderer/galaxyScene.ts b/src/renderer/galaxyScene.ts
+index 509bd59..95b04bb 100644
+--- a/src/renderer/galaxyScene.ts
++++ b/src/renderer/galaxyScene.ts
+@@ -1,4 +1,7 @@
+-/** Stage 7.0 — Three.js-сцена галактики. Игровые узлы и рёбра поступают только из PlanetaryGraph. */
++/** Stage 7.0 / Этап 9.0 — Three.js-сцена галактики.
++ * Игровые узлы и рёбра поступают только из PlanetaryGraph; звёздные системы — из карты
++ * `galaxy/starMap.ts`. Рендерер ничего не генерирует сам (ADR-019, R2/слои).
++ */
+ import * as THREE from 'three';
+ import type { GalaxyRenderData } from './galaxyModel';
+ import type { GalaxyRenderNode } from './galaxyModel';
+@@ -11,8 +14,13 @@ export interface OrbitalTopologyRenderData { readonly systemId: string; readonly
+ export interface GalaxyViewer {
+   setData(data: GalaxyRenderData): void;
+   setNodeSelectHandler(handler: ((nodeId: string) => void) | null): void;
++  /** Этап 9.0: клик по звёздной системе (в том числе фоновой, без игрового мира). */
++  setSystemSelectHandler(handler: ((systemId: string) => void) | null): void;
+   setSelectedNode(nodeId: string | null): void;
++  setSelectedSystem(systemId: string | null): void;
+   setSystemFocus(nodeId: string | null): void;
++  /** Этап 9.0: навестись на систему по её id (работает и для фоновых систем). */
++  focusSystem(systemId: string, durationMs?: number): void;
+   setOrbitalTopology(topology: OrbitalTopologyRenderData | null, onNavigate: ((planetId: string) => void) | null): void;
+   setRoute(path: readonly string[]): void;
+   focusNode(nodeId: string, durationMs?: number): void;
+@@ -26,6 +34,38 @@ export interface GalaxyViewer {
+ 
+ const clamp = (value: number, min: number, max: number): number => Math.max(min, Math.min(max, value));
+ 
++/**
++ * Этап 9.0 — темп орбитального движения в сцене: сколько игровых суток проходит за 1 мс реального
++ * времени. Подобрано так, чтобы планета земного типа делала оборот примерно за 12 секунд.
++ */
++const ORBIT_DAYS_PER_MS = 30 / 1000;
++
++/** Число отрезков на одно орбитальное кольцо (визуально гладко, дёшево для GPU). */
++const ORBIT_SEGMENTS = 56;
++
++/** Цвет орбитального кольца: неразведанная орбита и подтверждённый игровой мир. */
++const ORBIT_RING_COLOR: readonly [number, number, number] = [0.34, 0.47, 0.57];
++const BOUND_ORBIT_COLOR: readonly [number, number, number] = [0.98, 0.84, 0.47];
++
++/** Точка эллиптической орбиты в плоскости системы (XZ) с учётом эксцентриситета и наклона. */
++function orbitPoint(radius: number, eccentricity: number, inclination: number, angle: number, out: THREE.Vector3): THREE.Vector3 {
++  const e = clamp(eccentricity, 0, 0.35);
++  const x = radius * (Math.cos(angle) - e);
++  const z = radius * Math.sqrt(1 - e * e) * Math.sin(angle);
++  return out.set(x, z * Math.sin(inclination), z * Math.cos(inclination));
++}
++
++/** Kepler-позиция планеты по времени: среднее движение → эксцентрическая аномалия (4 итерации). */
++function planetPositionAt(radius: number, eccentricity: number, inclination: number, phase: number, periodDays: number, days: number, out: THREE.Vector3): THREE.Vector3 {
++  const e = clamp(eccentricity, 0, 0.35);
++  const mean = phase + (days * Math.PI * 2) / Math.max(1, periodDays);
++  let anomaly = mean;
++  for (let i = 0; i < 4; i++) anomaly -= (anomaly - e * Math.sin(anomaly) - mean) / (1 - e * Math.cos(anomaly));
++  const x = radius * (Math.cos(anomaly) - e);
++  const z = radius * Math.sqrt(1 - e * e) * Math.sin(anomaly);
++  return out.set(x, z * Math.sin(inclination), z * Math.cos(inclination));
++}
++
+ function seeded(seed: number): () => number {
+   let state = seed >>> 0;
+   return () => {
+@@ -149,6 +189,19 @@ function nodeColor(node: GalaxyRenderNode): THREE.Color {
+   return new THREE.Color('#a5d9ee');
+ }
+ 
++/** Данные одного инстанса планеты: положение системы + орбитальные элементы (Этап 9.0). */
++interface PlanetInstance {
++  readonly systemX: number;
++  readonly systemY: number;
++  readonly systemZ: number;
++  readonly radius: number;
++  readonly eccentricity: number;
++  readonly inclination: number;
++  readonly phase: number;
++  readonly periodDays: number;
++  readonly size: number;
++}
++
+ export function createGalaxyViewer(canvas: HTMLCanvasElement, initial: GalaxyRenderData): GalaxyViewer {
+   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
+   renderer.setPixelRatio(renderPixelRatio(window.devicePixelRatio || 1, window.innerWidth));
+@@ -157,7 +210,8 @@ export function createGalaxyViewer(canvas: HTMLCanvasElement, initial: GalaxyRen
+   scene.fog = new THREE.FogExp2('#020711', 0.012);
+   const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 250);
+   const target = new THREE.Vector3();
+-  let distance = Math.max(15, initial.bounds * 2.2);
++  const discRadius = Math.max(4, Number.isFinite(initial.discRadius) && initial.discRadius > 0 ? initial.discRadius : initial.bounds);
++  let distance = clamp(discRadius * 2.45, 9, 70);
+   let yaw = 0.42;
+   let pitch = 0.82;
+   const updateCamera = (): void => {
+@@ -166,27 +220,40 @@ export function createGalaxyViewer(canvas: HTMLCanvasElement, initial: GalaxyRen
+     camera.lookAt(target);
+   };
+   scene.add(new THREE.AmbientLight(0x9bbbd0, 0.55));
+-  const coreLight = new THREE.PointLight(0x4da9d6, 2.2, 24);
++  const coreLight = new THREE.PointLight(0x4da9d6, 2.2, 60);
+   coreLight.position.set(0, 0, 0);
+   scene.add(coreLight);
+-  const core = new THREE.Mesh(new THREE.SphereGeometry(0.42, 24, 16), new THREE.MeshBasicMaterial({ color: '#b6eaff' }));
++  // Этап 9.0: декорации диска строятся от фактического радиуса карты звёздных систем,
++  // а не от константы 18 — иначе галактика выглядит пустой, а системы сбиваются в точку в центре.
++  const core = new THREE.Mesh(new THREE.SphereGeometry(discRadius * 0.075, 24, 16), new THREE.MeshBasicMaterial({ color: '#dff2ff', transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false }));
+   scene.add(core);
+-  const coreGlow = new THREE.Mesh(new THREE.SphereGeometry(1.35, 24, 16), new THREE.MeshBasicMaterial({ color: '#2c8eb8', transparent: true, opacity: 0.09, depthWrite: false }));
++  const coreGlow = new THREE.Mesh(new THREE.SphereGeometry(discRadius * 0.26, 24, 16), new THREE.MeshBasicMaterial({ color: '#2c8eb8', transparent: true, opacity: 0.075, depthWrite: false }));
+   scene.add(coreGlow);
+-  const galaxyRadius = Math.max(18, initial.bounds * 1.8);
++  const galaxyRadius = discRadius * 1.12;
+   const visualBudget = galaxyVisualBudget(window.innerWidth, window.devicePixelRatio || 1);
+   const spiralArms = makeSpiralArms(galaxyRadius);
+   const nebulaClouds = makeNebulaClouds(galaxyRadius, visualBudget.nebulaPoints);
+   const starClusters = makeStarClusters(galaxyRadius, visualBudget.clusterStars);
+-  const starField = makeStarField(Math.max(900, Math.floor(visualBudget.nebulaPoints * 0.9)), Math.max(36, initial.bounds * 3.2));
++  const starField = makeStarField(Math.max(900, Math.floor(visualBudget.nebulaPoints * 0.9)), Math.max(30, discRadius * 4.2));
+   scene.add(spiralArms, nebulaClouds, starClusters, starField);
+-  const coreRing = new THREE.Mesh(new THREE.TorusGeometry(1.8, 0.018, 6, 96), new THREE.MeshBasicMaterial({ color: '#397fa8', transparent: true, opacity: 0.28, depthWrite: false }));
++  const coreRing = new THREE.Mesh(new THREE.TorusGeometry(discRadius * 0.17, 0.018, 6, 96), new THREE.MeshBasicMaterial({ color: '#397fa8', transparent: true, opacity: 0.26, depthWrite: false }));
+   coreRing.rotation.x = Math.PI * 0.5;
+   scene.add(coreRing);
+ 
+   let nodeMesh: THREE.InstancedMesh | null = null;
+   let systemCoreMesh: THREE.InstancedMesh | null = null;
+   let edgeLines: THREE.LineSegments | null = null;
++  // ——— Этап 9.0: слой звёздных систем (звезда + орбиты + планеты) ———
++  let starMesh: THREE.InstancedMesh | null = null;
++  let starGlowMesh: THREE.InstancedMesh | null = null;
++  let orbitLines: THREE.LineSegments | null = null;
++  let systemPlanetMesh: THREE.InstancedMesh | null = null;
++  let systemSelectionRing: THREE.Mesh | null = null;
++  /** instance index → id системы (порядок совпадает у starMesh/starGlowMesh). */
++  const systemIdByInstance: string[] = [];
++  let planetInstances: PlanetInstance[] = [];
++  let onSelectSystem: ((systemId: string) => void) | null = null;
++  let selectedSystemId: string | null = null;
+   let currentData = initial;
+   let onSelect: ((id: string) => void) | null = null;
+   let selectedNodeId: string | null = null;
+@@ -219,17 +286,149 @@ export function createGalaxyViewer(canvas: HTMLCanvasElement, initial: GalaxyRen
+     if (systemCoreMesh) { scene.remove(systemCoreMesh); systemCoreMesh.geometry.dispose(); (systemCoreMesh.material as THREE.Material).dispose(); systemCoreMesh = null; }
+     if (edgeLines) { scene.remove(edgeLines); edgeLines.geometry.dispose(); (edgeLines.material as THREE.Material).dispose(); edgeLines = null; }
+     nodeByInstance.length = 0;
++    disposeStarSystemLayer();
+     if (routeLines) { scene.remove(routeLines); routeLines.geometry.dispose(); (routeLines.material as THREE.Material).dispose(); routeLines = null; }
+     if (selectionRing) { scene.remove(selectionRing); selectionRing.geometry.dispose(); (selectionRing.material as THREE.Material).dispose(); selectionRing = null; }
+     if (orbitalSystemGroup) { scene.remove(orbitalSystemGroup); orbitalSystemGroup.traverse((child) => { const mesh = child as THREE.Mesh; mesh.geometry?.dispose?.(); const material = mesh.material as THREE.Material | THREE.Material[] | undefined; if (Array.isArray(material)) material.forEach((item) => item.dispose()); else material?.dispose(); }); orbitalSystemGroup = null; orbitalBodies = []; }
+     if (systemDetailGroup) { scene.remove(systemDetailGroup); systemDetailGroup.traverse((child) => { const mesh = child as THREE.Mesh; mesh.geometry?.dispose?.(); const material = mesh.material as THREE.Material | THREE.Material[] | undefined; if (Array.isArray(material)) material.forEach((item) => item.dispose()); else material?.dispose(); }); systemDetailGroup = null; systemOrbitBody = null; }
+   };
+ 
++  const tmpVector = new THREE.Vector3();
++  const tmpMatrix = new THREE.Matrix4();
++  const tmpScale = new THREE.Vector3();
++  const tmpColor = new THREE.Color();
++  let orbitClockStart = 0;
++
++  const disposeStarSystemLayer = (): void => {
++    for (const mesh of [starMesh, starGlowMesh, systemPlanetMesh]) {
++      if (!mesh) continue;
++      scene.remove(mesh);
++      mesh.geometry.dispose();
++      (mesh.material as THREE.Material).dispose();
++    }
++    starMesh = null; starGlowMesh = null; systemPlanetMesh = null;
++    if (orbitLines) { scene.remove(orbitLines); orbitLines.geometry.dispose(); (orbitLines.material as THREE.Material).dispose(); orbitLines = null; }
++    if (systemSelectionRing) { scene.remove(systemSelectionRing); systemSelectionRing.geometry.dispose(); (systemSelectionRing.material as THREE.Material).dispose(); systemSelectionRing = null; }
++    systemIdByInstance.length = 0;
++    planetInstances = [];
++  };
++
++  /** Расставляет планеты на орбитах по кеплерову времени (Этап 9.0). */
++  function updatePlanetInstances(nowMs: number): void {
++    if (!systemPlanetMesh || !planetInstances.length) return;
++    if (!orbitClockStart) orbitClockStart = nowMs;
++    const days = (nowMs - orbitClockStart) * ORBIT_DAYS_PER_MS;
++    for (let index = 0; index < planetInstances.length; index++) {
++      const planet = planetInstances[index]!;
++      planetPositionAt(planet.radius, planet.eccentricity, planet.inclination, planet.phase, planet.periodDays, days, tmpVector);
++      tmpMatrix.makeTranslation(planet.systemX + tmpVector.x, planet.systemY + tmpVector.y, planet.systemZ + tmpVector.z);
++      tmpScale.setScalar(Math.max(0.004, planet.size));
++      tmpMatrix.scale(tmpScale);
++      systemPlanetMesh.setMatrixAt(index, tmpMatrix);
++    }
++    systemPlanetMesh.instanceMatrix.needsUpdate = true;
++    systemPlanetMesh.computeBoundingSphere();
++  }
++
++  /**
++   * Этап 9.0 — звёзды, орбитальные кольца и планеты всех нанесённых на карту систем.
++   * Геометрия приходит из `GalaxyRenderData.systems`; сцена ничего не генерирует сама.
++   */
++  function buildStarSystemLayer(data: GalaxyRenderData): void {
++    const systems = data.systems.filter((system) => system.charted);
++    if (!systems.length) return;
++
++    starMesh = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 16, 12), new THREE.MeshBasicMaterial({ vertexColors: true }), systems.length);
++    starGlowMesh = new THREE.InstancedMesh(
++      new THREE.SphereGeometry(1, 12, 10),
++      new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending, depthWrite: false }),
++      systems.length,
++    );
++    systems.forEach((system, index) => {
++      tmpMatrix.makeTranslation(system.x, system.y, system.z);
++      tmpScale.setScalar(Math.max(0.006, system.starRadius));
++      tmpMatrix.scale(tmpScale);
++      starMesh!.setMatrixAt(index, tmpMatrix);
++      tmpMatrix.makeTranslation(system.x, system.y, system.z);
++      tmpScale.setScalar(Math.max(0.02, system.glowRadius));
++      tmpMatrix.scale(tmpScale);
++      starGlowMesh!.setMatrixAt(index, tmpMatrix);
++      tmpColor.set(system.active ? '#ffd36a' : system.starColor);
++      starMesh!.setColorAt(index, tmpColor);
++      starGlowMesh!.setColorAt(index, tmpColor);
++      systemIdByInstance[index] = system.id;
++    });
++    starMesh.instanceMatrix.needsUpdate = true;
++    starGlowMesh.instanceMatrix.needsUpdate = true;
++    if (starMesh.instanceColor) starMesh.instanceColor.needsUpdate = true;
++    if (starGlowMesh.instanceColor) starGlowMesh.instanceColor.needsUpdate = true;
++    starMesh.computeBoundingSphere();
++    starGlowMesh.computeBoundingSphere();
++    scene.add(starMesh, starGlowMesh);
++
++    // ——— орбитальные кольца: один LineSegments на всю галактику ———
++    const ringPositions: number[] = [];
++    const ringColors: number[] = [];
++    let planetTotal = 0;
++    for (const system of systems) {
++      for (const orbit of system.orbits) {
++        planetTotal += 1;
++        const tint = orbit.status === 'bound' ? BOUND_ORBIT_COLOR : ORBIT_RING_COLOR;
++        for (let segment = 0; segment < ORBIT_SEGMENTS; segment++) {
++          const a0 = (segment / ORBIT_SEGMENTS) * Math.PI * 2;
++          const a1 = ((segment + 1) / ORBIT_SEGMENTS) * Math.PI * 2;
++          orbitPoint(orbit.radius, orbit.eccentricity, orbit.inclination, a0, tmpVector);
++          ringPositions.push(system.x + tmpVector.x, system.y + tmpVector.y, system.z + tmpVector.z);
++          ringColors.push(tint[0], tint[1], tint[2]);
++          orbitPoint(orbit.radius, orbit.eccentricity, orbit.inclination, a1, tmpVector);
++          ringPositions.push(system.x + tmpVector.x, system.y + tmpVector.y, system.z + tmpVector.z);
++          ringColors.push(tint[0], tint[1], tint[2]);
++        }
++      }
++    }
++    const ringGeometry = new THREE.BufferGeometry();
++    ringGeometry.setAttribute('position', new THREE.Float32BufferAttribute(ringPositions, 3));
++    ringGeometry.setAttribute('color', new THREE.Float32BufferAttribute(ringColors, 3));
++    orbitLines = new THREE.LineSegments(ringGeometry, new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.4, depthWrite: false }));
++    scene.add(orbitLines);
++
++    // ——— планеты на орбитах ———
++    systemPlanetMesh = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 10, 8), new THREE.MeshBasicMaterial({ vertexColors: true }), Math.max(1, planetTotal));
++    systemPlanetMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
++    let cursor = 0;
++    for (const system of systems) {
++      for (const orbit of system.orbits) {
++        systemPlanetMesh.setColorAt(cursor, tmpColor.set(orbit.color));
++        planetInstances.push({
++          systemX: system.x, systemY: system.y, systemZ: system.z,
++          radius: orbit.radius, eccentricity: orbit.eccentricity, inclination: orbit.inclination,
++          phase: orbit.phase, periodDays: orbit.periodDays, size: orbit.size,
++        });
++        cursor += 1;
++      }
++    }
++    if (systemPlanetMesh.instanceColor) systemPlanetMesh.instanceColor.needsUpdate = true;
++    scene.add(systemPlanetMesh);
++    updatePlanetInstances(orbitClockStart || performance.now());
++  }
++
++  /** Кольцо выделения вокруг выбранной системы. */
++  function updateSystemSelection(): void {
++    if (systemSelectionRing) { scene.remove(systemSelectionRing); systemSelectionRing.geometry.dispose(); (systemSelectionRing.material as THREE.Material).dispose(); systemSelectionRing = null; }
++    const system = selectedSystemId ? currentData.systems.find((item) => item.id === selectedSystemId) : null;
++    if (!system || !system.charted) return;
++    const outer = Math.max(system.starRadius * 2, ...system.orbits.map((orbit) => orbit.radius)) * 1.35;
++    systemSelectionRing = new THREE.Mesh(new THREE.TorusGeometry(outer, Math.max(0.006, outer * 0.02), 8, 72), new THREE.MeshBasicMaterial({ color: '#fff0a8', transparent: true, opacity: 0.75, depthWrite: false }));
++    systemSelectionRing.rotation.x = Math.PI / 2;
++    systemSelectionRing.position.set(system.x, system.y, system.z);
++    scene.add(systemSelectionRing);
++  }
++
+   function setData(data: GalaxyRenderData): void {
+     const previousBounds = currentData.bounds;
+     disposeDynamic();
+     currentData = data;
+-    if (data.bounds > previousBounds * 1.15) { distance = Math.max(distance, data.bounds * 2.2); updateCamera(); }
++    if (data.bounds > previousBounds * 1.15) { distance = Math.max(distance, clamp(data.discRadius * 2.45, 9, 70)); updateCamera(); }
+     const geometry = new THREE.SphereGeometry(0.105, 10, 8);
+     const material = new THREE.MeshBasicMaterial({ vertexColors: true });
+     nodeMesh = new THREE.InstancedMesh(geometry, material, Math.max(1, data.nodes.length));
+@@ -268,6 +467,8 @@ export function createGalaxyViewer(canvas: HTMLCanvasElement, initial: GalaxyRen
+     systemCoreMesh.instanceMatrix.needsUpdate = true;
+     if (systemCoreMesh.instanceColor) systemCoreMesh.instanceColor.needsUpdate = true;
+     scene.add(systemCoreMesh);
++    buildStarSystemLayer(data);
++    updateSystemSelection();
+     applyLod();
+ 
+     const byId = new Map(data.nodes.map((node) => [node.id, node]));
+@@ -364,7 +565,7 @@ export function createGalaxyViewer(canvas: HTMLCanvasElement, initial: GalaxyRen
+       focusTo.set(0, 0, 0);
+       focusStartedAt = performance.now();
+       focusDuration = 650;
+-      distance = Math.max(12, currentData.bounds * 2.2);
++      distance = clamp(currentData.discRadius * 2.45, 9, 70);
+       updateCamera();
+     }
+     applyLod();
+@@ -415,12 +616,19 @@ export function createGalaxyViewer(canvas: HTMLCanvasElement, initial: GalaxyRen
+ 
+   function applyLod(): void {
+     const lod = galaxyLodForDistance(distance);
++    const hasSystems = currentData.systems.length > 0;
+     spiralArms.visible = lod !== 'system';
+     nebulaClouds.visible = lod !== 'system';
+     starClusters.visible = lod !== 'system';
+     starField.visible = true;
+-    if (systemCoreMesh) systemCoreMesh.visible = lod === 'regional';
+-    if (nodeMesh) nodeMesh.visible = lod !== 'system';
++    // Этап 9.0: звёзды систем видны всегда; кольца и планеты — пока не открыт режим одной системы.
++    if (starMesh) starMesh.visible = true;
++    if (starGlowMesh) starGlowMesh.visible = lod !== 'system';
++    if (orbitLines) orbitLines.visible = !orbitalSystemGroup;
++    if (systemPlanetMesh) systemPlanetMesh.visible = !orbitalSystemGroup;
++    if (systemSelectionRing) systemSelectionRing.visible = !orbitalSystemGroup;
++    if (systemCoreMesh) systemCoreMesh.visible = !hasSystems && lod === 'regional';
++    if (nodeMesh) nodeMesh.visible = !hasSystems && lod !== 'system';
+     if (edgeLines) edgeLines.visible = lod !== 'system';
+     if (systemDetailGroup) systemDetailGroup.visible = lod === 'system' && !orbitalSystemGroup;
+     if (orbitalSystemGroup) orbitalSystemGroup.visible = lod === 'system';
+@@ -466,10 +674,23 @@ export function createGalaxyViewer(canvas: HTMLCanvasElement, initial: GalaxyRen
+     updateCamera();
+   };
+   const pick = (event: PointerEvent): void => {
+-    if (!nodeMesh || Math.hypot(event.clientX - downX, event.clientY - downY) > 5) return;
++    if ((!nodeMesh && !starMesh) || Math.hypot(event.clientX - downX, event.clientY - downY) > 5) return;
+     const rect = canvas.getBoundingClientRect();
+     pointer.set(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1);
+     raycaster.setFromCamera(pointer, camera);
++    // Этап 9.0: клик по звезде. Область попадания расширена гало, чтобы попадать было удобно.
++    const starTargets = [starGlowMesh, starMesh].filter((mesh): mesh is THREE.InstancedMesh => Boolean(mesh?.visible));
++    if (starTargets.length) {
++      const starHit = raycaster.intersectObjects(starTargets, false)[0];
++      const systemId = starHit?.instanceId === undefined ? null : systemIdByInstance[starHit.instanceId] ?? null;
++      const system = systemId ? currentData.systems.find((item) => item.id === systemId) : null;
++      if (system) {
++        if (system.hostNodeId && system.discovered) { onSelect?.(system.hostNodeId); return; }
++        onSelectSystem?.(system.id);
++        return;
++      }
++    }
++    if (!nodeMesh?.visible) return;
+     if (orbitalSystemGroup?.visible) {
+       const orbitalHit = raycaster.intersectObjects(orbitalBodies.map((body) => body.mesh), false)[0];
+       if (orbitalHit?.object) { const body = orbitalBodies.find((item) => item.mesh === orbitalHit.object); if (body) { onOrbitalNavigate?.(body.planetId); return; } }
+@@ -504,6 +725,7 @@ export function createGalaxyViewer(canvas: HTMLCanvasElement, initial: GalaxyRen
+     canvas.removeEventListener('wheel', onWheel);
+     disposeDynamic();
+     if (flightMarker) { scene.remove(flightMarker); flightMarker.geometry.dispose(); (flightMarker.material as THREE.Material).dispose(); flightMarker = null; }
++    disposeStarSystemLayer();
+     for (const object of [...scene.children]) {
+       if (object === nodeMesh || object === edgeLines) continue;
+       object.traverse((child) => {
+@@ -521,7 +743,24 @@ export function createGalaxyViewer(canvas: HTMLCanvasElement, initial: GalaxyRen
+   return {
+     setData,
+     setNodeSelectHandler(handler) { onSelect = handler; },
++    setSystemSelectHandler(handler) { onSelectSystem = handler; },
+     setSelectedNode(nodeId) { selectedNodeId = nodeId; updateSelectionAndRoute(); },
++    setSelectedSystem(systemId) { selectedSystemId = systemId; updateSystemSelection(); },
++    focusSystem(systemId, durationMs = 780) {
++      const system = currentData.systems.find((item) => item.id === systemId);
++      if (!system) return;
++      selectedSystemId = systemId;
++      updateSystemSelection();
++      focusFrom.copy(target);
++      focusTo.set(system.x, system.y, system.z);
++      focusStartedAt = performance.now();
++      focusDuration = Math.max(0, durationMs);
++      const outer = Math.max(0.4, ...(system.orbits.length ? system.orbits.map((orbit) => orbit.radius) : [0.4]));
++      distance = clamp(outer * 9, 3.6, 14);
++      if (!focusDuration) { target.copy(focusTo); }
++      updateCamera();
++      applyLod();
++    },
+     setSystemFocus,
+     setOrbitalTopology,
+     setRoute,
+@@ -529,6 +768,7 @@ export function createGalaxyViewer(canvas: HTMLCanvasElement, initial: GalaxyRen
+     animateRoute,
+     render(nowMs) {
+       core.rotation.y = nowMs * 0.00004;
++      updatePlanetInstances(nowMs);
+       for (const body of orbitalBodies) { const mean = body.phase + nowMs * body.speed; let eccentric = mean; for (let i = 0; i < 4; i++) eccentric -= (eccentric - body.eccentricity * Math.sin(eccentric) - mean) / (1 - body.eccentricity * Math.cos(eccentric)); const x = body.semiMajor * (Math.cos(eccentric) - body.eccentricity); const z = body.semiMajor * Math.sqrt(1 - body.eccentricity * body.eccentricity) * Math.sin(eccentric); body.mesh.position.set(x, z * Math.sin(body.inclination), z * Math.cos(body.inclination)); body.mesh.rotation.y += 0.002; }
+       if (systemOrbitBody) {
+         const phase = systemOrbitPhase + nowMs * 0.00022;
+@@ -546,7 +786,7 @@ export function createGalaxyViewer(canvas: HTMLCanvasElement, initial: GalaxyRen
+     },
+     resize,
+     zoomBy(delta) { distance = clamp(distance + delta, 3.5, 45); updateCamera(); applyLod(); },
+-    resetView() { yaw = 0.42; pitch = 0.82; target.set(0, 0, 0); focusDuration = 0; distance = Math.max(12, currentData.bounds * 2.2); updateCamera(); applyLod(); },
++    resetView() { yaw = 0.42; pitch = 0.82; target.set(0, 0, 0); focusDuration = 0; selectedSystemId = null; updateSystemSelection(); distance = clamp(Math.max(12, currentData.discRadius * 2.45), 9, 70); updateCamera(); applyLod(); },
+     dispose,
+   };
+ }
+diff --git a/src/renderer/index.ts b/src/renderer/index.ts
+index 7805c32..e8d9a0e 100644
+--- a/src/renderer/index.ts
++++ b/src/renderer/index.ts
+@@ -5,7 +5,18 @@ export { FpsMeter, type FpsStats } from './fps';
+ export { createPlanetViewer, type PlanetViewer } from './scene';
+ export { renderPixelRatio } from './pixelRatio';
+ 
+-export { buildGalaxyRenderData, type GalaxyRenderData, type GalaxyRenderNode } from './galaxyModel';
++export {
++  buildGalaxyRenderData,
++  findRenderSystem,
++  findRenderSystemByNode,
++  GALAXY_RENDER_POLICY,
++  ORBIT_BODY_COLORS,
++  UNCHARTED_STAR_COLOR,
++  type GalaxyRenderData,
++  type GalaxyRenderNode,
++  type GalaxyRenderOrbit,
++  type GalaxyRenderSystem,
++} from './galaxyModel';
+ export { createGalaxyViewer, type GalaxyViewer } from './galaxyScene';
+ export { findSelectableGalaxyNode, resolveGalaxyRoute, routePositionAtProgress, type GalaxyPoint3 } from './galaxyInteraction';
+ 
+diff --git a/src/ui/app.ts b/src/ui/app.ts
+index 9e26ac8..88fd217 100644
+--- a/src/ui/app.ts
++++ b/src/ui/app.ts
+@@ -90,7 +90,7 @@ export function renderSnapshot(game: Game, root: HTMLElement, selectedCellId: nu
+   root.innerHTML = `
+   <div class="hud">
+     <div class="col">
+-      <h1>⚡ Voronia 2.0 <small>Stage 7.4 · ${active ? active.name : ''}</small></h1>
++      <h1>⚡ Voronia 2.0 <small>Stage 9.0 · ${active ? active.name : ''}</small></h1>
+       ${resLine('energy', s.resources.energy ?? 0, s.perSec.energy)}
+       ${resLine('iron', s.resources.iron ?? 0, s.perSec.iron)}
+       ${resLine('kriogen', s.resources.kriogen ?? 0, s.perSec.kriogen)}
+diff --git a/tests/stage9_0_galaxy_system_render.test.ts b/tests/stage9_0_galaxy_system_render.test.ts
+new file mode 100644
+index 0000000..9f1fef7
+--- /dev/null
++++ b/tests/stage9_0_galaxy_system_render.test.ts
+@@ -0,0 +1,177 @@
++/**
++ * Этап 9.0 — проекция карты звёздных систем в рендер-модель галактики.
++ * Проверяет, что галактика рисуется по фактическим данным систем (а не по константе),
++ * что звезда всегда помещается внутри первой орбиты, и что неразведанные орбиты
++ * не раскрывают класс тела.
++ */
++import { describe, expect, it } from 'vitest';
++import type { GraphNode } from '../src/contracts/galaxy';
++import { STAR_MAP_POLICY, buildGalaxyStarMap } from '../src/galaxy/starMap';
++import {
++  GALAXY_RENDER_POLICY,
++  ORBIT_BODY_COLORS,
++  UNCHARTED_STAR_COLOR,
++  buildGalaxyRenderData,
++  findRenderSystem,
++  findRenderSystemByNode,
++} from '../src/renderer/galaxyModel';
++
++const SPIRAL = { arms: 4, b: 0.55, r0: 3.5, width: 3.2 };
++
++const node = (id: string, x: number, z: number, seed: number, discovered = true): GraphNode => ({
++  id, planetId: id, name: discovered ? `Мир ${id}` : `Скрытый ${id}`,
++  x, y: 0.2, z, geometryName: 'Crystalline', biome: 'Ice', geometry: 'crystal',
++  frequency: 0.5, seed, armId: 'frost', discovered,
++});
++
++const NODES: readonly GraphNode[] = [
++  node('ferrum', -2.6, 0.4, 15929600),
++  node('krios', 3, -0.9, 13045769, false),
++  node('planet_03', 41, -28, 777001),
++];
++
++const starMap = buildGalaxyStarMap({ nodes: NODES, spiral: SPIRAL, outerRadius: 95, thickness: 3.2 });
++
++function build(overrides: { systems?: typeof starMap.systems; revealedOrbits?: Record<string, number[]>; unlockedIds?: string[] } = {}) {
++  return buildGalaxyRenderData({
++    nodes: NODES,
++    edges: [['ferrum', 'planet_03']],
++    unlockedIds: overrides.unlockedIds ?? ['ferrum'],
++    activeId: 'ferrum',
++    systems: overrides.systems ?? starMap.systems,
++    systemSpacing: STAR_MAP_POLICY.minSystemSeparation,
++    discRadius: starMap.radius,
++    revealedOrbits: overrides.revealedOrbits,
++  });
++}
++
++describe('Этап 9.0 — рендер-модель звёздных систем', () => {
++  it('проецирует каждую систему в координаты сцены тем же масштабом, что и узлы графа', () => {
++    const data = build();
++    expect(data.systems.length).toBe(starMap.systems.length);
++    for (const system of data.systems) {
++      const source = starMap.byId[system.id]!;
++      expect(system.x).toBeCloseTo(source.position.x * data.scale, 9);
++      expect(system.z).toBeCloseTo(source.position.z * data.scale, 9);
++      expect(system.planetCount).toBe(source.planets.length);
++      expect(system.planetCount).toBeGreaterThanOrEqual(1);
++      expect(system.planetCount).toBeLessThanOrEqual(5);
++      expect(system.orbits.length).toBe(source.planets.length);
++    }
++  });
++
++  it('диск галактики строится от радиуса карты систем, а не от константы 18', () => {
++    const nodesOnly = buildGalaxyRenderData({ nodes: NODES, edges: [], unlockedIds: ['ferrum'], activeId: 'ferrum' });
++    const withSystems = build();
++    expect(nodesOnly.systems).toEqual([]);
++    // Регулярная запись бага Этапа 8: декорации строились от константы 18 и не совпадали
++    // с облаком узлов — галактика выглядела пустой. Теперь диск равен радиусу карты систем.
++    expect(nodesOnly.discRadius).toBe(nodesOnly.bounds);
++    expect(withSystems.discRadius).toBeGreaterThan(nodesOnly.bounds);
++    expect(withSystems.discRadius).toBeCloseTo(starMap.radius * withSystems.scale, 9);
++    // Диск берётся из конфигурации галактики, поэтому он стабилен и не меньше облака узлов.
++    expect(withSystems.discRadius).toBeGreaterThanOrEqual(withSystems.bounds);
++    const maxSystem = Math.max(...withSystems.systems.map((system) => Math.hypot(system.x, system.y, system.z)));
++    expect(withSystems.discRadius).toBeGreaterThanOrEqual(maxSystem);
++  });
++
++  it('звезда всегда помещается внутри первой орбиты, орбиты расходятся монотонно', () => {
++    const data = build();
++    for (const system of data.systems) {
++      const radii = system.orbits.map((orbit) => orbit.radius);
++      expect(radii).toEqual([...radii].sort((left, right) => left - right));
++      expect(new Set(radii).size).toBe(radii.length);
++      expect(system.starRadius).toBeGreaterThan(0);
++      expect(system.starRadius).toBeLessThanOrEqual(radii[0]! * GALAXY_RENDER_POLICY.starToInnerOrbitRatio + 1e-9);
++      const glowFactor = GALAXY_RENDER_POLICY.glowMultiplier * (system.core ? GALAXY_RENDER_POLICY.coreGlowBoost : 1);
++      expect(system.glowRadius).toBeCloseTo(system.starRadius * glowFactor, 9);
++      // Система не должна вылезать за отведённый ей шаг, иначе кольца соседних систем сливаются.
++      const spacing = STAR_MAP_POLICY.minSystemSeparation * data.scale;
++      expect(radii[radii.length - 1]!).toBeLessThanOrEqual(spacing * GALAXY_RENDER_POLICY.orbitFillRatio + 1e-9);
++    }
++  });
++
++  it('орбиты сжаты по степени: внутренняя орбита различима рядом со звездой', () => {
++    const data = build();
++    const system = data.systems.find((item) => item.orbits.length >= 3)!;
++    const ratio = system.orbits[system.orbits.length - 1]!.radius / system.orbits[0]!.radius;
++    const linear = system.orbits[system.orbits.length - 1]!.semiMajorAxisAu / system.orbits[0]!.semiMajorAxisAu;
++    expect(ratio).toBeLessThan(linear);
++    expect(ratio).toBeGreaterThan(1);
++  });
++
++  it('система игровой планеты: орбита 0 привязана к миру, активная система подсвечена', () => {
++    const data = build({ unlockedIds: ['ferrum', 'planet_03'] });
++    const ferrum = findRenderSystemByNode(data, 'ferrum')!;
++    expect(ferrum.id).toBe('sys:ferrum');
++    expect(ferrum.hostNodeId).toBe('ferrum');
++    expect(ferrum.discovered).toBe(true);
++    expect(ferrum.active).toBe(true);
++    expect(ferrum.unlocked).toBe(true);
++    expect(ferrum.orbits[0]).toMatchObject({ orbitIndex: 0, status: 'bound', planetId: 'ferrum', revealed: true });
++    expect(ferrum.orbits[0]!.color).toBe(ORBIT_BODY_COLORS['terrestrial']);
++    expect(ferrum.orbits.slice(1).every((orbit) => orbit.status === 'candidate' && orbit.planetId === null)).toBe(true);
++    expect(findRenderSystem(data, 'sys:ferrum')?.id).toBe('sys:ferrum');
++    expect(findRenderSystem(data, 'sys:missing')).toBeNull();
++  });
++
++  it('неоткрытый узел: система не нанесена на карту, звезда тусклая, имя не раскрывается', () => {
++    const data = build();
++    const krios = findRenderSystemByNode(data, 'krios')!;
++    expect(krios.charted).toBe(false);
++    expect(krios.discovered).toBe(false);
++    expect(krios.starColor).toBe(UNCHARTED_STAR_COLOR);
++    expect(krios.name).toBe('Неизвестный сигнал');
++  });
++
++  it('фоновые системы нанесены на карту, но их планеты не идентифицированы до исследования', () => {
++    const data = build();
++    const background = data.systems.filter((system) => system.id.startsWith('sys:bg:'));
++    expect(background.length).toBe(STAR_MAP_POLICY.backgroundSystems);
++    for (const system of background) {
++      expect(system.charted).toBe(true);
++      expect(system.discovered).toBe(false);
++      expect(system.hostNodeId).toBeNull();
++      expect(system.unlocked).toBe(false);
++      expect(system.name.length).toBeGreaterThan(2);
++      expect(system.starColor).toMatch(/^#[0-9a-f]{6}$/i);
++      expect(system.orbits.every((orbit) => orbit.bodyClass === 'unknown' && !orbit.revealed)).toBe(true);
++      expect(system.orbits.every((orbit) => orbit.color === ORBIT_BODY_COLORS['unknown'])).toBe(true);
++    }
++  });
++
++  it('центральная звезда галактики крупнее обычных и находится в начале координат сцены', () => {
++    const data = build();
++    const core = findRenderSystem(data, 'sys:core')!;
++    expect(core.core).toBe(true);
++    expect(core.x).toBe(0);
++    expect(core.y).toBe(0);
++    expect(core.z).toBe(0);
++    expect(core.starRadius).toBeGreaterThan(0);
++    // Центральная звезда читается как ядро галактики за счёт усиленного гало.
++    const ordinaryGlow = Math.max(...data.systems.filter((system) => !system.core).map((system) => system.glowRadius));
++    expect(core.glowRadius).toBeGreaterThan(ordinaryGlow);
++    expect(core.starRadius).toBeLessThanOrEqual(core.orbits[0]!.radius * GALAXY_RENDER_POLICY.starToInnerOrbitRatio + 1e-9);
++  });
++
++  it('исследованные орбиты раскрывают класс тела, неисследованные — нет', () => {
++    const target = starMap.systems.find((system) => system.hostNodeId === 'ferrum')!;
++    const before = build();
++    const ferrumBefore = findRenderSystemByNode(before, 'ferrum')!;
++    expect(ferrumBefore.orbits[2]?.revealed).toBe(false);
++    const after = build({ revealedOrbits: { [target.id]: [2] } });
++    const ferrumAfter = findRenderSystemByNode(after, 'ferrum')!;
++    expect(ferrumAfter.orbits[2]?.revealed).toBe(true);
++    expect(ferrumAfter.orbits[2]?.bodyClass).not.toBe('unknown');
++    expect(ferrumAfter.orbits[1]?.revealed).toBe(false);
++  });
++
++  it('без карты систем проекция остаётся совместимой с Этапом 7 (обратная совместимость)', () => {
++    const data = buildGalaxyRenderData({ nodes: NODES, edges: [['ferrum', 'planet_03']], unlockedIds: ['ferrum'], activeId: 'ferrum' });
++    expect(data.systems).toEqual([]);
++    expect(data.nodes.length).toBe(3);
++    expect(data.edges).toEqual([['ferrum', 'planet_03']]);
++    expect(data.bounds).toBeGreaterThan(0);
++    expect(data.discRadius).toBe(data.bounds);
++  });
++});
+diff --git a/tests/stage9_0_integration.test.ts b/tests/stage9_0_integration.test.ts
+new file mode 100644
+index 0000000..2bda27a
+--- /dev/null
++++ b/tests/stage9_0_integration.test.ts
+@@ -0,0 +1,145 @@
++/**
++ * Этап 9.0 — интеграция: реальная игра → карта звёздных систем → рендер-модель галактики.
++ * Проверяет, что слой систем надстроен над PlanetaryGraph без изменения координат узлов,
++ * растёт вместе с открытием миров и переживает save/load (карта не хранится в сейве).
++ */
++import { describe, expect, it } from 'vitest';
++import { makeGame } from './helpers';
++import { STAR_MAP_POLICY, buildGalaxyStarMap, systemForNode, validateStarMap } from '../src/galaxy/starMap';
++import { SYSTEM_POLICY, buildStarSystemCatalog } from '../src/galaxy/starSystems';
++import { buildGalaxyRenderData, findRenderSystemByNode } from '../src/renderer/galaxyModel';
++import type { Game } from '../src/core/game';
++import type { StarSystemDescriptor } from '../src/contracts/galaxy';
++
++function starMapOf(game: Game) {
++  const registry = game.balance.registry.galaxy;
++  return buildGalaxyStarMap({
++    nodes: game.snapshot().galaxy.nodes,
++    spiral: registry.arms,
++    outerRadius: registry.gen.outerRadius,
++    thickness: registry.nodeRender.THICK,
++  });
++}
++
++function renderDataOf(game: Game, systems: readonly StarSystemDescriptor[]) {
++  const snap = game.snapshot();
++  return buildGalaxyRenderData({
++    nodes: snap.galaxy.nodes,
++    edges: snap.galaxy.edges,
++    unlockedIds: snap.unlockedPlanets,
++    activeId: snap.activePlanetId,
++    systems,
++    systemSpacing: STAR_MAP_POLICY.minSystemSeparation,
++    discRadius: starMapOf(game).radius,
++  });
++}
++
++describe('Этап 9.0 — интеграция карты систем с реальной игрой', () => {
++  it('новая игра: 1 центральная звезда + 2 системы стартовых планет + 36 фоновых систем', () => {
++    const { game } = makeGame();
++    const map = starMapOf(game);
++    expect(validateStarMap(map)).toEqual([]);
++    expect(map.systemCount).toBe(1 + 2 + STAR_MAP_POLICY.backgroundSystems);
++    expect(map.planetTotal).toBeGreaterThanOrEqual(map.systemCount * SYSTEM_POLICY.freeMinPlanets);
++    expect(map.planetTotal).toBeLessThanOrEqual(map.systemCount * SYSTEM_POLICY.hostMaxPlanets);
++    expect(map.radius).toBeGreaterThan(game.balance.registry.galaxy.gen.outerRadius * 0.5);
++  });
++
++  it('система стартовой планеты: координаты узла без изменений, орбита 0 занята Феррумом', () => {
++    const { game } = makeGame();
++    const map = starMapOf(game);
++    const ferrum = systemForNode(map, 'ferrum')!;
++    const node = game.snapshot().galaxy.nodes.find((item) => item.id === 'ferrum')!;
++    expect(ferrum.position).toEqual({ x: node.x, y: node.y, z: node.z });
++    expect(ferrum.charted).toBe(true);
++    expect(ferrum.planets.length).toBeGreaterThanOrEqual(SYSTEM_POLICY.hostMinPlanets);
++    expect(ferrum.planets.length).toBeLessThanOrEqual(SYSTEM_POLICY.hostMaxPlanets);
++    expect(ferrum.planets[0]).toMatchObject({ orbitIndex: 0, status: 'bound', planetId: 'ferrum' });
++    // Каталог Этапа 7.4 и карта Этапа 9.0 — одна и та же система.
++    const catalog = buildStarSystemCatalog(node)!;
++    expect(catalog.star).toEqual(ferrum.star);
++    expect(catalog.bodies.length).toBe(ferrum.planets.length);
++  });
++
++  it('неоткрытый Криос-9: система существует, но не нанесена на карту и не раскрывает имя', () => {
++    const { game } = makeGame();
++    const map = starMapOf(game);
++    const krios = systemForNode(map, 'krios')!;
++    expect(krios.charted).toBe(false);
++    expect(krios.hostNodeId).toBe('krios');
++    expect(krios.name).not.toContain('Криос');
++    const data = renderDataOf(game, map.systems);
++    expect(findRenderSystemByNode(data, 'krios')?.name).toBe('Неизвестный сигнал');
++  });
++
++  it('рендер-модель: диск галактики равен радиусу карты систем и больше облака узлов', () => {
++    const { game } = makeGame();
++    const map = starMapOf(game);
++    const snap = game.snapshot();
++    const nodesOnly = buildGalaxyRenderData({ nodes: snap.galaxy.nodes, edges: snap.galaxy.edges, unlockedIds: snap.unlockedPlanets, activeId: snap.activePlanetId });
++    const withSystems = renderDataOf(game, map.systems);
++    expect(withSystems.discRadius).toBeCloseTo(map.radius * withSystems.scale, 9);
++    expect(withSystems.discRadius).toBeGreaterThan(nodesOnly.bounds);
++    expect(withSystems.systems.length).toBe(map.systemCount);
++    expect(withSystems.systems.filter((system) => system.id.startsWith('sys:bg:')).length).toBe(STAR_MAP_POLICY.backgroundSystems);
++  });
++
++  it('открытие мира добавляет ровно одну систему и не двигает остальные', () => {
++    const { game } = makeGame();
++    const before = starMapOf(game);
++    const result = game.dispatch('discoverPlanet', { seed: 777001, name: 'Гелика-Прайм' });
++    expect(result.ok).toBe(true);
++    const after = starMapOf(game);
++    expect(after.systemCount).toBe(before.systemCount + 1);
++    const added = after.systems.filter((system) => !before.byId[system.id]);
++    expect(added).toHaveLength(1);
++    expect(added[0]?.hostNodeId).toBe('planet_03');
++    expect(added[0]?.charted).toBe(true);
++    expect(added[0]?.planets[0]?.planetId).toBe('planet_03');
++    // Фоновые системы и стартовые не меняются: карта стабильна относительно открытий.
++    for (const system of before.systems) {
++      expect(after.byId[system.id]?.position).toEqual(system.position);
++      expect(after.byId[system.id]?.planets).toEqual(system.planets);
++    }
++  });
++
++  it('карта детерминирована и переживает save/load (в сейве не хранится)', () => {
++    const { game } = makeGame();
++    game.dispatch('discoverPlanet', { seed: 777001, name: 'Гелика-Прайм' });
++    const first = starMapOf(game);
++    expect(starMapOf(game)).toEqual(first);
++    const saved = game.dispatch('save', {});
++    expect(saved.ok).toBe(true);
++    const exported = game.dispatch('exportSave', {});
++    expect(exported.ok).toBe(true);
++    if (exported.ok) expect(exported.value.payload).not.toContain('sys:bg:');
++    const loaded = game.dispatch('load', {});
++    expect(loaded.ok).toBe(true);
++    expect(starMapOf(game)).toEqual(first);
++  });
++
++  it('исследованная орбитальная сигнатура раскрывает класс тела в рендер-модели', () => {
++    const { game } = makeGame();
++    const map = starMapOf(game);
++    const ferrum = systemForNode(map, 'ferrum')!;
++    const candidate = ferrum.planets.find((planet) => planet.status === 'candidate')!;
++    const bodyId = `body:ferrum:${candidate.orbitIndex}`;
++    game.dispatch('grant', { delta: { energy: 100000, research: 100000 }, reason: 'test' });
++    const before = renderDataOf(game, map.systems);
++    expect(findRenderSystemByNode(before, 'ferrum')?.orbits[candidate.orbitIndex]?.bodyClass).toBe('unknown');
++    const scan = game.dispatch('scanOrbitalBody', { hostPlanetId: 'ferrum', bodyId });
++    expect(scan.ok).toBe(true);
++    const state = game.orbitalExplorationState('ferrum');
++    expect(state.scannedBodyIds).toContain(bodyId);
++    const revealed: Record<string, number[]> = { [ferrum.id]: [candidate.orbitIndex] };
++    const snap = game.snapshot();
++    const after = buildGalaxyRenderData({
++      nodes: snap.galaxy.nodes, edges: snap.galaxy.edges, unlockedIds: snap.unlockedPlanets,
++      activeId: snap.activePlanetId, systems: map.systems,
++      systemSpacing: STAR_MAP_POLICY.minSystemSeparation, revealedOrbits: revealed,
++    });
++    const orbit = findRenderSystemByNode(after, 'ferrum')?.orbits[candidate.orbitIndex];
++    expect(orbit?.bodyClass).not.toBe('unknown');
++    expect(orbit?.revealed).toBe(true);
++  });
++});
+diff --git a/tests/stage9_0_star_map.test.ts b/tests/stage9_0_star_map.test.ts
+new file mode 100644
+index 0000000..bf485ad
+--- /dev/null
++++ b/tests/stage9_0_star_map.test.ts
+@@ -0,0 +1,204 @@
++/**
++ * Этап 9.0 — карта звёздных систем галактики (ADR-019).
++ * Проверяет: детерминизм, «много систем в одной галактике», 1–5 планет на орбитах вокруг звезды,
++ * центральную звезду, привязку систем игровых планет к координатам узлов графа и кеплеровы периоды.
++ */
++import { describe, expect, it } from 'vitest';
++import type { GraphNode } from '../src/contracts/galaxy';
++import {
++  CORE_SYSTEM_ID,
++  GALAXY_SEED,
++  STAR_MAP_POLICY,
++  buildGalaxyStarMap,
++  generateSystemName,
++  systemDesignation,
++  systemForNode,
++  validateStarMap,
++} from '../src/galaxy/starMap';
++import { SYSTEM_POLICY, buildStarSystemCatalog, classifyStar, orbitalPeriodDays, validateStarSystemCatalog } from '../src/galaxy/starSystems';
++
++const SPIRAL = { arms: 4, b: 0.55, r0: 3.5, width: 3.2 };
++const OUTER_RADIUS = 95;
++const THICK = 3.2;
++
++const node = (id: string, x: number, z: number, seed: number, discovered = true): GraphNode => ({
++  id, planetId: id, name: discovered ? `Мир ${id}` : `Скрытый ${id}`,
++  x, y: 0.2, z, geometryName: 'Crystalline', biome: 'Ice', geometry: 'crystal',
++  frequency: 0.5, seed, armId: 'frost', discovered,
++});
++
++const STARTERS: readonly GraphNode[] = [node('ferrum', -2.6, 0.4, 15929600), node('krios', 3, -0.9, 13045769, false)];
++
++function buildMap(nodes: readonly GraphNode[] = STARTERS) {
++  return buildGalaxyStarMap({ nodes, spiral: SPIRAL, outerRadius: OUTER_RADIUS, thickness: THICK });
++}
++
++describe('Этап 9.0 — карта звёздных систем', () => {
++  it('детерминирована: две сборки бит-в-бит идентичны, seed карты фиксирован', () => {
++    const a = buildMap();
++    const b = buildMap();
++    expect(a.seed).toBe(GALAXY_SEED);
++    expect(a).toEqual(b);
++    expect(JSON.stringify(a.systems)).toBe(JSON.stringify(b.systems));
++  });
++
++  it('систем много: ядро + системы узлов графа + фоновые системы', () => {
++    const map = buildMap();
++    expect(map.systemCount).toBe(1 + STARTERS.length + STAR_MAP_POLICY.backgroundSystems);
++    expect(map.systemCount).toBeGreaterThan(30);
++    expect(map.systems.filter((system) => system.hostNodeId === null).length).toBeGreaterThan(30);
++  });
++
++  it('в каждой системе 1–5 планет, орбиты монотонно расходятся от звезды', () => {
++    const map = buildMap();
++    expect(validateStarMap(map)).toEqual([]);
++    for (const system of map.systems) {
++      expect(system.planets.length).toBeGreaterThanOrEqual(SYSTEM_POLICY.freeMinPlanets);
++      expect(system.planets.length).toBeLessThanOrEqual(SYSTEM_POLICY.hostMaxPlanets);
++      const axes = system.planets.map((planet) => planet.semiMajorAxis);
++      expect(axes).toEqual([...axes].sort((left, right) => left - right));
++      expect(new Set(axes).size).toBe(axes.length);
++      expect(system.planets.every((planet, index) => planet.orbitIndex === index)).toBe(true);
++      for (const planet of system.planets) {
++        expect(Number.isFinite(planet.periodDays)).toBe(true);
++        expect(planet.periodDays).toBeGreaterThan(0);
++        expect(Math.abs(planet.eccentricity)).toBeLessThanOrEqual(SYSTEM_POLICY.maxEccentricity + 1e-9);
++        expect(Math.abs(planet.inclination)).toBeLessThanOrEqual(SYSTEM_POLICY.maxInclinationRad + 1e-9);
++      }
++    }
++  });
++
++  it('на карте встречаются системы и с одной планетой, и с пятью', () => {
++    const map = buildMap();
++    const counts = new Set(map.systems.map((system) => system.planets.length));
++    expect(counts.has(1)).toBe(true);
++    expect(counts.has(5)).toBe(true);
++  });
++
++  it('центральная звезда галактики: в начале координат, нанесена на карту, без игрового мира-хоста', () => {
++    const map = buildMap();
++    const core = map.byId[CORE_SYSTEM_ID];
++    expect(core).toBeDefined();
++    expect(core?.position).toEqual({ x: 0, y: 0, z: 0 });
++    expect(core?.core).toBe(true);
++    expect(core?.charted).toBe(true);
++    expect(core?.hostNodeId).toBeNull();
++    expect(core?.armId).toBe('core');
++    expect(core?.sectorId).toBe('core');
++    expect(core?.planets.length).toBe(STAR_MAP_POLICY.corePlanetCount);
++  });
++
++  it('система игровой планеты стоит ровно в координатах узла графа, орбита 0 занята этим миром', () => {
++    const map = buildMap();
++    for (const source of STARTERS) {
++      const system = systemForNode(map, source.id);
++      expect(system?.id).toBe(`sys:${source.id}`);
++      expect(system?.position).toEqual({ x: source.x, y: source.y, z: source.z });
++      expect(system?.hostNodeId).toBe(source.id);
++      expect(system?.planets[0]).toMatchObject({ orbitIndex: 0, planetId: source.id, status: 'bound', eccentricity: 0, inclination: 0 });
++      expect(system?.planets.slice(1).every((planet) => planet.status === 'candidate' && planet.planetId === null)).toBe(true);
++    }
++  });
++
++  it('неоткрытый узел даёт систему без имени и не наносится на карту (спойлеров нет)', () => {
++    const map = buildMap();
++    const krios = systemForNode(map, 'krios');
++    expect(krios?.charted).toBe(false);
++    expect(krios?.name).not.toBe('Скрытый krios');
++    expect(krios?.hostNodeId).toBe('krios');
++  });
++
++  it('игровой каталог системы (Этап 7.4) согласован с картой: тот же seed, звезда и орбиты', () => {
++    const map = buildMap([node('ferrum', -2.6, 0.4, 15929600)]);
++    const system = systemForNode(map, 'ferrum')!;
++    const catalog = buildStarSystemCatalog(node('ferrum', -2.6, 0.4, 15929600))!;
++    expect(validateStarSystemCatalog(catalog)).toEqual([]);
++    expect(catalog.seed).toBe(system.seed);
++    expect(catalog.star).toEqual(system.star);
++    expect(catalog.bodies.length).toBe(system.planets.length);
++    expect(catalog.bodies.map((body) => body.semiMajorAxis)).toEqual(system.planets.map((planet) => planet.semiMajorAxis));
++  });
++
++  it('фоновые системы лежат внутри галактического диска и не слипаются', () => {
++    const map = buildMap();
++    const background = map.systems.filter((system) => system.id.startsWith('sys:bg:'));
++    expect(background.length).toBe(STAR_MAP_POLICY.backgroundSystems);
++    for (const system of background) {
++      expect(Math.hypot(system.position.x, system.position.z)).toBeLessThanOrEqual(OUTER_RADIUS * 1.05);
++      expect(Math.abs(system.position.y)).toBeLessThanOrEqual(THICK);
++      expect(Number.isFinite(system.position.x)).toBe(true);
++      expect(system.planets.every((planet) => planet.status === 'candidate')).toBe(true);
++      expect(system.charted).toBe(true);
++      expect(system.name.length).toBeGreaterThan(2);
++      expect(system.designation).toMatch(/^VOR-[Α-Ω]-\d{3}$/);
++    }
++    for (let i = 0; i < background.length; i++) {
++      for (let j = i + 1; j < background.length; j++) {
++        const a = background[i]!;
++        const b = background[j]!;
++        const d = Math.hypot(a.position.x - b.position.x, a.position.y - b.position.y, a.position.z - b.position.z);
++        expect(d, `${a.id} ↔ ${b.id}`).toBeGreaterThanOrEqual(STAR_MAP_POLICY.minSystemSeparation * 0.999);
++      }
++    }
++  });
++
++  it('рукава: фоновые системы распределены минимум по двум спиральным рукавам', () => {
++    const map = buildMap();
++    const arms = new Set(map.systems.filter((system) => system.id.startsWith('sys:bg:')).map((system) => system.armId));
++    expect(arms.size).toBeGreaterThanOrEqual(2);
++  });
++
++  it('фоновые системы не зависят от узлов графа: открытие мира ничего не сдвигает', () => {
++    const before = buildMap();
++    const after = buildMap([...STARTERS, node('planet_03', 41, -28, 777001)]);
++    expect(after.systemCount).toBe(before.systemCount + 1);
++    for (const system of before.systems) {
++      expect(after.byId[system.id]?.position).toEqual(system.position);
++      expect(after.byId[system.id]?.planets).toEqual(system.planets);
++      expect(after.byId[system.id]?.designation).toBe(system.designation);
++      expect(after.byId[system.id]?.star).toEqual(system.star);
++    }
++    const backgroundBefore = before.systems.filter((item) => item.id.startsWith('sys:bg:'));
++    const backgroundAfter = after.systems.filter((item) => item.id.startsWith('sys:bg:'));
++    expect(backgroundAfter).toEqual(backgroundBefore);
++  });
++
++  it('радиус карты покрывает все системы — рендер масштабирует диск по данным, а не по константе', () => {
++    const map = buildMap();
++    const max = Math.max(...map.systems.map((system) => Math.hypot(system.position.x, system.position.y, system.position.z)));
++    expect(max).toBeLessThanOrEqual(map.radius);
++    // Радиус диска — конфигурационная величина: он не меняется при открытии миров.
++    expect(map.radius).toBe(OUTER_RADIUS);
++    expect(buildMap([...STARTERS, node('planet_03', 41, -28, 777001)]).radius).toBe(map.radius);
++  });
++
++  it('кеплеров период: P² / a³ одинаков для всех планет одной звезды и растёт с полуосью', () => {
++    const star = classifyStar(12345);
++    const ratio = (a: number): number => {
++      const p = orbitalPeriodDays(a, star) / 365.25;
++      return (p * p) / (a * a * a);
++    };
++    expect(ratio(1)).toBeCloseTo(ratio(4), 6);
++    expect(orbitalPeriodDays(4, star)).toBeGreaterThan(orbitalPeriodDays(1, star));
++    expect(orbitalPeriodDays(1, { class: 'red' })).toBeGreaterThan(orbitalPeriodDays(1, { class: 'blue' }));
++  });
++
++  it('звезда: класс → цвет/радиус/масса из единой политики, все значения конечны', () => {
++    for (const seed of [1, 7, 999, 15929600, 0x50505f53]) {
++      const star = classifyStar(seed);
++      expect(SYSTEM_POLICY.starColorByClass[star.class]).toMatch(/^#[0-9a-f]{6}$/i);
++      expect(star.color).toBe(SYSTEM_POLICY.starColorByClass[star.class]);
++      expect(star.radiusScale).toBe(SYSTEM_POLICY.starRadiusByClass[star.class]);
++      expect(star.temperatureK).toBeGreaterThan(0);
++      expect(star.luminosity).toBeGreaterThan(0);
++    }
++  });
++
++  it('имена и обозначения систем стабильны и не повторяются в пределах карты', () => {
++    expect(generateSystemName(42)).toBe(generateSystemName(42));
++    expect(systemDesignation('forge', 7)).toBe('VOR-Β-107');
++    const map = buildMap();
++    const ids = map.systems.map((system) => system.id);
++    expect(new Set(ids).size).toBe(ids.length);
++  });
++});
+-- 
+2.39.5
+
