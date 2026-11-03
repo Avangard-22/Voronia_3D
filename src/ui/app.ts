@@ -90,7 +90,7 @@ export function renderSnapshot(game: Game, root: HTMLElement, selectedCellId: nu
   root.innerHTML = `
   <div class="hud">
     <div class="col">
-      <h1>⚡ Voronia 2.0 <small>Stage 7.4 · ${active ? active.name : ''}</small></h1>
+      <h1>⚡ Voronia 2.0 <small>Stage 9.0 · ${active ? active.name : ''}</small></h1>
       ${resLine('energy', s.resources.energy ?? 0, s.perSec.energy)}
       ${resLine('iron', s.resources.iron ?? 0, s.perSec.iron)}
       ${resLine('kriogen', s.resources.kriogen ?? 0, s.perSec.kriogen)}

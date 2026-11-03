@@ -5,7 +5,18 @@ export { FpsMeter, type FpsStats } from './fps';
 export { createPlanetViewer, type PlanetViewer } from './scene';
 export { renderPixelRatio } from './pixelRatio';
 
-export { buildGalaxyRenderData, type GalaxyRenderData, type GalaxyRenderNode } from './galaxyModel';
+export {
+  buildGalaxyRenderData,
+  findRenderSystem,
+  findRenderSystemByNode,
+  GALAXY_RENDER_POLICY,
+  ORBIT_BODY_COLORS,
+  UNCHARTED_STAR_COLOR,
+  type GalaxyRenderData,
+  type GalaxyRenderNode,
+  type GalaxyRenderOrbit,
+  type GalaxyRenderSystem,
+} from './galaxyModel';
 export { createGalaxyViewer, type GalaxyViewer } from './galaxyScene';
 export { findSelectableGalaxyNode, resolveGalaxyRoute, routePositionAtProgress, type GalaxyPoint3 } from './galaxyInteraction';
 

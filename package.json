@@ -1,7 +1,7 @@
 {
   "name": "voronia2",
   "private": true,
-  "version": "2.0.0-stage8.1.0",
+  "version": "2.0.0-stage9.0.0",
   "type": "module",
   "description": "Voronia 2.0 — модульный rewrite монолита v0.0.41 (ТЗ ред. 1.0). Баланс меняется только через ledger (ТЗ §15).",
   "engines": {

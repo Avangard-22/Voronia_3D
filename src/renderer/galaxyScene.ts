@@ -1,4 +1,7 @@
-/** Stage 7.0 — Three.js-сцена галактики. Игровые узлы и рёбра поступают только из PlanetaryGraph. */
+/** Stage 7.0 / Этап 9.0 — Three.js-сцена галактики.
+ * Игровые узлы и рёбра поступают только из PlanetaryGraph; звёздные системы — из карты
+ * `galaxy/starMap.ts`. Рендерер ничего не генерирует сам (ADR-019, R2/слои).
+ */
 import * as THREE from 'three';
 import type { GalaxyRenderData } from './galaxyModel';
 import type { GalaxyRenderNode } from './galaxyModel';
@@ -11,8 +14,13 @@ export interface OrbitalTopologyRenderData { readonly systemId: string; readonly
 export interface GalaxyViewer {
   setData(data: GalaxyRenderData): void;
   setNodeSelectHandler(handler: ((nodeId: string) => void) | null): void;
+  /** Этап 9.0: клик по звёздной системе (в том числе фоновой, без игрового мира). */
+  setSystemSelectHandler(handler: ((systemId: string) => void) | null): void;
   setSelectedNode(nodeId: string | null): void;
+  setSelectedSystem(systemId: string | null): void;
   setSystemFocus(nodeId: string | null): void;
+  /** Этап 9.0: навестись на систему по её id (работает и для фоновых систем). */
+  focusSystem(systemId: string, durationMs?: number): void;
   setOrbitalTopology(topology: OrbitalTopologyRenderData | null, onNavigate: ((planetId: string) => void) | null): void;
   setRoute(path: readonly string[]): void;
   focusNode(nodeId: string, durationMs?: number): void;
@@ -25,6 +33,38 @@ export interface GalaxyViewer {
 }
 
 const clamp = (value: number, min: number, max: number): number => Math.max(min, Math.min(max, value));
+
+/**
+ * Этап 9.0 — темп орбитального движения в сцене: сколько игровых суток проходит за 1 мс реального
+ * времени. Подобрано так, чтобы планета земного типа делала оборот примерно за 12 секунд.
+ */
+const ORBIT_DAYS_PER_MS = 30 / 1000;
+
+/** Число отрезков на одно орбитальное кольцо (визуально гладко, дёшево для GPU). */
+const ORBIT_SEGMENTS = 56;
+
+/** Цвет орбитального кольца: неразведанная орбита и подтверждённый игровой мир. */
+const ORBIT_RING_COLOR: readonly [number, number, number] = [0.34, 0.47, 0.57];
+const BOUND_ORBIT_COLOR: readonly [number, number, number] = [0.98, 0.84, 0.47];
+
+/** Точка эллиптической орбиты в плоскости системы (XZ) с учётом эксцентриситета и наклона. */
+function orbitPoint(radius: number, eccentricity: number, inclination: number, angle: number, out: THREE.Vector3): THREE.Vector3 {
+  const e = clamp(eccentricity, 0, 0.35);
+  const x = radius * (Math.cos(angle) - e);
+  const z = radius * Math.sqrt(1 - e * e) * Math.sin(angle);
+  return out.set(x, z * Math.sin(inclination), z * Math.cos(inclination));
+}
+
+/** Kepler-позиция планеты по времени: среднее движение → эксцентрическая аномалия (4 итерации). */
+function planetPositionAt(radius: number, eccentricity: number, inclination: number, phase: number, periodDays: number, days: number, out: THREE.Vector3): THREE.Vector3 {
+  const e = clamp(eccentricity, 0, 0.35);
+  const mean = phase + (days * Math.PI * 2) / Math.max(1, periodDays);
+  let anomaly = mean;
+  for (let i = 0; i < 4; i++) anomaly -= (anomaly - e * Math.sin(anomaly) - mean) / (1 - e * Math.cos(anomaly));
+  const x = radius * (Math.cos(anomaly) - e);
+  const z = radius * Math.sqrt(1 - e * e) * Math.sin(anomaly);
+  return out.set(x, z * Math.sin(inclination), z * Math.cos(inclination));
+}
 
 function seeded(seed: number): () => number {
   let state = seed >>> 0;
@@ -149,6 +189,19 @@ function nodeColor(node: GalaxyRenderNode): THREE.Color {
   return new THREE.Color('#a5d9ee');
 }
 
+/** Данные одного инстанса планеты: положение системы + орбитальные элементы (Этап 9.0). */
+interface PlanetInstance {
+  readonly systemX: number;
+  readonly systemY: number;
+  readonly systemZ: number;
+  readonly radius: number;
+  readonly eccentricity: number;
+  readonly inclination: number;
+  readonly phase: number;
+  readonly periodDays: number;
+  readonly size: number;
+}
+
 export function createGalaxyViewer(canvas: HTMLCanvasElement, initial: GalaxyRenderData): GalaxyViewer {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
   renderer.setPixelRatio(renderPixelRatio(window.devicePixelRatio || 1, window.innerWidth));
@@ -157,7 +210,8 @@ export function createGalaxyViewer(canvas: HTMLCanvasElement, initial: GalaxyRen
   scene.fog = new THREE.FogExp2('#020711', 0.012);
   const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 250);
   const target = new THREE.Vector3();
-  let distance = Math.max(15, initial.bounds * 2.2);
+  const discRadius = Math.max(4, Number.isFinite(initial.discRadius) && initial.discRadius > 0 ? initial.discRadius : initial.bounds);
+  let distance = clamp(discRadius * 2.45, 9, 70);
   let yaw = 0.42;
   let pitch = 0.82;
   const updateCamera = (): void => {
@@ -166,27 +220,40 @@ export function createGalaxyViewer(canvas: HTMLCanvasElement, initial: GalaxyRen
     camera.lookAt(target);
   };
   scene.add(new THREE.AmbientLight(0x9bbbd0, 0.55));
-  const coreLight = new THREE.PointLight(0x4da9d6, 2.2, 24);
+  const coreLight = new THREE.PointLight(0x4da9d6, 2.2, 60);
   coreLight.position.set(0, 0, 0);
   scene.add(coreLight);
-  const core = new THREE.Mesh(new THREE.SphereGeometry(0.42, 24, 16), new THREE.MeshBasicMaterial({ color: '#b6eaff' }));
+  // Этап 9.0: декорации диска строятся от фактического радиуса карты звёздных систем,
+  // а не от константы 18 — иначе галактика выглядит пустой, а системы сбиваются в точку в центре.
+  const core = new THREE.Mesh(new THREE.SphereGeometry(discRadius * 0.075, 24, 16), new THREE.MeshBasicMaterial({ color: '#dff2ff', transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false }));
   scene.add(core);
-  const coreGlow = new THREE.Mesh(new THREE.SphereGeometry(1.35, 24, 16), new THREE.MeshBasicMaterial({ color: '#2c8eb8', transparent: true, opacity: 0.09, depthWrite: false }));
+  const coreGlow = new THREE.Mesh(new THREE.SphereGeometry(discRadius * 0.26, 24, 16), new THREE.MeshBasicMaterial({ color: '#2c8eb8', transparent: true, opacity: 0.075, depthWrite: false }));
   scene.add(coreGlow);
-  const galaxyRadius = Math.max(18, initial.bounds * 1.8);
+  const galaxyRadius = discRadius * 1.12;
   const visualBudget = galaxyVisualBudget(window.innerWidth, window.devicePixelRatio || 1);
   const spiralArms = makeSpiralArms(galaxyRadius);
   const nebulaClouds = makeNebulaClouds(galaxyRadius, visualBudget.nebulaPoints);
   const starClusters = makeStarClusters(galaxyRadius, visualBudget.clusterStars);
-  const starField = makeStarField(Math.max(900, Math.floor(visualBudget.nebulaPoints * 0.9)), Math.max(36, initial.bounds * 3.2));
+  const starField = makeStarField(Math.max(900, Math.floor(visualBudget.nebulaPoints * 0.9)), Math.max(30, discRadius * 4.2));
   scene.add(spiralArms, nebulaClouds, starClusters, starField);
-  const coreRing = new THREE.Mesh(new THREE.TorusGeometry(1.8, 0.018, 6, 96), new THREE.MeshBasicMaterial({ color: '#397fa8', transparent: true, opacity: 0.28, depthWrite: false }));
+  const coreRing = new THREE.Mesh(new THREE.TorusGeometry(discRadius * 0.17, 0.018, 6, 96), new THREE.MeshBasicMaterial({ color: '#397fa8', transparent: true, opacity: 0.26, depthWrite: false }));
   coreRing.rotation.x = Math.PI * 0.5;
   scene.add(coreRing);
 
   let nodeMesh: THREE.InstancedMesh | null = null;
   let systemCoreMesh: THREE.InstancedMesh | null = null;
   let edgeLines: THREE.LineSegments | null = null;
+  // ——— Этап 9.0: слой звёздных систем (звезда + орбиты + планеты) ———
+  let starMesh: THREE.InstancedMesh | null = null;
+  let starGlowMesh: THREE.InstancedMesh | null = null;
+  let orbitLines: THREE.LineSegments | null = null;
+  let systemPlanetMesh: THREE.InstancedMesh | null = null;
+  let systemSelectionRing: THREE.Mesh | null = null;
+  /** instance index → id системы (порядок совпадает у starMesh/starGlowMesh). */
+  const systemIdByInstance: string[] = [];
+  let planetInstances: PlanetInstance[] = [];
+  let onSelectSystem: ((systemId: string) => void) | null = null;
+  let selectedSystemId: string | null = null;
   let currentData = initial;
   let onSelect: ((id: string) => void) | null = null;
   let selectedNodeId: string | null = null;
@@ -219,17 +286,149 @@ export function createGalaxyViewer(canvas: HTMLCanvasElement, initial: GalaxyRen
     if (systemCoreMesh) { scene.remove(systemCoreMesh); systemCoreMesh.geometry.dispose(); (systemCoreMesh.material as THREE.Material).dispose(); systemCoreMesh = null; }
     if (edgeLines) { scene.remove(edgeLines); edgeLines.geometry.dispose(); (edgeLines.material as THREE.Material).dispose(); edgeLines = null; }
     nodeByInstance.length = 0;
+    disposeStarSystemLayer();
     if (routeLines) { scene.remove(routeLines); routeLines.geometry.dispose(); (routeLines.material as THREE.Material).dispose(); routeLines = null; }
     if (selectionRing) { scene.remove(selectionRing); selectionRing.geometry.dispose(); (selectionRing.material as THREE.Material).dispose(); selectionRing = null; }
     if (orbitalSystemGroup) { scene.remove(orbitalSystemGroup); orbitalSystemGroup.traverse((child) => { const mesh = child as THREE.Mesh; mesh.geometry?.dispose?.(); const material = mesh.material as THREE.Material | THREE.Material[] | undefined; if (Array.isArray(material)) material.forEach((item) => item.dispose()); else material?.dispose(); }); orbitalSystemGroup = null; orbitalBodies = []; }
     if (systemDetailGroup) { scene.remove(systemDetailGroup); systemDetailGroup.traverse((child) => { const mesh = child as THREE.Mesh; mesh.geometry?.dispose?.(); const material = mesh.material as THREE.Material | THREE.Material[] | undefined; if (Array.isArray(material)) material.forEach((item) => item.dispose()); else material?.dispose(); }); systemDetailGroup = null; systemOrbitBody = null; }
   };
 
+  const tmpVector = new THREE.Vector3();
+  const tmpMatrix = new THREE.Matrix4();
+  const tmpScale = new THREE.Vector3();
+  const tmpColor = new THREE.Color();
+  let orbitClockStart = 0;
+
+  const disposeStarSystemLayer = (): void => {
+    for (const mesh of [starMesh, starGlowMesh, systemPlanetMesh]) {
+      if (!mesh) continue;
+      scene.remove(mesh);
+      mesh.geometry.dispose();
+      (mesh.material as THREE.Material).dispose();
+    }
+    starMesh = null; starGlowMesh = null; systemPlanetMesh = null;
+    if (orbitLines) { scene.remove(orbitLines); orbitLines.geometry.dispose(); (orbitLines.material as THREE.Material).dispose(); orbitLines = null; }
+    if (systemSelectionRing) { scene.remove(systemSelectionRing); systemSelectionRing.geometry.dispose(); (systemSelectionRing.material as THREE.Material).dispose(); systemSelectionRing = null; }
+    systemIdByInstance.length = 0;
+    planetInstances = [];
+  };
+
+  /** Расставляет планеты на орбитах по кеплерову времени (Этап 9.0). */
+  function updatePlanetInstances(nowMs: number): void {
+    if (!systemPlanetMesh || !planetInstances.length) return;
+    if (!orbitClockStart) orbitClockStart = nowMs;
+    const days = (nowMs - orbitClockStart) * ORBIT_DAYS_PER_MS;
+    for (let index = 0; index < planetInstances.length; index++) {
+      const planet = planetInstances[index]!;
+      planetPositionAt(planet.radius, planet.eccentricity, planet.inclination, planet.phase, planet.periodDays, days, tmpVector);
+      tmpMatrix.makeTranslation(planet.systemX + tmpVector.x, planet.systemY + tmpVector.y, planet.systemZ + tmpVector.z);
+      tmpScale.setScalar(Math.max(0.004, planet.size));
+      tmpMatrix.scale(tmpScale);
+      systemPlanetMesh.setMatrixAt(index, tmpMatrix);
+    }
+    systemPlanetMesh.instanceMatrix.needsUpdate = true;
+    systemPlanetMesh.computeBoundingSphere();
+  }
+
+  /**
+   * Этап 9.0 — звёзды, орбитальные кольца и планеты всех нанесённых на карту систем.
+   * Геометрия приходит из `GalaxyRenderData.systems`; сцена ничего не генерирует сама.
+   */
+  function buildStarSystemLayer(data: GalaxyRenderData): void {
+    const systems = data.systems.filter((system) => system.charted);
+    if (!systems.length) return;
+
+    starMesh = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 16, 12), new THREE.MeshBasicMaterial({ vertexColors: true }), systems.length);
+    starGlowMesh = new THREE.InstancedMesh(
+      new THREE.SphereGeometry(1, 12, 10),
+      new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.2, blending: THREE.AdditiveBlending, depthWrite: false }),
+      systems.length,
+    );
+    systems.forEach((system, index) => {
+      tmpMatrix.makeTranslation(system.x, system.y, system.z);
+      tmpScale.setScalar(Math.max(0.006, system.starRadius));
+      tmpMatrix.scale(tmpScale);
+      starMesh!.setMatrixAt(index, tmpMatrix);
+      tmpMatrix.makeTranslation(system.x, system.y, system.z);
+      tmpScale.setScalar(Math.max(0.02, system.glowRadius));
+      tmpMatrix.scale(tmpScale);
+      starGlowMesh!.setMatrixAt(index, tmpMatrix);
+      tmpColor.set(system.active ? '#ffd36a' : system.starColor);
+      starMesh!.setColorAt(index, tmpColor);
+      starGlowMesh!.setColorAt(index, tmpColor);
+      systemIdByInstance[index] = system.id;
+    });
+    starMesh.instanceMatrix.needsUpdate = true;
+    starGlowMesh.instanceMatrix.needsUpdate = true;
+    if (starMesh.instanceColor) starMesh.instanceColor.needsUpdate = true;
+    if (starGlowMesh.instanceColor) starGlowMesh.instanceColor.needsUpdate = true;
+    starMesh.computeBoundingSphere();
+    starGlowMesh.computeBoundingSphere();
+    scene.add(starMesh, starGlowMesh);
+
+    // ——— орбитальные кольца: один LineSegments на всю галактику ———
+    const ringPositions: number[] = [];
+    const ringColors: number[] = [];
+    let planetTotal = 0;
+    for (const system of systems) {
+      for (const orbit of system.orbits) {
+        planetTotal += 1;
+        const tint = orbit.status === 'bound' ? BOUND_ORBIT_COLOR : ORBIT_RING_COLOR;
+        for (let segment = 0; segment < ORBIT_SEGMENTS; segment++) {
+          const a0 = (segment / ORBIT_SEGMENTS) * Math.PI * 2;
+          const a1 = ((segment + 1) / ORBIT_SEGMENTS) * Math.PI * 2;
+          orbitPoint(orbit.radius, orbit.eccentricity, orbit.inclination, a0, tmpVector);
+          ringPositions.push(system.x + tmpVector.x, system.y + tmpVector.y, system.z + tmpVector.z);
+          ringColors.push(tint[0], tint[1], tint[2]);
+          orbitPoint(orbit.radius, orbit.eccentricity, orbit.inclination, a1, tmpVector);
+          ringPositions.push(system.x + tmpVector.x, system.y + tmpVector.y, system.z + tmpVector.z);
+          ringColors.push(tint[0], tint[1], tint[2]);
+        }
+      }
+    }
+    const ringGeometry = new THREE.BufferGeometry();
+    ringGeometry.setAttribute('position', new THREE.Float32BufferAttribute(ringPositions, 3));
+    ringGeometry.setAttribute('color', new THREE.Float32BufferAttribute(ringColors, 3));
+    orbitLines = new THREE.LineSegments(ringGeometry, new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.4, depthWrite: false }));
+    scene.add(orbitLines);
+
+    // ——— планеты на орбитах ———
+    systemPlanetMesh = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 10, 8), new THREE.MeshBasicMaterial({ vertexColors: true }), Math.max(1, planetTotal));
+    systemPlanetMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    let cursor = 0;
+    for (const system of systems) {
+      for (const orbit of system.orbits) {
+        systemPlanetMesh.setColorAt(cursor, tmpColor.set(orbit.color));
+        planetInstances.push({
+          systemX: system.x, systemY: system.y, systemZ: system.z,
+          radius: orbit.radius, eccentricity: orbit.eccentricity, inclination: orbit.inclination,
+          phase: orbit.phase, periodDays: orbit.periodDays, size: orbit.size,
+        });
+        cursor += 1;
+      }
+    }
+    if (systemPlanetMesh.instanceColor) systemPlanetMesh.instanceColor.needsUpdate = true;
+    scene.add(systemPlanetMesh);
+    updatePlanetInstances(orbitClockStart || performance.now());
+  }
+
+  /** Кольцо выделения вокруг выбранной системы. */
+  function updateSystemSelection(): void {
+    if (systemSelectionRing) { scene.remove(systemSelectionRing); systemSelectionRing.geometry.dispose(); (systemSelectionRing.material as THREE.Material).dispose(); systemSelectionRing = null; }
+    const system = selectedSystemId ? currentData.systems.find((item) => item.id === selectedSystemId) : null;
+    if (!system || !system.charted) return;
+    const outer = Math.max(system.starRadius * 2, ...system.orbits.map((orbit) => orbit.radius)) * 1.35;
+    systemSelectionRing = new THREE.Mesh(new THREE.TorusGeometry(outer, Math.max(0.006, outer * 0.02), 8, 72), new THREE.MeshBasicMaterial({ color: '#fff0a8', transparent: true, opacity: 0.75, depthWrite: false }));
+    systemSelectionRing.rotation.x = Math.PI / 2;
+    systemSelectionRing.position.set(system.x, system.y, system.z);
+    scene.add(systemSelectionRing);
+  }
+
   function setData(data: GalaxyRenderData): void {
     const previousBounds = currentData.bounds;
     disposeDynamic();
     currentData = data;
-    if (data.bounds > previousBounds * 1.15) { distance = Math.max(distance, data.bounds * 2.2); updateCamera(); }
+    if (data.bounds > previousBounds * 1.15) { distance = Math.max(distance, clamp(data.discRadius * 2.45, 9, 70)); updateCamera(); }
     const geometry = new THREE.SphereGeometry(0.105, 10, 8);
     const material = new THREE.MeshBasicMaterial({ vertexColors: true });
     nodeMesh = new THREE.InstancedMesh(geometry, material, Math.max(1, data.nodes.length));
@@ -268,6 +467,8 @@ export function createGalaxyViewer(canvas: HTMLCanvasElement, initial: GalaxyRen
     systemCoreMesh.instanceMatrix.needsUpdate = true;
     if (systemCoreMesh.instanceColor) systemCoreMesh.instanceColor.needsUpdate = true;
     scene.add(systemCoreMesh);
+    buildStarSystemLayer(data);
+    updateSystemSelection();
     applyLod();
 
     const byId = new Map(data.nodes.map((node) => [node.id, node]));
@@ -364,7 +565,7 @@ export function createGalaxyViewer(canvas: HTMLCanvasElement, initial: GalaxyRen
       focusTo.set(0, 0, 0);
       focusStartedAt = performance.now();
       focusDuration = 650;
-      distance = Math.max(12, currentData.bounds * 2.2);
+      distance = clamp(currentData.discRadius * 2.45, 9, 70);
       updateCamera();
     }
     applyLod();
@@ -415,12 +616,19 @@ export function createGalaxyViewer(canvas: HTMLCanvasElement, initial: GalaxyRen
 
   function applyLod(): void {
     const lod = galaxyLodForDistance(distance);
+    const hasSystems = currentData.systems.length > 0;
     spiralArms.visible = lod !== 'system';
     nebulaClouds.visible = lod !== 'system';
     starClusters.visible = lod !== 'system';
     starField.visible = true;
-    if (systemCoreMesh) systemCoreMesh.visible = lod === 'regional';
-    if (nodeMesh) nodeMesh.visible = lod !== 'system';
+    // Этап 9.0: звёзды систем видны всегда; кольца и планеты — пока не открыт режим одной системы.
+    if (starMesh) starMesh.visible = true;
+    if (starGlowMesh) starGlowMesh.visible = lod !== 'system';
+    if (orbitLines) orbitLines.visible = !orbitalSystemGroup;
+    if (systemPlanetMesh) systemPlanetMesh.visible = !orbitalSystemGroup;
+    if (systemSelectionRing) systemSelectionRing.visible = !orbitalSystemGroup;
+    if (systemCoreMesh) systemCoreMesh.visible = !hasSystems && lod === 'regional';
+    if (nodeMesh) nodeMesh.visible = !hasSystems && lod !== 'system';
     if (edgeLines) edgeLines.visible = lod !== 'system';
     if (systemDetailGroup) systemDetailGroup.visible = lod === 'system' && !orbitalSystemGroup;
     if (orbitalSystemGroup) orbitalSystemGroup.visible = lod === 'system';
@@ -466,10 +674,23 @@ export function createGalaxyViewer(canvas: HTMLCanvasElement, initial: GalaxyRen
     updateCamera();
   };
   const pick = (event: PointerEvent): void => {
-    if (!nodeMesh || Math.hypot(event.clientX - downX, event.clientY - downY) > 5) return;
+    if ((!nodeMesh && !starMesh) || Math.hypot(event.clientX - downX, event.clientY - downY) > 5) return;
     const rect = canvas.getBoundingClientRect();
     pointer.set(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1);
     raycaster.setFromCamera(pointer, camera);
+    // Этап 9.0: клик по звезде. Область попадания расширена гало, чтобы попадать было удобно.
+    const starTargets = [starGlowMesh, starMesh].filter((mesh): mesh is THREE.InstancedMesh => Boolean(mesh?.visible));
+    if (starTargets.length) {
+      const starHit = raycaster.intersectObjects(starTargets, false)[0];
+      const systemId = starHit?.instanceId === undefined ? null : systemIdByInstance[starHit.instanceId] ?? null;
+      const system = systemId ? currentData.systems.find((item) => item.id === systemId) : null;
+      if (system) {
+        if (system.hostNodeId && system.discovered) { onSelect?.(system.hostNodeId); return; }
+        onSelectSystem?.(system.id);
+        return;
+      }
+    }
+    if (!nodeMesh?.visible) return;
     if (orbitalSystemGroup?.visible) {
       const orbitalHit = raycaster.intersectObjects(orbitalBodies.map((body) => body.mesh), false)[0];
       if (orbitalHit?.object) { const body = orbitalBodies.find((item) => item.mesh === orbitalHit.object); if (body) { onOrbitalNavigate?.(body.planetId); return; } }
@@ -504,6 +725,7 @@ export function createGalaxyViewer(canvas: HTMLCanvasElement, initial: GalaxyRen
     canvas.removeEventListener('wheel', onWheel);
     disposeDynamic();
     if (flightMarker) { scene.remove(flightMarker); flightMarker.geometry.dispose(); (flightMarker.material as THREE.Material).dispose(); flightMarker = null; }
+    disposeStarSystemLayer();
     for (const object of [...scene.children]) {
       if (object === nodeMesh || object === edgeLines) continue;
       object.traverse((child) => {
@@ -521,7 +743,24 @@ export function createGalaxyViewer(canvas: HTMLCanvasElement, initial: GalaxyRen
   return {
     setData,
     setNodeSelectHandler(handler) { onSelect = handler; },
+    setSystemSelectHandler(handler) { onSelectSystem = handler; },
     setSelectedNode(nodeId) { selectedNodeId = nodeId; updateSelectionAndRoute(); },
+    setSelectedSystem(systemId) { selectedSystemId = systemId; updateSystemSelection(); },
+    focusSystem(systemId, durationMs = 780) {
+      const system = currentData.systems.find((item) => item.id === systemId);
+      if (!system) return;
+      selectedSystemId = systemId;
+      updateSystemSelection();
+      focusFrom.copy(target);
+      focusTo.set(system.x, system.y, system.z);
+      focusStartedAt = performance.now();
+      focusDuration = Math.max(0, durationMs);
+      const outer = Math.max(0.4, ...(system.orbits.length ? system.orbits.map((orbit) => orbit.radius) : [0.4]));
+      distance = clamp(outer * 9, 3.6, 14);
+      if (!focusDuration) { target.copy(focusTo); }
+      updateCamera();
+      applyLod();
+    },
     setSystemFocus,
     setOrbitalTopology,
     setRoute,
@@ -529,6 +768,7 @@ export function createGalaxyViewer(canvas: HTMLCanvasElement, initial: GalaxyRen
     animateRoute,
     render(nowMs) {
       core.rotation.y = nowMs * 0.00004;
+      updatePlanetInstances(nowMs);
       for (const body of orbitalBodies) { const mean = body.phase + nowMs * body.speed; let eccentric = mean; for (let i = 0; i < 4; i++) eccentric -= (eccentric - body.eccentricity * Math.sin(eccentric) - mean) / (1 - body.eccentricity * Math.cos(eccentric)); const x = body.semiMajor * (Math.cos(eccentric) - body.eccentricity); const z = body.semiMajor * Math.sqrt(1 - body.eccentricity * body.eccentricity) * Math.sin(eccentric); body.mesh.position.set(x, z * Math.sin(body.inclination), z * Math.cos(body.inclination)); body.mesh.rotation.y += 0.002; }
       if (systemOrbitBody) {
         const phase = systemOrbitPhase + nowMs * 0.00022;
@@ -546,7 +786,7 @@ export function createGalaxyViewer(canvas: HTMLCanvasElement, initial: GalaxyRen
     },
     resize,
     zoomBy(delta) { distance = clamp(distance + delta, 3.5, 45); updateCamera(); applyLod(); },
-    resetView() { yaw = 0.42; pitch = 0.82; target.set(0, 0, 0); focusDuration = 0; distance = Math.max(12, currentData.bounds * 2.2); updateCamera(); applyLod(); },
+    resetView() { yaw = 0.42; pitch = 0.82; target.set(0, 0, 0); focusDuration = 0; selectedSystemId = null; updateSystemSelection(); distance = clamp(Math.max(12, currentData.discRadius * 2.45), 9, 70); updateCamera(); applyLod(); },
     dispose,
   };
 }

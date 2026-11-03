@@ -1,4 +1,5 @@
 import { buildStarSystemExploration } from './galaxy/systemExploration';
+import { STAR_MAP_POLICY, buildGalaxyStarMap, systemForNode, type GalaxyStarMap } from './galaxy/starMap';
 import { buildStarSystemTopology } from './galaxy/systemTopology';
 /**
  * main.ts — точка входа браузера: сборка Game (RafDriver + LocalStorage), старт, авто-сейв,
@@ -103,9 +104,47 @@ try {
       cellLevels: new Map([...(rt?.cellStates ?? new Map<number, CellState>())].map(([id, state]) => [id, state.level])),
     }) : null;
   };
+  // ——— Этап 9.0: карта звёздных систем (звезда + 1–5 планет на орбитах). ———
+  const galaxyRegistry = game.balance.registry.galaxy;
+  let starMapCache: { key: string; map: GalaxyStarMap } | null = null;
+  const starMapOf = (): GalaxyStarMap => {
+    const snap = game.snapshot();
+    const key = snap.galaxy.nodes.map((node) => `${node.id}:${node.seed}:${node.discovered ? 1 : 0}`).join('|');
+    if (starMapCache?.key === key) return starMapCache.map;
+    const map = buildGalaxyStarMap({
+      nodes: snap.galaxy.nodes,
+      spiral: galaxyRegistry.arms,
+      outerRadius: galaxyRegistry.gen.outerRadius,
+      thickness: galaxyRegistry.nodeRender.THICK,
+    });
+    starMapCache = { key, map };
+    return map;
+  };
+  /** Исследованные/активированные орбиты: systemId → orbitIndex (чтобы не раскрывать класс тела раньше времени). */
+  const revealedOrbitsOf = (): Record<string, number[]> => {
+    const snap = game.snapshot();
+    const revealed: Record<string, number[]> = {};
+    for (const node of snap.galaxy.nodes) {
+      const state = game.orbitalExplorationState(node.id);
+      const indexes = [...state.scannedBodyIds, ...Object.keys(state.activatedBodies)]
+        .map((bodyId) => Number(bodyId.split(':').pop()))
+        .filter((index) => Number.isFinite(index) && index > 0);
+      if (indexes.length) revealed[`sys:${node.id}`] = [...new Set(indexes)];
+    }
+    return revealed;
+  };
   const galaxyData = (): ReturnType<typeof buildGalaxyRenderData> => {
     const snap = game.snapshot();
-    return buildGalaxyRenderData({ nodes: snap.galaxy.nodes, edges: snap.galaxy.edges, unlockedIds: snap.unlockedPlanets, activeId: snap.activePlanetId });
+    return buildGalaxyRenderData({
+      nodes: snap.galaxy.nodes,
+      edges: snap.galaxy.edges,
+      unlockedIds: snap.unlockedPlanets,
+      activeId: snap.activePlanetId,
+      systems: starMapOf().systems,
+      systemSpacing: STAR_MAP_POLICY.minSystemSeparation,
+      discRadius: starMapOf().radius,
+      revealedOrbits: revealedOrbitsOf(),
+    });
   };
   let selectedGalaxyNodeId: string | null = null;
   const escapeHtml = (value: string): string => value.replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch] ?? ch);
@@ -121,15 +160,54 @@ try {
     const systemDetail = buildGalaxySystemDetail(renderNode);
     const system = buildStarSystemExploration({ ...node, unlocked, active });
     const routeLabel = route ? `${route.hops} прыжк. · ${route.totalDistance.toFixed(1)} ед. · ${Math.ceil(route.totalEnergy).toLocaleString('ru-RU')} ⚡` : 'Нет доступного маршрута';
-    const world = system?.worlds[0];
+    const starSystem = systemForNode(starMapOf(), node.id);
+    const orbitalState = game.orbitalExplorationState(node.id);
+    const bodyLabel = (bodyClass: string): string => ({ terrestrial: 'Землеподобная', ice: 'Ледяная', 'gas-giant': 'Газовый гигант', dwarf: 'Карлик', 'asteroid-belt': 'Пояс астероидов', unknown: 'Не идентифицировано' } as Record<string, string>)[bodyClass] ?? bodyClass;
+    const orbitPeriod = (days: number): string => (days < 365.25 ? `${Math.round(days)} сут` : `${(days / 365.25).toFixed(2)} г.`);
+    const orbitRows = (starSystem?.planets ?? []).map((planet) => {
+      const bodyId = `body:${node.id}:${planet.orbitIndex}`;
+      const host = planet.status === 'bound';
+      const scanned = orbitalState.scannedBodyIds.includes(bodyId);
+      const activatedId = orbitalState.activatedBodies[bodyId];
+      const known = host || scanned || Boolean(activatedId);
+      const label = known ? bodyLabel(planet.bodyClass) : 'Неидентифицированное орбитальное тело';
+      const title = host ? node.name : activatedId ? activatedId : `Орбита ${planet.orbitIndex + 1}`;
+      const meta = `${planet.semiMajorAxis.toFixed(2)} а.е. · период ${orbitPeriod(planet.periodDays)} · e ${planet.eccentricity.toFixed(2)}`;
+      const action = host
+        ? (active ? '<strong>АКТИВНА</strong>' : unlocked ? `<button type="button" class="galaxy-orbit-action" data-system-travel="${escapeHtml(node.id)}">ПЕРЕЙТИ</button>` : '<strong>ЗАКРЫТА</strong>')
+        : !unlocked ? '<strong>СИСТЕМА ЗАКРЫТА</strong>'
+          : activatedId ? `<button type="button" class="galaxy-orbit-action" data-system-travel="${escapeHtml(activatedId)}">ПЕРЕЙТИ</button>`
+            : scanned ? `<button type="button" class="galaxy-orbit-action" data-orbit-activate="${escapeHtml(bodyId)}">АКТИВИРОВАТЬ · 2 000 ⚡ / 500 🔬</button>`
+              : `<button type="button" class="galaxy-orbit-action" data-orbit-scan="${escapeHtml(bodyId)}">ИССЛЕДОВАТЬ · 500 ⚡ / 100 🔬</button>`;
+      return `<div class="galaxy-world-row${host ? '' : ' galaxy-world-candidate'}"><span class="galaxy-world-orbit">${host ? '◎' : scanned ? '◍' : '◌'}</span><span><b>${escapeHtml(title)}</b><em>${escapeHtml(label)} · ${escapeHtml(meta)}</em></span>${action}</div>`;
+    }).join('');
     const worldAction = active
       ? `<button type="button" class="galaxy-travel-button" data-enter-world="${escapeHtml(node.id)}">ОТКРЫТЬ ПОВЕРХНОСТЬ ПЛАНЕТЫ</button>`
       : unlocked && route
         ? `<button type="button" class="galaxy-travel-button" data-galaxy-travel="${escapeHtml(node.id)}" ${(snap.resources.energy ?? 0) < route.firstLeg.energyCost ? 'disabled' : ''}>ПЕРЕЛЁТ К ПЛАНЕТЕ · ${Math.ceil(route.firstLeg.energyCost).toLocaleString('ru-RU')} ⚡</button>`
         : '<div class="galaxy-panel-status">Мир обнаружен, но ещё не открыт. Завершите сонарное открытие.</div>';
-    galaxyPanel.innerHTML = `<button class="galaxy-panel-close" type="button" aria-label="Закрыть карточку">×</button><div class="galaxy-panel-kicker">${active ? 'АКТИВНАЯ СИСТЕМА' : unlocked ? 'ОТКРЫТАЯ СИСТЕМА' : 'ОБНАРУЖЕННЫЙ СИГНАЛ'}</div><div class="galaxy-nav-actions"><button type="button" data-system-view>ОТКРЫТЬ СИСТЕМУ</button><button type="button" data-galaxy-return>К ГАЛАКТИКЕ</button></div><h3>${escapeHtml(node.name)}</h3><div class="galaxy-panel-meta">${escapeHtml(node.biome)} · ${escapeHtml(node.geometryName)}</div><div class="galaxy-system-summary"><span class="galaxy-system-star" style="--star-color:${systemDetail?.starColor ?? '#d8e8f5'}"></span><div><small>ЦЕНТРАЛЬНАЯ ЗВЕЗДА · ${escapeHtml(systemDetail?.starClass.toUpperCase() ?? 'UNKNOWN')}</small><b>${escapeHtml(systemDetail?.title ?? 'UNKNOWN')}</b><em>Каталог: ${escapeHtml(system?.catalog.star.class.toUpperCase() ?? 'UNKNOWN')} · ${system?.catalog.star.temperatureK ?? 0} K</em></div></div><div class="galaxy-panel-grid"><span>Рукав <b>${escapeHtml(node.armId)}</b></span><span>Сектор <b>${escapeHtml(node.sectorLabel)}</b></span><span>Координаты <b>${node.x.toFixed(1)}, ${node.y.toFixed(1)}, ${node.z.toFixed(1)}</b></span><span>Состояние <b>${active ? 'Здесь' : unlocked ? 'Доступна' : 'Не открыта'}</b></span></div><div class="galaxy-world-list"><small>ПОДТВЕРЖДЁННЫЕ ПЛАНЕТЫ · ${system?.confirmedWorldCount ?? 0}</small>${world ? `<div class="galaxy-world-row"><span class="galaxy-world-orbit">◎</span><span><b>${escapeHtml(world.name)}</b><em>${escapeHtml(world.biome)} · ${escapeHtml(world.geometry)}</em></span><strong>${world.active ? 'АКТИВНА' : world.unlocked ? 'ОТКРЫТА' : 'ЗАКРЫТА'}</strong></div>` : ''}<div class="galaxy-orbital-signatures"><small>НЕРАЗВЕДАННЫЕ ОРБИТЫ · ${system?.candidateCount ?? 0}</small>${(system?.candidates ?? []).map((body) => { const orbital = game.orbitalExplorationState(node.id); const activatedId = orbital.activatedBodies[body.id]; const scanned = orbital.scannedBodyIds.includes(body.id); return `<div class="galaxy-world-row galaxy-world-candidate"><span class="galaxy-world-orbit">◌</span><span><b>${scanned ? (system?.catalog.bodies.find((item) => item.id === body.id)?.bodyClass ?? 'Орбитальное тело') : body.label}</b><em>Орбита ${body.orbitIndex} · ${body.orbitRadius.toFixed(2)} а.е.</em></span>${!unlocked ? '<strong>СИСТЕМА ЗАКРЫТА</strong>' : activatedId ? `<strong>${escapeHtml(activatedId)}</strong><button type="button" class="galaxy-orbit-action" data-system-travel="${escapeHtml(activatedId)}">ПЕРЕЙТИ</button>` : scanned ? `<button type="button" class="galaxy-orbit-action" data-orbit-activate="${escapeHtml(body.id)}">АКТИВИРОВАТЬ · 2 000 ⚡ / 500 🔬</button>` : `<button type="button" class="galaxy-orbit-action" data-orbit-scan="${escapeHtml(body.id)}">ИССЛЕДОВАТЬ · 500 ⚡ / 100 🔬</button>`}</div>`; }).join('')}</div></div>${anomaly ? `<div class="galaxy-panel-anomaly">✧ ${escapeHtml(anomaly.title)} · ${anomaly.resolved ? 'исследована' : anomaly.available ? 'экспедиция доступна' : 'условия не выполнены'}</div>` : ''}<div class="galaxy-panel-route"><small>МАРШРУТ ОТ ТЕКУЩЕЙ ПЛАНЕТЫ</small><b>${routeLabel}</b>${route ? `<span>${route.path.map((id) => escapeHtml(snap.galaxy.nodes.find((item) => item.id === id)?.name ?? id)).join(' → ')}</span>` : ''}</div>${worldAction}`;
+    galaxyPanel.innerHTML = `<button class="galaxy-panel-close" type="button" aria-label="Закрыть карточку">×</button><div class="galaxy-panel-kicker">${active ? 'АКТИВНАЯ СИСТЕМА' : unlocked ? 'ОТКРЫТАЯ СИСТЕМА' : 'ОБНАРУЖЕННЫЙ СИГНАЛ'}</div><div class="galaxy-nav-actions"><button type="button" data-system-view>ОТКРЫТЬ СИСТЕМУ</button><button type="button" data-galaxy-return>К ГАЛАКТИКЕ</button></div><h3>${escapeHtml(node.name)}</h3><div class="galaxy-panel-meta">${escapeHtml(node.biome)} · ${escapeHtml(node.geometryName)}</div><div class="galaxy-system-summary"><span class="galaxy-system-star" style="--star-color:${systemDetail?.starColor ?? '#d8e8f5'}"></span><div><small>ЦЕНТРАЛЬНАЯ ЗВЕЗДА · ${escapeHtml(systemDetail?.starClass.toUpperCase() ?? 'UNKNOWN')}</small><b>${escapeHtml(systemDetail?.title ?? 'UNKNOWN')}</b><em>${escapeHtml(starSystem?.designation ?? '')} · ${escapeHtml(system?.catalog.star.class.toUpperCase() ?? 'UNKNOWN')} · ${system?.catalog.star.temperatureK ?? 0} K · ${(system?.catalog.star.luminosity ?? 0).toFixed(2)} L☉ · планет ${starSystem?.planets.length ?? 0}</em></div></div><div class="galaxy-panel-grid"><span>Рукав <b>${escapeHtml(node.armId)}</b></span><span>Сектор <b>${escapeHtml(node.sectorLabel)}</b></span><span>Координаты <b>${node.x.toFixed(1)}, ${node.y.toFixed(1)}, ${node.z.toFixed(1)}</b></span><span>Состояние <b>${active ? 'Здесь' : unlocked ? 'Доступна' : 'Не открыта'}</b></span></div>${orbitRows}${anomaly ? `<div class="galaxy-panel-anomaly">✧ ${escapeHtml(anomaly.title)} · ${anomaly.resolved ? 'исследована' : anomaly.available ? 'экспедиция доступна' : 'условия не выполнены'}</div>` : ''}<div class="galaxy-panel-route"><small>МАРШРУТ ОТ ТЕКУЩЕЙ ПЛАНЕТЫ</small><b>${routeLabel}</b>${route ? `<span>${route.path.map((id) => escapeHtml(snap.galaxy.nodes.find((item) => item.id === id)?.name ?? id)).join(' → ')}</span>` : ''}</div>${worldAction}`;
     galaxyPanel.hidden = false;
   };
+  /**
+   * Этап 9.0 — карточка системы без подтверждённого мира (фоновая система или центр галактики).
+   * Показывает звезду и планеты на орбитах, но не раскрывает то, что ещё не исследовано.
+   */
+  const paintStarSystemPanel = (systemId: string): void => {
+    const system = starMapOf().byId[systemId];
+    if (!system) { galaxyPanel.hidden = true; galaxyPanel.innerHTML = ''; return; }
+    const orbitPeriod = (days: number): string => (days < 365.25 ? `${Math.round(days)} сут` : `${(days / 365.25).toFixed(2)} г.`);
+    galaxyPanel.innerHTML = `<button class="galaxy-panel-close" type="button" aria-label="Закрыть карточку">×</button>`
+      + `<div class="galaxy-panel-kicker">${system.core ? 'ЦЕНТР ГАЛАКТИКИ' : 'НЕИЗУЧЕННАЯ СИСТЕМА'}</div>`
+      + `<div class="galaxy-nav-actions"><button type="button" data-system-zoom="${escapeHtml(system.id)}">ПРИБЛИЗИТЬСЯ</button><button type="button" data-galaxy-return>К ГАЛАКТИКЕ</button></div>`
+      + `<h3>${escapeHtml(system.name)}</h3>`
+      + `<div class="galaxy-panel-meta">${escapeHtml(system.designation)} · рукав ${escapeHtml(system.armId)} · сектор ${escapeHtml(system.sectorId)}</div>`
+      + `<div class="galaxy-system-summary"><span class="galaxy-system-star" style="--star-color:${escapeHtml(system.star.color)}"></span><div><small>ЦЕНТРАЛЬНАЯ ЗВЕЗДА · ${escapeHtml(system.star.class.toUpperCase())}</small><b>${system.star.temperatureK.toLocaleString('ru-RU')} K</b><em>Светимость ${system.star.luminosity.toFixed(2)} L☉ · планет на орбитах: ${system.planets.length}</em></div></div>`
+      + `<div class="galaxy-world-list"><small>ПЛАНЕТЫ НА ОРБИТАХ · ${system.planets.length}</small>${system.planets.map((planet) => `<div class="galaxy-world-row galaxy-world-candidate"><span class="galaxy-world-orbit">◌</span><span><b>Орбита ${planet.orbitIndex + 1}</b><em>${planet.semiMajorAxis.toFixed(2)} а.е. · период ${orbitPeriod(planet.periodDays)} · e ${planet.eccentricity.toFixed(2)}</em></span><strong>НЕ ПОДТВЕРЖДЕНА</strong></div>`).join('')}</div>`
+      + `<div class="galaxy-panel-status">Система нанесена на карту, подтверждённых миров нет. Сонарное открытие привяжет новую планету к одной из свободных орбит (Этап 9.1).</div>`;
+    galaxyPanel.hidden = false;
+  };
+
   const showSystemView = (nodeId: string): void => {
     const snap = game.snapshot();
     const node = snap.galaxy.nodes.find((item) => item.id === nodeId);
@@ -157,7 +235,8 @@ try {
   const showGalaxyView = (): void => {
     activeScene = 'galaxy'; sceneHost.hidden = true; galaxyHost.hidden = false;
     galaxyViewer?.setOrbitalTopology(null, null); galaxyViewer?.setSystemFocus(null);
-    galaxyCaption.textContent = 'GALAXY · PLANETARY GRAPH';
+    galaxyViewer?.setSelectedSystem(null);
+    galaxyCaption.textContent = `GALAXY · ${starMapOf().systemCount} СИСТЕМ · ${starMapOf().planetTotal} ПЛАНЕТ`
     sceneSwitch.querySelectorAll('button').forEach((item) => item.classList.toggle('active', (item).dataset['scene'] === 'galaxy'));
     galaxyViewer?.resize(); startRenderLoop();
   };
@@ -165,8 +244,22 @@ try {
   if (first) {
     viewer = createPlanetViewer(canvas, first);
     galaxyViewer = createGalaxyViewer(galaxyCanvas, galaxyData());
+    galaxyViewer.setSystemSelectHandler((systemId) => {
+      selectedGalaxyNodeId = null;
+      galaxyViewer?.setSelectedNode(null);
+      galaxyViewer?.setSelectedSystem(systemId);
+      galaxyViewer?.focusSystem(systemId);
+      activeScene = 'galaxy';
+      sceneHost.hidden = true;
+      galaxyHost.hidden = false;
+      sceneSwitch.querySelectorAll('button').forEach((item) => item.classList.toggle('active', (item).dataset['scene'] === 'galaxy'));
+      galaxyCaption.textContent = `STAR SYSTEM · ${starMapOf().byId[systemId]?.designation ?? ''}`;
+      paintStarSystemPanel(systemId);
+      startRenderLoop();
+    });
     galaxyViewer.setNodeSelectHandler((nodeId) => {
       selectedGalaxyNodeId = nodeId;
+      galaxyViewer?.setSelectedSystem(null);
       const current = game.snapshot();
       const route = current.galaxy.routes.find((item) => item.destinationId === nodeId);
       galaxyViewer?.setSelectedNode(nodeId);
@@ -180,6 +273,8 @@ try {
       const target = event.target as HTMLElement;
       if (target.closest('.galaxy-panel-close')) { galaxyPanel.hidden = true; return; }
       if (target.closest('[data-system-view]')) { if (selectedGalaxyNodeId) showSystemView(selectedGalaxyNodeId); return; }
+      const zoomButton = target.closest<HTMLButtonElement>('[data-system-zoom]');
+      if (zoomButton) { galaxyViewer?.focusSystem(zoomButton.dataset['systemZoom'] ?? ''); return; }
       if (target.closest('[data-galaxy-return]')) { showGalaxyView(); return; }
       const enter = target.closest<HTMLButtonElement>('[data-enter-world]');
       if (enter) {
