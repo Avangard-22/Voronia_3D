@@ -7,7 +7,7 @@ describe('Stage 7.4.6 system exploration persistence', () => {
   function activatedGame() {
     const game = new Game({ rngSeed: 7406 });
     game.dispatch('grant', { delta: { energy: 10000, research: 3000 }, reason: 'stage7.4.6-test' });
-    const body = buildStarSystemCatalog(game.galaxyGraph().nodes['ferrum']!)!.bodies[1]!;
+    const body = buildStarSystemCatalog(game.galaxyGraph().nodes['ferrum'])!.bodies[1]!;
     expect(game.dispatch('scanOrbitalBody', { hostPlanetId: 'ferrum', bodyId: body.id }).ok).toBe(true);
     const activation = game.dispatch('activateOrbitalBody', { hostPlanetId: 'ferrum', bodyId: body.id });
     expect(activation.ok).toBe(true);

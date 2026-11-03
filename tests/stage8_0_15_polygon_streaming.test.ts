@@ -13,7 +13,9 @@ describe('Stage 8.0.15 polygon-aware surface streaming', () => {
     expect(plan.minPolygonSides).toBe(4);
     expect(plan.maxPolygonSides).toBe(9);
     expect(plan.polygonSideHistogram).toEqual({ 4: 1, 5: 1, 6: 1, 7: 1, 9: 1 });
-    expect([...plan.chunkCellIds].flat().sort((a, b) => a - b)).toEqual([10, 20, 30, 40, 50]);
+    // chunkCellIds — Uint32Array[]: Array.prototype.flat не разворачивает типизированные массивы,
+    // поэтому приводим к number[] явно (иначе sort((a, b) => a - b) сравнивал NaN и ничего не проверял).
+    expect(plan.chunkCellIds.flatMap((ids) => Array.from(ids)).sort((a, b) => a - b)).toEqual([10, 20, 30, 40, 50]);
   });
   it('uses adjacency and exposes cross-chunk seams without splitting cells', () => {
     const plan = buildPolygonSurfaceChunkPlan(input, 2);

@@ -10,7 +10,7 @@ describe('Stage 8.0.13 surface chunks', () => {
     cellCenters: new Float32Array([1,1,1, -1,-1,-1]),
   });
   it('partitions triangles and preserves per-face cell identity and vertex attributes', async () => {
-    const chunks = await buildSurfaceChunksAsync(fixture(), { yieldControl: async () => undefined });
+    const chunks = await buildSurfaceChunksAsync(fixture(), { yieldControl: () => Promise.resolve() });
     expect(chunks).toHaveLength(2);
     expect(chunks.reduce((sum, chunk) => sum + chunk.triangleCount, 0)).toBe(2);
     expect(chunks.flatMap((chunk) => [...chunk.faceCellIds]).sort()).toEqual([10, 20]);

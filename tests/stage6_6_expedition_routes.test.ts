@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { GraphNode, PlanetaryGraph } from '../src/contracts/galaxy';
-import { buildRouteOptions, findGalaxyRoute, quoteRouteLeg } from '../src/galaxy/routes';
+import { buildRouteOptions, findGalaxyRoute, quoteRouteLeg, ROUTE_POLICY } from '../src/galaxy/routes';
 import { makeGame, grant } from './helpers';
 
-function node(id: string, x: number, z: number, biome = 'unknown', geometryName = 'icosahedron'): GraphNode {
-  return { id, planetId: id, name: id.toUpperCase(), geometryName, biome, geometry: geometryName, frequency: 1, seed: x + z + 100, armId: 'core', x, y: 0, z, discovered: true };
+function node(id: string, x: number, z: number, biome = 'unknown', geometryName = 'icosahedron', discovered = true): GraphNode {
+  return { id, planetId: id, name: id.toUpperCase(), geometryName, biome, geometry: geometryName, frequency: 1, seed: x + z + 100, armId: 'core', x, y: 0, z, discovered };
 }
 
 function graph(nodes: GraphNode[], edges: [string, string][]): PlanetaryGraph {
@@ -18,7 +18,38 @@ describe('Stage 6.6 — Expedition Routes', () => {
     expect(route?.path).toEqual(['a', 'b', 'c']);
     expect(route?.hops).toBe(2);
     expect(route?.nextHop).toBe('b');
-    expect(findGalaxyRoute(g, ['a', 'c'], 'a', 'c')).toBeNull();
+    expect(route?.transitNodeIds).toEqual([]);
+    // Контракт Этапа 6.6 сохранён за явным флагом: без транзита замкнутой цепочки открытых узлов нет.
+    expect(findGalaxyRoute(g, ['a', 'c'], 'a', 'c', 0, { allowTransit: false })).toBeNull();
+  });
+
+  it('Этап 8.1: допускает пролёт через неоткрытую систему без посадки и с надбавкой', () => {
+    const g = graph([node('a', 0, 0), node('b', 3, 0), node('c', 6, 0), node('locked', 3, 2)], [['a', 'b'], ['b', 'c'], ['a', 'locked'], ['locked', 'c']]);
+    const transit = findGalaxyRoute(g, ['a', 'c'], 'a', 'c');
+    // Транзитный узел не становится остановкой: activePlanetId всегда указывает на открытую планету с runtime.
+    expect(transit?.path).toEqual(['a', 'c']);
+    expect(transit?.hops).toBe(1);
+    expect(transit?.nextHop).toBe('c');
+    expect(transit?.firstLeg).toMatchObject({ from: 'a', to: 'c' });
+    expect(transit?.transitNodeIds).toEqual(['b']);
+    const rawThroughB = quoteRouteLeg(g.nodes['a']!, g.nodes['b']!).energyCost + quoteRouteLeg(g.nodes['b']!, g.nodes['c']!).energyCost;
+    expect(transit?.totalEnergy).toBeGreaterThan(rawThroughB);
+    expect(transit?.totalEnergy).toBeLessThanOrEqual(Math.ceil(rawThroughB * ROUTE_POLICY.lockedTransitMultiplier) + 2);
+    expect(transit?.firstLeg.energyCost).toBe(transit?.totalEnergy);
+    // Открытая планета без связи с остальным графом по-прежнему недостижима.
+    expect(findGalaxyRoute(graph([node('a', 0, 0), node('far', 40, 40)], []), ['a', 'far'], 'a', 'far')).toBeNull();
+  });
+
+  it('Этап 8.1: неизученная система как транзит стоит дороже нанесённой на карту', () => {
+    const charted = graph([node('a', 0, 0), node('c', 6, 0), node('mid', 3, 0)], [['a', 'mid'], ['mid', 'c']]);
+    const blind = graph([node('a', 0, 0), node('c', 6, 0), node('mid', 3, 0, 'unknown', 'icosahedron', false)], [['a', 'mid'], ['mid', 'c']]);
+    const chartedRoute = findGalaxyRoute(charted, ['a', 'c'], 'a', 'c');
+    const blindRoute = findGalaxyRoute(blind, ['a', 'c'], 'a', 'c');
+    expect(chartedRoute?.transitNodeIds).toEqual(['mid']);
+    expect(blindRoute?.transitNodeIds).toEqual(['mid']);
+    expect(chartedRoute?.totalDistance).toBe(blindRoute?.totalDistance);
+    expect(blindRoute!.totalEnergy).toBeGreaterThan(chartedRoute!.totalEnergy);
+    expect(blindRoute!.totalEnergy).toBeLessThanOrEqual(Math.ceil(chartedRoute!.totalEnergy * (ROUTE_POLICY.blindTransitMultiplier / ROUTE_POLICY.lockedTransitMultiplier)) + 2);
   });
 
   it('prices distance, destination sector and anomalous instability', () => {

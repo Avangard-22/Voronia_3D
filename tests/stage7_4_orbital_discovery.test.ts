@@ -40,7 +40,7 @@ describe('Stage 7.4 orbital discovery and activation', () => {
   it('does not activate an unscanned orbital body', () => {
     const game = new Game({ rngSeed: 79 });
     game.dispatch('grant', { delta: { energy: 10000, research: 3000 }, reason: 'stage7.4-test' });
-    const body = buildStarSystemCatalog(game.galaxyGraph().nodes['ferrum']!)!.bodies[1]!;
+    const body = buildStarSystemCatalog(game.galaxyGraph().nodes['ferrum'])!.bodies[1]!;
     const result = game.dispatch('activateOrbitalBody', { hostPlanetId: 'ferrum', bodyId: body.id });
     expect(result.ok).toBe(false);
   });

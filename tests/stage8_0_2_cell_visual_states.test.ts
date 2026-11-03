@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { buildPlanetMeshData } from '../src/renderer/planetMesh';
 import { buildPlanet } from '../src/planets/generator';
 import { STARTER_PLANET_SPECS, armsFromBalance } from '../src/planets/catalog';
+import { createStarterWorld, discoverPlanet } from '../src/core/discovery';
 import { loadBalance } from '../src/config/loader';
 import type { GeneratorCtx } from '../src/planets/generator';
 
@@ -14,7 +15,14 @@ describe('Stage 8.0.2 — polygon cell visual states', () => {
     const expectedSegments = planet.cells.reduce((sum, cell) => sum + cell.poly.length, 0);
     expect(data.boundaryPositions).toHaveLength(expectedSegments * 6);
     expect(data.boundaryColors).toHaveLength(expectedSegments * 6);
-    expect(new Set(planet.cells.map((cell) => cell.poly.length)).size).toBeGreaterThan(1);
+    expect(Array.from(data.cellSideCounts)).toEqual(planet.cells.map((cell) => cell.poly.length));
+    // Феррум — строгий додекаэдр: все 12 клеток пятиугольные, поэтому разнообразие сторон проверяется
+    // на сгенерированном мире. Инвариант Stage 8.0.2: меш повторяет исходные poly, а не сводит их к hex-сетке.
+    const generated = discoverPlanet({ seed: 777001, name: 'Гелика-Прайм' }, createStarterWorld(ctx), ctx).planet;
+    expect(new Set(generated.cells.map((cell) => cell.poly.length)).size).toBeGreaterThan(1);
+    const generatedData = buildPlanetMeshData(generated);
+    expect(Array.from(generatedData.cellSideCounts)).toEqual(generated.cells.map((cell) => cell.poly.length));
+    expect(generatedData.boundarySegmentCount).toBe(generated.cells.reduce((sum, cell) => sum + cell.poly.length, 0));
   });
 
   it('distinguishes hidden, revealed and explored states without exposing hidden cell types', () => {

@@ -43,21 +43,34 @@ describe('parseColor (палитра 1.x: hsl/hex)', () => {
 });
 
 describe('buildPlanetMeshData (поли-сетка + граф соседства)', () => {
-  it('ferrum: cellCount=12, facets=Σ(poly−2), edges=Σneighbors/2, размеры массивов согласованы', () => {
+  it('ferrum: cellCount=12, facets=9×сегменты сторон+надстройки, edges=Σneighbors/2, размеры массивов согласованы', () => {
     const d = buildPlanetMeshData(ferrum);
     expect(d.cellCount).toBe(ferrum.cells.length);
     expect(d.cellCount).toBe(12); // GS-14: ferrum — 12 клеток
     let edges = 0;
     for (const c of ferrum.cells) edges += c.neighbors.length;
-    expect(d.facetCount).toBe(ferrum.cells.reduce((sum, cell) => sum + cell.poly.length * 9 + ((cell.type === 2 ? 3 : cell.type === 4 ? 5 : cell.type === 6 ? 2 : cell.type === 7 ? 4 : 0) * 3), 0));
-    expect(d.edgeCount).toBe(edges / 2); // граф неориентированный: каждое ребро один раз
+    // Контракт меша Stage 8.0.x (вместо Stage 5 «Σ poly×9 + шипы×3»):
+    // каждая сторона полигона тесселируется на segments = clamp(ceil(угол/0.12), 1, 12) общих сегментов,
+    // на сегмент приходится 9 треугольников склона (4 кольца × 2 + замыкающий на центр клетки).
+    const sides = ferrum.cells.reduce((sum, cell) => sum + cell.poly.length, 0);
+    const baseFacets = d.facetCount - d.featureTriangleCount;
+    expect(sides).toBe(60); // 12 пятиугольников
+    expect(d.sharedEdgeCount).toBe(edges / 2); // граф неориентированный: каждое ребро один раз
+    expect(d.edgeCount).toBe(edges / 2);
+    expect(sides).toBe(d.sharedEdgeCount * 2); // замкнутая поли-сетка: у каждого ребра ровно две клетки
+    expect(d.tessellatedEdgeSegmentCount).toBeGreaterThanOrEqual(d.sharedEdgeCount);
+    expect(baseFacets % 9).toBe(0);
+    expect(baseFacets).toBe(9 * 2 * d.tessellatedEdgeSegmentCount); // по 9 треугольников на сегмент с каждой из двух сторон ребра
+    expect(baseFacets).toBeGreaterThanOrEqual(sides * 9); // не меньше одного сегмента на сторону
+    expect(d.featureTriangleCount).toBeGreaterThan(0); // процедурные надстройки исследованных клеток
+    expect(d.facetCount).toBe(4023); // golden: детерминированная сборка Феррума (210 сегментов × 9 × 2 + 243 надстройки)
     expect(d.positions.length).toBe(d.facetCount * 9);
     expect(d.colors.length).toBe(d.facetCount * 9);
     expect(d.cellCenters.length).toBe(d.cellCount * 3);
     expect(d.cellColors.length).toBe(d.cellCount * 3);
     expect(d.cellIds.length).toBe(d.cellCount);
     expect(d.faceCellIds.length).toBe(d.facetCount);
-    expect(Array.from(d.faceCellIds)).toEqual(ferrum.cells.flatMap((cell) => Array.from({ length: cell.poly.length * 5 }, () => cell.id)));
+    expect(Array.from(d.cellSideCounts)).toEqual(ferrum.cells.map((cell) => cell.poly.length));
     expect(d.cellSurfaceCenters.length).toBe(d.cellCount * 3);
     expect(d.cellHeights.length).toBe(d.cellCount);
     expect(d.edgePositions.length).toBe(d.edgeCount * 6);
@@ -135,10 +148,16 @@ describe('buildPlanetMeshData (поли-сетка + граф соседства
 
   it('карта faceIndex → cellId сохраняется при рельефной триангуляции', () => {
     const d = buildPlanetMeshData(ferrum);
+    // Точное число треугольников на клетку зависит от тесселяции её сторон и от процедурных надстроек,
+    // поэтому проверяется инвариант pickable-меша: треугольники каждой клетки идут сплошным блоком
+    // в порядке planet.cells, и блоки исчерпывают меш целиком.
     let offset = 0;
     for (const cell of ferrum.cells) {
-      const extraSpikes = cell.type === 2 ? 3 : cell.type === 4 ? 5 : cell.type === 6 ? 2 : cell.type === 7 ? 4 : 0;
-      for (let i = 0; i < cell.poly.length * 9 + extraSpikes * 3; i++) expect(d.faceCellIds[offset++]).toBe(cell.id);
+      const start = offset;
+      while (offset < d.faceCellIds.length && d.faceCellIds[offset] === cell.id) offset++;
+      const block = offset - start;
+      expect(block).toBeGreaterThanOrEqual(cell.poly.length * 9); // минимум один сегмент на сторону
+      expect(Array.from(d.faceCellIds.slice(start, offset)).every((id) => id === cell.id)).toBe(true);
     }
     expect(offset).toBe(d.facetCount);
   });
@@ -154,20 +173,30 @@ describe('buildPlanetMeshData (поли-сетка + граф соседства
     expect(a.facetCount).toBe(b.facetCount);
   });
 
-  it('explored-опция: неисследованная клетка красится из unexplored-палитры', () => {
+  it('explored-опция: исследованная клетка — из explored-палитры, неисследованная — нейтральной (Stage 8.0.2)', () => {
     const t0 = ferrum.cells.find((c) => c.type === 0)!;
     const exploredColor = parseColor(ferrum.palette.explored[String(t0.type)] ?? ferrum.palette.border);
     const unexploredColor = parseColor(ferrum.palette.unexplored[String(t0.type)] ?? ferrum.palette.border);
     expect(exploredColor).not.toEqual(unexploredColor); // палитры 1.x различаются
     const idx = ferrum.cells.indexOf(t0);
+    const rgbOf = (d: ReturnType<typeof buildPlanetMeshData>, i: number): number[] => [d.cellColors[i * 3]!, d.cellColors[i * 3 + 1]!, d.cellColors[i * 3 + 2]!];
+
     const all = buildPlanetMeshData(ferrum); // без опции — все explored
-    expect([all.cellColors[idx * 3]!, all.cellColors[idx * 3 + 1]!, all.cellColors[idx * 3 + 2]!]).toEqual([
-      Math.fround(exploredColor[0]), Math.fround(exploredColor[1]), Math.fround(exploredColor[2]),
-    ]);
+    expect(rgbOf(all, idx)).toEqual([Math.fround(exploredColor[0]), Math.fround(exploredColor[1]), Math.fround(exploredColor[2])]);
+
+    // Отклонение от 1.x (Stage 8.0.2): per-type unexplored-палитра раскрыла бы тип клетки до исследования.
+    // Неисследованная, но открытая для взаимодействия клетка получает единый нейтральный тон от palette.border.
+    const border = parseColor(ferrum.palette.border);
+    const revealedTint = [border[0] * 0.72 + 0.12, border[1] * 0.72 + 0.16, border[2] * 0.72 + 0.2];
     const none = buildPlanetMeshData(ferrum, { explored: new Set() });
-    expect([none.cellColors[idx * 3]!, none.cellColors[idx * 3 + 1]!, none.cellColors[idx * 3 + 2]!]).toEqual([
-      Math.fround(unexploredColor[0]), Math.fround(unexploredColor[1]), Math.fround(unexploredColor[2]),
-    ]);
+    expect(rgbOf(none, idx)).toEqual(revealedTint.map((v) => Math.fround(v)));
+    expect(new Set(ferrum.cells.map((_, i) => rgbOf(none, i).join(','))).size).toBe(1); // тип не читается из цвета
+
+    // Полностью скрытая клетка темнее и тоже одинакова для всех типов.
+    const dark = buildPlanetMeshData(ferrum, { explored: new Set(), revealed: new Set() });
+    expect(rgbOf(dark, idx)).toEqual([0.035, 0.055, 0.075].map((v) => Math.fround(v)));
+    expect(new Set(ferrum.cells.map((_, i) => rgbOf(dark, i).join(','))).size).toBe(1);
+    expect(rgbOf(dark, idx)).not.toEqual(rgbOf(none, idx));
   });
 });
 
