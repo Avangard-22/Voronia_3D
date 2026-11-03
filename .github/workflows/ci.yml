@@ -1,0 +1,44 @@
+name: CI (lint · typecheck · arch · tests)
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck (app)
+        run: npm run typecheck
+
+      - name: Typecheck (node/tools)
+        run: npm run typecheck:node
+
+      - name: Architecture gates
+        run: npm run check:arch
+
+      - name: Tests
+        run: npm run test
