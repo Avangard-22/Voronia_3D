@@ -4,6 +4,7 @@ import { buildStarSystemTopology } from './galaxy/systemTopology';
  * main.ts — точка входа браузера: сборка Game (RafDriver + LocalStorage), старт, авто-сейв,
  * UI-цикл (рендер из снапшота ~4 раза/с и после команд).
  */
+import type { CellState } from './contracts/cells';
 import { Game } from './core/game';
 import { RafDriver } from './core/gameClock';
 import { LocalStorageAdapter, MemoryStorage } from './persistence/storage';
@@ -99,7 +100,7 @@ try {
     return planet ? buildPlanetMeshData(planet, {
       explored: rt?.explored,
       revealed: rt ? new Set([...rt.explored, ...rt.revealed]) : undefined,
-      cellLevels: new Map([...(rt?.cellStates ?? new Map())].map(([id, state]) => [id, state.level])),
+      cellLevels: new Map([...(rt?.cellStates ?? new Map<number, CellState>())].map(([id, state]) => [id, state.level])),
     }) : null;
   };
   const galaxyData = (): ReturnType<typeof buildGalaxyRenderData> => {
@@ -107,7 +108,7 @@ try {
     return buildGalaxyRenderData({ nodes: snap.galaxy.nodes, edges: snap.galaxy.edges, unlockedIds: snap.unlockedPlanets, activeId: snap.activePlanetId });
   };
   let selectedGalaxyNodeId: string | null = null;
-  const escapeHtml = (value: string): string => value.replace(/[&<>\"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', "'": '&#39;' })[ch] ?? ch);
+  const escapeHtml = (value: string): string => value.replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch] ?? ch);
   const paintGalaxyPanel = (): void => {
     const snap = game.snapshot();
     const node = snap.galaxy.nodes.find((item) => item.id === selectedGalaxyNodeId);
@@ -145,19 +146,19 @@ try {
       if (!result.ok) { paintHud(); paintGalaxyPanel(); return; }
       planetVisualDirty = true; galaxyVisualDirty = true; paintHud();
       activeScene = 'planet'; sceneHost.hidden = false; galaxyHost.hidden = true;
-      sceneSwitch.querySelectorAll('button').forEach((item) => item.classList.toggle('active', (item as HTMLButtonElement).dataset['scene'] === 'planet'));
+      sceneSwitch.querySelectorAll('button').forEach((item) => item.classList.toggle('active', (item).dataset['scene'] === 'planet'));
       viewer?.resize(); startRenderLoop();
     });
     activeScene = 'system'; sceneHost.hidden = true; galaxyHost.hidden = false;
     galaxyCaption.textContent = `STAR SYSTEM · ${node.name.toUpperCase()}`;
-    sceneSwitch.querySelectorAll('button').forEach((item) => item.classList.toggle('active', (item as HTMLButtonElement).dataset['scene'] === 'system'));
+    sceneSwitch.querySelectorAll('button').forEach((item) => item.classList.toggle('active', (item).dataset['scene'] === 'system'));
     galaxyViewer.resize(); paintGalaxyPanel(); startRenderLoop();
   };
   const showGalaxyView = (): void => {
     activeScene = 'galaxy'; sceneHost.hidden = true; galaxyHost.hidden = false;
     galaxyViewer?.setOrbitalTopology(null, null); galaxyViewer?.setSystemFocus(null);
     galaxyCaption.textContent = 'GALAXY · PLANETARY GRAPH';
-    sceneSwitch.querySelectorAll('button').forEach((item) => item.classList.toggle('active', (item as HTMLButtonElement).dataset['scene'] === 'galaxy'));
+    sceneSwitch.querySelectorAll('button').forEach((item) => item.classList.toggle('active', (item).dataset['scene'] === 'galaxy'));
     galaxyViewer?.resize(); startRenderLoop();
   };
   const first = meshOf();
@@ -187,7 +188,7 @@ try {
         activeScene = 'planet';
         sceneHost.hidden = false;
         galaxyHost.hidden = true;
-        sceneSwitch.querySelectorAll('button').forEach((item) => item.classList.toggle('active', (item as HTMLButtonElement).dataset['scene'] === 'planet'));
+        sceneSwitch.querySelectorAll('button').forEach((item) => item.classList.toggle('active', (item).dataset['scene'] === 'planet'));
         viewer?.resize();
         startRenderLoop();
         return;
@@ -200,7 +201,7 @@ try {
         if (result.ok) {
           planetVisualDirty = true; galaxyVisualDirty = true; paintHud(); paintGalaxyPanel();
           activeScene = 'planet'; sceneHost.hidden = false; galaxyHost.hidden = true;
-          sceneSwitch.querySelectorAll('button').forEach((item) => item.classList.toggle('active', (item as HTMLButtonElement).dataset['scene'] === 'planet'));
+          sceneSwitch.querySelectorAll('button').forEach((item) => item.classList.toggle('active', (item).dataset['scene'] === 'planet'));
           viewer?.resize(); startRenderLoop();
         } else { paintHud(); paintGalaxyPanel(); }
         return;
@@ -241,7 +242,7 @@ try {
         activeScene = 'planet';
         sceneHost.hidden = false;
         galaxyHost.hidden = true;
-        sceneSwitch.querySelectorAll('button').forEach((item) => item.classList.toggle('active', (item as HTMLButtonElement).dataset['scene'] === 'planet'));
+        sceneSwitch.querySelectorAll('button').forEach((item) => item.classList.toggle('active', (item).dataset['scene'] === 'planet'));
         viewer?.resize();
       } else {
         paintHud();
