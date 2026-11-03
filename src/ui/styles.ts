@@ -40,11 +40,39 @@ button:hover { background: #1d2b3a; }
 .galaxy3d-scene canvas { width:100%; height:100%; display:block; touch-action:none; cursor:grab; }
 .galaxy-scene-caption { position:absolute; top:12px; left:14px; color:#8dc9df; font:600 11px system-ui,sans-serif; letter-spacing:.16em; text-shadow:0 1px 5px #000; pointer-events:none; }
 .galaxy3d-scene .view-controls { right:8px; left:auto; bottom:8px; }
+.galaxy-node-panel { position:absolute; left:12px; bottom:12px; width:min(360px,calc(100% - 92px)); max-height:calc(100% - 64px); overflow:auto; padding:13px 14px; border:1px solid #39718a; border-radius:11px; background:linear-gradient(145deg,rgba(7,22,34,.96),rgba(4,11,19,.94)); box-shadow:0 12px 34px #0009,inset 0 0 24px #12364a55; backdrop-filter:blur(9px); color:#d9edf7; }
+.galaxy-node-panel[hidden] { display:none; }
+.galaxy-node-panel h3 { margin:2px 28px 2px 0; color:#e8f8ff; font-size:18px; }
+.galaxy-nav-actions { display:flex; gap:6px; margin:7px 28px 7px 0; } .galaxy-nav-actions button { flex:1; min-width:0; padding:6px 5px; border-color:#315c72; color:#a9d9e9; font-size:9px; font-weight:800; letter-spacing:.04em; } .galaxy-nav-actions button:first-child { border-color:#5b9eb4; background:#123449; color:#d8f7ff; }
+.galaxy-panel-kicker { color:#63c9e8; font:700 9px monospace; letter-spacing:.16em; }
+.galaxy-panel-meta { color:#9bb8c8; font-size:11px; }
+.galaxy-panel-close { position:absolute; right:7px; top:7px; width:28px; height:28px; padding:0; font-size:20px; line-height:1; }
+.galaxy-panel-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin:10px 0; }
+.galaxy-panel-grid span { display:block; padding:5px 7px; border:1px solid #234356; border-radius:6px; background:#0a1b28; color:#87aabd; font-size:10px; }
+.galaxy-panel-grid b { display:block; color:#d5edf7; font-size:11px; font-weight:600; overflow-wrap:anywhere; }
+.galaxy-panel-route { display:flex; flex-direction:column; gap:3px; padding:8px; border-left:2px solid #e9c96e; background:#182331; }
+.galaxy-panel-route small { color:#d5bd78; font:700 9px monospace; letter-spacing:.1em; }
+.galaxy-panel-route b { color:#fff0b7; font-size:12px; }
+.galaxy-panel-route span { color:#9fb6c5; font-size:10px; line-height:1.4; }
+.galaxy-panel-anomaly { margin:6px 0; color:#d8a7ff; font-size:11px; }
+.galaxy-panel-status { margin-top:8px; color:#9ab7c8; font-size:11px; }
+.galaxy-travel-button { width:100%; margin-top:9px; padding:8px; border-color:#b99b4d; background:linear-gradient(90deg,#5a4721,#293b43); color:#fff0b8; font-size:11px; font-weight:800; letter-spacing:.04em; }
+.galaxy-travel-button:disabled { opacity:.45; cursor:not-allowed; }
+.galaxy-world-list { margin:9px 0; padding:8px; border:1px solid #29495b; border-radius:8px; background:rgba(7,19,29,.78); }
+.galaxy-world-list > small { display:block; color:#70cbe5; font:700 9px monospace; letter-spacing:.12em; margin-bottom:6px; }
+.galaxy-world-row { display:flex; align-items:center; gap:8px; padding:6px 0; }
+.galaxy-world-orbit { display:grid; place-items:center; width:28px; height:28px; border:1px solid #5aa5bd; border-radius:50%; color:#bceeff; font-size:19px; }
+.galaxy-world-row span:nth-child(2) { min-width:0; flex:1; }
+.galaxy-world-row b,.galaxy-world-row em { display:block; }
+.galaxy-world-row b { color:#e2f6ff; font-size:11px; }
+.galaxy-world-row em { color:#8daebd; font-size:9px; font-style:normal; }
+.galaxy-world-row strong { color:#8ce0b1; font:700 8px monospace; }
+.galaxy-world-list p { margin:5px 0 0; color:#748f9f; font-size:9px; line-height:1.4; }
 .scene3d { position: relative; width: min(56vh, 480px); height: min(56vh, 480px); margin: 0 auto 10px; }
 .scene3d canvas { width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
 .view-controls { position: absolute; left: 8px; bottom: 8px; display: flex; gap: 5px; }
 .view-controls button { width: 36px; height: 36px; padding: 0; font-size: 19px; background: rgba(10,18,27,.82); border-color: #456078; }
-@media (max-width: 600px) { #app { padding: 8px; } .scene3d { width: min(76vw, 54vh, 420px); height: min(76vw, 54vh, 420px); } .galaxy3d-scene { height:min(62vh,500px); min-height:280px; } .hud { gap: 12px; } .hud .col { min-width: min(100%, 280px); flex: 1 1 100%; } .board { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); } .selected-cell { max-width: none; } button { min-height: 34px; } }
+@media (max-width: 600px) { #app { padding: 8px; } .scene3d { width: min(76vw, 54vh, 420px); height: min(76vw, 54vh, 420px); } .galaxy3d-scene { height:min(62vh,500px); min-height:280px; } .galaxy-node-panel { left:7px; bottom:7px; width:min(310px,calc(100% - 64px)); padding:10px; } .galaxy-panel-grid { gap:4px; } .galaxy-nav-actions { margin-right:26px; } .galaxy-nav-actions button { font-size:8px; } .hud { gap: 12px; } .hud .col { min-width: min(100%, 280px); flex: 1 1 100%; } .board { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); } .selected-cell { max-width: none; } button { min-height: 34px; } }
 .sonar-preview { padding: 7px 9px; margin: 5px 0; border: 1px solid #28546a; border-radius: 7px; background: rgba(16,43,58,.45); color: #bdeaff; font-size: 12px; } .sonar-preview small { color: #8caebe; } .sonar-state { font-size: 12px; color: #9ec3d6; margin: 5px 0; }
 .sonar-overlay { position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center; padding: 16px; background: rgba(1,6,12,.94); } .sonar-dialog { width: min(100%, 520px); padding: 20px; border: 1px solid #39718a; border-radius: 14px; background: linear-gradient(145deg,#0b1b29,#071018); box-shadow: 0 20px 80px #000; text-align: center; } .sonar-dialog h2 { color: #4ddcff; letter-spacing: 1.5px; } .sonar-dialog p,.sonar-help { color: #8caebe; font-size: 12px; } .sonar-round { margin: 18px 0 10px; color: #4ddcff; font: 700 12px monospace; } .sonar-track { position: relative; height: 34px; margin: 18px 0; border: 1px solid #2b6178; border-radius: 8px; background: linear-gradient(90deg,#401b27,#263a36 38%,#235a48 50%,#263a36 62%,#401b27); overflow: hidden; } .sonar-center { position: absolute; left: 50%; top: 0; height: 100%; width: 2px; background: #eafff6; box-shadow: 0 0 12px #5cf2b0; } .sonar-cursor { position: absolute; top: 3px; width: 5px; height: 26px; margin-left: -2px; border-radius: 3px; background: #4ddcff; box-shadow: 0 0 12px #4ddcff; } .sonar-readout { font: 900 32px monospace; color: #4ddcff; margin: 10px; } .sonar-stop { width: 100%; min-height: 48px; color: white; border-color: #4ddcff; background: #12354a; font-weight: 800; letter-spacing: 1px; }
 .fps { position: absolute; top: 6px; right: 8px; font-size: 11px; color: #7fe3a8; background: rgba(8, 14, 20, 0.55); padding: 2px 6px; border-radius: 4px; pointer-events: none; }
@@ -84,6 +112,14 @@ button:hover { background: #1d2b3a; }
 .progression-stage b,.progression-stage small { display:block; }
 .progression-stage b { color:#d6f4ff; font-size:12px; }
 .progression-stage small { color:#91adbb; font-size:10px; margin-top:4px; line-height:1.4; }
+
+
+/* Stage 7.4 — unscanned orbital signatures are visible without revealing body identity. */
+.galaxy-orbital-signatures { display: grid; gap: 7px; margin-top: 12px; }
+.galaxy-orbital-signatures > small { color: #79cde8; font-size: 10px; letter-spacing: .09em; }
+.galaxy-world-candidate { opacity: .76; border-style: dashed; }
+.galaxy-world-candidate .galaxy-world-orbit { color: #83c9e8; }
+.galaxy-world-candidate strong { color: #8ca9b7; font-size: 9px; }
 `;
 
 export function bindStyles(doc: Document = document): void {
@@ -93,3 +129,4 @@ export function bindStyles(doc: Document = document): void {
   style.textContent = CSS;
   doc.head.appendChild(style);
 }
+

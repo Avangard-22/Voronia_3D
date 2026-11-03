@@ -3,6 +3,7 @@ import type { GraphNode } from '../contracts/galaxy';
 
 export interface GalaxyRenderNode {
   readonly id: string;
+  readonly seed: number;
   readonly name: string;
   readonly x: number;
   readonly y: number;
@@ -35,6 +36,7 @@ export function buildGalaxyRenderData(input: {
   const discoveredIds = new Set(input.nodes.filter((node) => node.discovered).map((node) => node.id));
   const nodes = input.nodes.map((node): GalaxyRenderNode => ({
     id: node.id,
+    seed: node.seed,
     name: node.discovered ? node.name : 'Неизвестный сигнал',
     x: node.x * scale,
     y: node.y * scale,

@@ -118,6 +118,12 @@ export interface CommandMap {
   unloadCargo: { readonly resource: string; readonly amount: number };
   /** Stage 6.7: вернуть ресурс из локального депо в общий баланс на текущей планете. */
   withdrawDepot: { readonly resource: string; readonly amount: number };
+  /** Stage 7.4: исследовать орбитальную сигнатуру открытой звёздной системы. */
+  scanOrbitalBody: { readonly hostPlanetId: string; readonly bodyId: string };
+  /** Stage 7.4: активировать ранее исследованное орбитальное тело как игровую планету. */
+  activateOrbitalBody: { readonly hostPlanetId: string; readonly bodyId: string };
+  /** Stage 7.4.2: бесплатное перемещение между активированными телами одной системы. */
+  travelWithinSystem: { readonly hostPlanetId: string; readonly destinationId: string };
   /** Stage 6.6: один прыжок по кратчайшему доступному маршруту к цели. */
   travelToPlanet: { readonly destinationId: string };
   /** Совместимость старого UI/API; теперь также требует реального маршрута и оплаты. */
@@ -141,6 +147,9 @@ export interface CommandResultMap {
   discoverPlanet: DiscoverPlanetResult;
   setActivePlanet: TravelToPlanetResult;
   travelToPlanet: TravelToPlanetResult;
+  travelWithinSystem: { readonly pid: string; readonly prev: string; readonly hostPlanetId: string };
+  scanOrbitalBody: { readonly hostPlanetId: string; readonly bodyId: string; readonly energySpent: number; readonly researchSpent: number };
+  activateOrbitalBody: DiscoverPlanetResult & { readonly hostPlanetId: string; readonly bodyId: string };
   loadCargo: { readonly resource: string; readonly amount: number; readonly cargoMass: number };
   unloadCargo: { readonly planetId: string; readonly resource: string; readonly amount: number; readonly depotMass: number };
   withdrawDepot: { readonly planetId: string; readonly resource: string; readonly amount: number };
