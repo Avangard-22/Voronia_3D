@@ -2,6 +2,7 @@
  * contracts/tech.ts — контракт состояния технологий/исследований (владелец — progression).
  * RESOURCE_UNLOCK — parity 1.x Kt() (fixtures/resources_research_v0.0.41.json).
  */
+import type { ResourceAmounts } from './resources';
 
 export interface TechLevels {
   readonly costScale: number;
@@ -29,3 +30,24 @@ export const RESOURCE_UNLOCK: Readonly<Record<string, string | null>> = Object.f
   biomass: null,
   platinum: null,
 });
+
+/** Узел дерева исследований в UI-представлении (Этап 9.3, Этап 7 ТЗ). */
+export interface TechNodeView {
+  readonly id: string;
+  readonly name: string;
+  readonly desc: string;
+  readonly kind: 'level' | 'unlock';
+  readonly level: number;
+  readonly maxLevel: number;
+  readonly prereq: readonly string[];
+  /** Цена следующего уровня ({} — если максимум достигнут). */
+  readonly cost: ResourceAmounts;
+  /** Требования выполнены и максимум не достигнут. */
+  readonly available: boolean;
+  readonly bought: boolean;
+}
+
+/** Срез дерева технологий для снапшота. */
+export interface TechSnapshot {
+  readonly nodes: readonly TechNodeView[];
+}

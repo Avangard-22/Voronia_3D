@@ -220,15 +220,17 @@ export function createGalaxyViewer(canvas: HTMLCanvasElement, initial: GalaxyRen
     camera.lookAt(target);
   };
   scene.add(new THREE.AmbientLight(0x9bbbd0, 0.55));
-  const coreLight = new THREE.PointLight(0x4da9d6, 2.2, 60);
+  // Этап 9.2: центр галактики — одна звезда-аналог Солнца, поэтому свет ядра тёплый.
+  const coreLight = new THREE.PointLight(0xffcf9a, 2.6, 90);
   coreLight.position.set(0, 0, 0);
   scene.add(coreLight);
   // Этап 9.0: декорации диска строятся от фактического радиуса карты звёздных систем,
   // а не от константы 18 — иначе галактика выглядит пустой, а системы сбиваются в точку в центре.
-  const core = new THREE.Mesh(new THREE.SphereGeometry(discRadius * 0.075, 24, 16), new THREE.MeshBasicMaterial({ color: '#dff2ff', transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false }));
-  scene.add(core);
-  const coreGlow = new THREE.Mesh(new THREE.SphereGeometry(discRadius * 0.26, 24, 16), new THREE.MeshBasicMaterial({ color: '#2c8eb8', transparent: true, opacity: 0.075, depthWrite: false }));
-  scene.add(coreGlow);
+  // Этап 9.2: прежние «core» (бледная сфера 0.075) и «coreGlow» (синяя сфера 0.26 диска)
+  // давали на скриншоте серую кляксу, на которую налипали системы. Оставлено одно
+  // компактное тёплое гало: сама звезда ядра рисуется инстансом системы sys:core.
+  const coreHalo = new THREE.Mesh(new THREE.SphereGeometry(discRadius * 0.085, 24, 16), new THREE.MeshBasicMaterial({ color: '#ffbf70', transparent: true, opacity: 0.06, depthWrite: false, blending: THREE.AdditiveBlending }));
+  scene.add(coreHalo);
   const galaxyRadius = discRadius * 1.12;
   const visualBudget = galaxyVisualBudget(window.innerWidth, window.devicePixelRatio || 1);
   const spiralArms = makeSpiralArms(galaxyRadius);
@@ -236,9 +238,6 @@ export function createGalaxyViewer(canvas: HTMLCanvasElement, initial: GalaxyRen
   const starClusters = makeStarClusters(galaxyRadius, visualBudget.clusterStars);
   const starField = makeStarField(Math.max(900, Math.floor(visualBudget.nebulaPoints * 0.9)), Math.max(30, discRadius * 4.2));
   scene.add(spiralArms, nebulaClouds, starClusters, starField);
-  const coreRing = new THREE.Mesh(new THREE.TorusGeometry(discRadius * 0.17, 0.018, 6, 96), new THREE.MeshBasicMaterial({ color: '#397fa8', transparent: true, opacity: 0.26, depthWrite: false }));
-  coreRing.rotation.x = Math.PI * 0.5;
-  scene.add(coreRing);
 
   let nodeMesh: THREE.InstancedMesh | null = null;
   let systemCoreMesh: THREE.InstancedMesh | null = null;
@@ -521,7 +520,18 @@ export function createGalaxyViewer(canvas: HTMLCanvasElement, initial: GalaxyRen
       systemOrbitBody = null;
     }
     const node = systemFocusId ? findSelectableGalaxyNode(currentData, systemFocusId) : null;
-    const detail = buildGalaxySystemDetail(node);
+    // Этап 9.2: подробный вид берёт имя/обозначение/звезду из каталога систем (Этап 9.0),
+    // а не выводит заглушку из классов сигналов (прежнее «BLUE · CRYO»).
+    const catalogSystem = node ? currentData.systems.find((item) => item.hostNodeId === node.id) ?? null : null;
+    const detail = buildGalaxySystemDetail(node, catalogSystem ? {
+      title: catalogSystem.name,
+      designation: catalogSystem.designation,
+      starColor: catalogSystem.starColor,
+      starLabel: `${catalogSystem.starClass} · ${catalogSystem.temperatureK} K`,
+      temperatureK: catalogSystem.temperatureK,
+      luminosity: catalogSystem.luminosity,
+      planetCount: catalogSystem.planetCount,
+    } : null);
     if (!node || !detail) return;
     const group = new THREE.Group();
     group.position.set(node.x, node.y, node.z);
@@ -767,7 +777,7 @@ export function createGalaxyViewer(canvas: HTMLCanvasElement, initial: GalaxyRen
     focusNode,
     animateRoute,
     render(nowMs) {
-      core.rotation.y = nowMs * 0.00004;
+      coreHalo.rotation.y = nowMs * 0.00004;
       updatePlanetInstances(nowMs);
       for (const body of orbitalBodies) { const mean = body.phase + nowMs * body.speed; let eccentric = mean; for (let i = 0; i < 4; i++) eccentric -= (eccentric - body.eccentricity * Math.sin(eccentric) - mean) / (1 - body.eccentricity * Math.cos(eccentric)); const x = body.semiMajor * (Math.cos(eccentric) - body.eccentricity); const z = body.semiMajor * Math.sqrt(1 - body.eccentricity * body.eccentricity) * Math.sin(eccentric); body.mesh.position.set(x, z * Math.sin(body.inclination), z * Math.cos(body.inclination)); body.mesh.rotation.y += 0.002; }
       if (systemOrbitBody) {

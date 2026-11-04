@@ -58,6 +58,11 @@ export interface SaveGameV2 {
   readonly warehouseLevel: number;
   /** Stage 6.7: грузовой трюм и локальные депо планет; опционально для совместимости с сейвами v2 до 6.7. */
   readonly logistics?: LogisticsState;
+  /** Этап 9.3 (ТЗ §6): очередь реактора и прогресс run — опционально для сейвов v2 до 9.3. */
+  readonly reactor?: {
+    readonly jobs?: readonly { id?: number; recipeId?: string; runs?: number; done?: number; progressMs?: number; paidForCurrent?: boolean; deficit?: boolean }[];
+    readonly nextJobId?: number;
+  };
   readonly session: SessionStats;
   /** Этап 4 (опц.): сонар-заряды (1.x n.sonarCharges, cap sonar.chargeMax). */
   readonly sonarCharges?: number;
@@ -183,12 +188,22 @@ function cellStateFromLegacy(cs: Json): SerializedCellState {
     kriogenYield: legacyNum(cs, 'kriogenYield'),
     reserve: legacyNum(cs, 'reserve'),
     maxReserve: legacyNum(cs, 'maxReserve'),
-    cooldownUntil: legacyNum(cs, 'cooldownUntil'),
+    // Этап 9.3: v1 хранил кулдауны в wall-clock мс (Date.now()); игровой时钟 v2 относителен.
+    // 1e11 мс ≈ 3.2 года игрового времени — недостижимо; всё, что выше, — epoch v1 → считаем истёкшим.
+    cooldownUntil: legacyGameMs(legacyNum(cs, 'cooldownUntil')),
     reactCount: Math.max(0, legacyNum(cs, 'reactCount')),
     anomalyType: (cs['anomalyType'] === 'synth' || cs['anomalyType'] === 'power' || cs['anomalyType'] === 'resonance' ? cs['anomalyType'] : null),
     mutant: typeof cs['mutant'] === 'string' ? cs['mutant'] : null,
     destroyed: cs['destroyed'] === true || cs['_destroyed'] === true,
   };
+}
+
+/**
+ * Этап 9.3: миграция epoch-меток v1 в игровую шкалу v2.
+ * Без неё клетки из legacy-сейва вечно «остывают» (на экране были числа ~1.79e9 с).
+ */
+function legacyGameMs(value: number): number {
+  return value > 1e11 ? 0 : Math.max(0, value);
 }
 
 /** Миграция legacy v39 → v2. Неизвестные/поздние секции 1.x (dustPerks, extensions, boss…) отбрасываются — домены вернут их на своих этапах. */

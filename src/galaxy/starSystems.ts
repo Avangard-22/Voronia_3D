@@ -12,6 +12,19 @@
 import type { GraphNode, OrbitBodyClass, StarDescriptor, StarSpectralClass, SystemPlanetOrbit } from '../contracts/galaxy';
 
 export type StarClass = StarSpectralClass;
+
+/**
+ * Этап 9.2: человекочитаемые подписи спектральных классов для панелей.
+ * Раньше панель показывала голый класс («ЦЕНТРАЛЬНАЯ ЗВЕЗДА · YELLOW»), а деталь
+ * вида системы вообще дублировала класс сигнала («BLUE · BLUE · CRYO»).
+ */
+export const STAR_CLASS_LABELS: Readonly<Record<StarSpectralClass, string>> = Object.freeze({
+  blue: 'голубая звезда',
+  white: 'белая звезда',
+  yellow: 'жёлтый карлик',
+  orange: 'оранжевый карлик',
+  red: 'красный карлик',
+});
 export type SystemBodyClass = OrbitBodyClass;
 export type SystemBodyStatus = 'confirmed' | 'unscanned';
 

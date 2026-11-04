@@ -1,5 +1,6 @@
 import { buildStarSystemExploration } from './galaxy/systemExploration';
 import { STAR_MAP_POLICY, buildGalaxyStarMap, systemForNode, type GalaxyStarMap } from './galaxy/starMap';
+import { STAR_CLASS_LABELS } from './galaxy/starSystems';
 import { buildStarSystemTopology } from './galaxy/systemTopology';
 /**
  * main.ts — точка входа браузера: сборка Game (RafDriver + LocalStorage), старт, авто-сейв,
@@ -10,9 +11,9 @@ import { Game } from './core/game';
 import { RafDriver } from './core/gameClock';
 import { LocalStorageAdapter, MemoryStorage } from './persistence/storage';
 import { Logger } from './core/logger';
-import { renderSnapshot, bindCommands } from './ui/app';
+import { renderSnapshot, bindCommands, renderCellDock } from './ui/app';
 import { bindStyles } from './ui/styles';
-import { RENDERER_STATUS, buildPlanetMeshData, createPlanetViewer, createGalaxyViewer, buildGalaxyRenderData, buildGalaxySystemDetail, FpsMeter, type PlanetViewer, type GalaxyViewer } from './renderer';
+import { RENDERER_STATUS, buildPlanetMeshData, createPlanetViewer, createGalaxyViewer, buildGalaxyRenderData, FpsMeter, type PlanetViewer, type GalaxyViewer } from './renderer';
 import { GALAXY_STATUS } from './galaxy/status';
 import { CRAFTING_STATUS } from './crafting/status';
 import { LOGISTICS_STATUS } from './logistics/status';
@@ -44,6 +45,9 @@ bindStyles();
 const sceneHost = document.createElement('div');
 sceneHost.className = 'scene3d';
 sceneHost.id = 'game-scene';
+// Этап 9.2: контейнер дока клетки поверх canvas (внутри sceneHost, position:absolute).
+const cellDockHost = document.createElement('div');
+cellDockHost.className = 'cell-dock-host';
 const canvas = document.createElement('canvas');
 canvas.setAttribute('aria-label', '3D-поверхность планеты; перетаскивайте для вращения');
 const fps = document.createElement('div');
@@ -51,7 +55,7 @@ fps.className = 'fps';
 const viewControls = document.createElement('div');
 viewControls.className = 'view-controls';
 viewControls.innerHTML = '<button type="button" aria-label="Приблизить планету" data-view="in">＋</button><button type="button" aria-label="Отдалить планету" data-view="out">－</button><button type="button" aria-label="Сбросить вид планеты" data-view="reset">⟳</button>';
-sceneHost.append(canvas, fps, viewControls);
+sceneHost.append(canvas, fps, viewControls, cellDockHost);
 const galaxyHost = document.createElement('div');
 galaxyHost.className = 'galaxy3d-scene';
 galaxyHost.id = 'galaxy-scene';
@@ -75,7 +79,7 @@ const hudHost = document.createElement('div');
 hudHost.id = 'game-hud';
 root.replaceChildren(sceneSwitch, sceneHost, galaxyHost, hudHost);
 let selectedCellId: number | null = null;
-const paintHud = (): void => renderSnapshot(game, hudHost, selectedCellId);
+const paintHud = (): void => { renderSnapshot(game, hudHost); renderCellDock(game, cellDockHost, selectedCellId); };
 
 paintHud();
 let planetVisualDirty = false;
@@ -83,6 +87,16 @@ let galaxyVisualDirty = true;
 bindCommands(game, hudHost, () => {
   planetVisualDirty = true;
   galaxyVisualDirty = true;
+  paintHud();
+});
+// Док клетки живёт в отдельном контейнере: свои команды + снятие выделения.
+bindCommands(game, cellDockHost, () => {
+  planetVisualDirty = true;
+  galaxyVisualDirty = true;
+  paintHud();
+}, () => {
+  selectedCellId = null;
+  viewer?.selectCell(null);
   paintHud();
 });
 const hudTimer = window.setInterval(paintHud, 250);
@@ -156,9 +170,6 @@ try {
     const route = snap.galaxy.routes.find((item) => item.destinationId === node.id);
     const anomaly = snap.galaxy.anomalies.find((item) => item.planetId === node.id);
     const active = node.id === snap.activePlanetId;
-    const renderNode = galaxyData().nodes.find((item) => item.id === node.id);
-    const systemDetail = buildGalaxySystemDetail(renderNode);
-    const system = buildStarSystemExploration({ ...node, unlocked, active });
     const routeLabel = route ? `${route.hops} прыжк. · ${route.totalDistance.toFixed(1)} ед. · ${Math.ceil(route.totalEnergy).toLocaleString('ru-RU')} ⚡` : 'Нет доступного маршрута';
     const starSystem = systemForNode(starMapOf(), node.id);
     const orbitalState = game.orbitalExplorationState(node.id);
@@ -186,7 +197,7 @@ try {
       : unlocked && route
         ? `<button type="button" class="galaxy-travel-button" data-galaxy-travel="${escapeHtml(node.id)}" ${(snap.resources.energy ?? 0) < route.firstLeg.energyCost ? 'disabled' : ''}>ПЕРЕЛЁТ К ПЛАНЕТЕ · ${Math.ceil(route.firstLeg.energyCost).toLocaleString('ru-RU')} ⚡</button>`
         : '<div class="galaxy-panel-status">Мир обнаружен, но ещё не открыт. Завершите сонарное открытие.</div>';
-    galaxyPanel.innerHTML = `<button class="galaxy-panel-close" type="button" aria-label="Закрыть карточку">×</button><div class="galaxy-panel-kicker">${active ? 'АКТИВНАЯ СИСТЕМА' : unlocked ? 'ОТКРЫТАЯ СИСТЕМА' : 'ОБНАРУЖЕННЫЙ СИГНАЛ'}</div><div class="galaxy-nav-actions"><button type="button" data-system-view>ОТКРЫТЬ СИСТЕМУ</button><button type="button" data-galaxy-return>К ГАЛАКТИКЕ</button></div><h3>${escapeHtml(node.name)}</h3><div class="galaxy-panel-meta">${escapeHtml(node.biome)} · ${escapeHtml(node.geometryName)}</div><div class="galaxy-system-summary"><span class="galaxy-system-star" style="--star-color:${systemDetail?.starColor ?? '#d8e8f5'}"></span><div><small>ЦЕНТРАЛЬНАЯ ЗВЕЗДА · ${escapeHtml(systemDetail?.starClass.toUpperCase() ?? 'UNKNOWN')}</small><b>${escapeHtml(systemDetail?.title ?? 'UNKNOWN')}</b><em>${escapeHtml(starSystem?.designation ?? '')} · ${escapeHtml(system?.catalog.star.class.toUpperCase() ?? 'UNKNOWN')} · ${system?.catalog.star.temperatureK ?? 0} K · ${(system?.catalog.star.luminosity ?? 0).toFixed(2)} L☉ · планет ${starSystem?.planets.length ?? 0}</em></div></div><div class="galaxy-panel-grid"><span>Рукав <b>${escapeHtml(node.armId)}</b></span><span>Сектор <b>${escapeHtml(node.sectorLabel)}</b></span><span>Координаты <b>${node.x.toFixed(1)}, ${node.y.toFixed(1)}, ${node.z.toFixed(1)}</b></span><span>Состояние <b>${active ? 'Здесь' : unlocked ? 'Доступна' : 'Не открыта'}</b></span></div>${orbitRows}${anomaly ? `<div class="galaxy-panel-anomaly">✧ ${escapeHtml(anomaly.title)} · ${anomaly.resolved ? 'исследована' : anomaly.available ? 'экспедиция доступна' : 'условия не выполнены'}</div>` : ''}<div class="galaxy-panel-route"><small>МАРШРУТ ОТ ТЕКУЩЕЙ ПЛАНЕТЫ</small><b>${routeLabel}</b>${route ? `<span>${route.path.map((id) => escapeHtml(snap.galaxy.nodes.find((item) => item.id === id)?.name ?? id)).join(' → ')}</span>` : ''}</div>${worldAction}`;
+    galaxyPanel.innerHTML = `<button class="galaxy-panel-close" type="button" aria-label="Закрыть карточку">×</button><div class="galaxy-panel-kicker">${active ? 'АКТИВНАЯ СИСТЕМА' : unlocked ? 'ОТКРЫТАЯ СИСТЕМА' : 'ОБНАРУЖЕННЫЙ СИГНАЛ'}</div><div class="galaxy-nav-actions"><button type="button" data-system-view>ОТКРЫТЬ СИСТЕМУ</button><button type="button" data-galaxy-return>К ГАЛАКТИКЕ</button></div><h3>${escapeHtml(node.name)}</h3><div class="galaxy-panel-meta">${escapeHtml(node.biome)} · ${escapeHtml(node.geometryName)}</div><div class="galaxy-system-summary"><span class="galaxy-system-star" style="--star-color:${escapeHtml(starSystem?.star.color ?? '#d8e8f5')}"></span><div><small>${starSystem?.core ? 'ЦЕНТРАЛЬНАЯ ЗВЕЗДА ГАЛАКТИКИ' : 'ЗВЕЗДА СИСТЕМЫ'} · ${escapeHtml(STAR_CLASS_LABELS[starSystem?.star.class ?? 'yellow'] ?? starSystem?.star.class ?? 'неизвестно')}</small><b>${escapeHtml(starSystem?.name ?? node.name)}</b><em>${escapeHtml(starSystem?.designation ?? '')} · ${starSystem?.star.temperatureK.toLocaleString('ru-RU') ?? 0} K · ${(starSystem?.star.luminosity ?? 0).toFixed(2)} L☉ · планет ${starSystem?.planets.length ?? 0}</em></div></div><div class="galaxy-panel-grid"><span>Рукав <b>${escapeHtml(node.armId)}</b></span><span>Сектор <b>${escapeHtml(node.sectorLabel)}</b></span><span>Координаты <b>${node.x.toFixed(1)}, ${node.y.toFixed(1)}, ${node.z.toFixed(1)}</b></span><span>Состояние <b>${active ? 'Здесь' : unlocked ? 'Доступна' : 'Не открыта'}</b></span></div>${orbitRows}${anomaly ? `<div class="galaxy-panel-anomaly">✧ ${escapeHtml(anomaly.title)} · ${anomaly.resolved ? 'исследована' : anomaly.available ? 'экспедиция доступна' : 'условия не выполнены'}</div>` : ''}<div class="galaxy-panel-route"><small>МАРШРУТ ОТ ТЕКУЩЕЙ ПЛАНЕТЫ</small><b>${routeLabel}</b>${route ? `<span>${route.path.map((id) => escapeHtml(snap.galaxy.nodes.find((item) => item.id === id)?.name ?? id)).join(' → ')}</span>` : ''}</div>${worldAction}`;
     galaxyPanel.hidden = false;
   };
   /**
@@ -202,7 +213,7 @@ try {
       + `<div class="galaxy-nav-actions"><button type="button" data-system-zoom="${escapeHtml(system.id)}">ПРИБЛИЗИТЬСЯ</button><button type="button" data-galaxy-return>К ГАЛАКТИКЕ</button></div>`
       + `<h3>${escapeHtml(system.name)}</h3>`
       + `<div class="galaxy-panel-meta">${escapeHtml(system.designation)} · рукав ${escapeHtml(system.armId)} · сектор ${escapeHtml(system.sectorId)}</div>`
-      + `<div class="galaxy-system-summary"><span class="galaxy-system-star" style="--star-color:${escapeHtml(system.star.color)}"></span><div><small>ЦЕНТРАЛЬНАЯ ЗВЕЗДА · ${escapeHtml(system.star.class.toUpperCase())}</small><b>${system.star.temperatureK.toLocaleString('ru-RU')} K</b><em>Светимость ${system.star.luminosity.toFixed(2)} L☉ · планет на орбитах: ${system.planets.length}</em></div></div>`
+      + `<div class="galaxy-system-summary"><span class="galaxy-system-star" style="--star-color:${escapeHtml(system.star.color)}"></span><div><small>${system.core ? 'ЦЕНТРАЛЬНАЯ ЗВЕЗДА ГАЛАКТИКИ' : 'ЗВЕЗДА СИСТЕМЫ'} · ${escapeHtml(STAR_CLASS_LABELS[system.star.class])}</small><b>${escapeHtml(system.star.class.toUpperCase())} · ${system.star.temperatureK.toLocaleString('ru-RU')} K</b><em>Светимость ${system.star.luminosity.toFixed(2)} L☉ · планет на орбитах: ${system.planets.length}</em></div></div>`
       + `<div class="galaxy-world-list"><small>ПЛАНЕТЫ НА ОРБИТАХ · ${system.planets.length}</small>${system.planets.map((planet) => `<div class="galaxy-world-row galaxy-world-candidate"><span class="galaxy-world-orbit">◌</span><span><b>Орбита ${planet.orbitIndex + 1}</b><em>${planet.semiMajorAxis.toFixed(2)} а.е. · период ${orbitPeriod(planet.periodDays)} · e ${planet.eccentricity.toFixed(2)}</em></span><strong>НЕ ПОДТВЕРЖДЕНА</strong></div>`).join('')}</div>`
       + `<div class="galaxy-panel-status">Система нанесена на карту, подтверждённых миров нет. Сонарное открытие привяжет новую планету к одной из свободных орбит (Этап 9.1).</div>`;
     galaxyPanel.hidden = false;
@@ -244,19 +255,26 @@ try {
   if (first) {
     viewer = createPlanetViewer(canvas, first);
     galaxyViewer = createGalaxyViewer(galaxyCanvas, galaxyData());
-    galaxyViewer.setSystemSelectHandler((systemId) => {
+    /**
+     * Этап 9.2: подробный вид звёздной системы по id системы каталога (а не узла графа).
+     * Используется кликом по системе на карте и вкладкой «Звёздная система»,
+     * которая по умолчанию открывает ЦЕНТРАЛЬНУЮ систему галактики: владелец просил
+     * сосредоточить игру на одной системе, а не на россыпи сигналов.
+     */
+    const openSystemViewById = (systemId: string): void => {
       selectedGalaxyNodeId = null;
       galaxyViewer?.setSelectedNode(null);
       galaxyViewer?.setSelectedSystem(systemId);
       galaxyViewer?.focusSystem(systemId);
-      activeScene = 'galaxy';
+      activeScene = 'system';
       sceneHost.hidden = true;
       galaxyHost.hidden = false;
-      sceneSwitch.querySelectorAll('button').forEach((item) => item.classList.toggle('active', (item).dataset['scene'] === 'galaxy'));
+      sceneSwitch.querySelectorAll('button').forEach((item) => item.classList.toggle('active', (item).dataset['scene'] === 'system'));
       galaxyCaption.textContent = `STAR SYSTEM · ${starMapOf().byId[systemId]?.designation ?? ''}`;
       paintStarSystemPanel(systemId);
       startRenderLoop();
-    });
+    };
+    galaxyViewer.setSystemSelectHandler(openSystemViewById);
     galaxyViewer.setNodeSelectHandler((nodeId) => {
       selectedGalaxyNodeId = nodeId;
       galaxyViewer?.setSelectedSystem(null);
@@ -348,7 +366,7 @@ try {
       const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button[data-scene]');
       if (!button) return;
       const requested = button.dataset['scene'];
-      if (requested === 'system') { if (selectedGalaxyNodeId) showSystemView(selectedGalaxyNodeId); else showGalaxyView(); return; }
+      if (requested === 'system') { if (selectedGalaxyNodeId) showSystemView(selectedGalaxyNodeId); else openSystemViewById(starMapOf().coreSystemId); return; }
       if (requested === 'galaxy') { showGalaxyView(); return; }
       activeScene = 'planet'; sceneHost.hidden = false; galaxyHost.hidden = true;
       sceneSwitch.querySelectorAll('button').forEach((item) => item.classList.toggle('active', item === button));

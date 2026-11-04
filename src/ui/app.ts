@@ -27,6 +27,23 @@ function resLine(key: keyof typeof RESOURCE_META, amount: number, perSec?: numbe
   return `<div class="res"><span class="ic">${m.icon}</span> <b>${fmt(amount)}</b>${rate}</div>`;
 }
 
+/** Этап 9.3 (Этап 8 ТЗ): русские имена рецептов реактора (parity v1). */
+const RECIPE_NAMES: Readonly<Record<string, string>> = Object.freeze({
+  steel: 'Сталь', chip: 'Чип', alloy: 'Сплав', core: 'Ядро', relic: 'Реликт предтеч',
+  researchData: 'Блок данных', researchDataBulk: 'Блок данных · серия', researchDataElite: 'Блок данных · элита',
+  helium3: 'Гелий-3', biomass: 'Биомасса', platinum: 'Платина',
+});
+
+/** Этап 9.3: компактная строка «иконка+количество» для ResourceAmounts (цены/входы/выходы). */
+function amountsLine(amounts: Readonly<Record<string, number>>): string {
+  const parts = Object.entries(amounts).filter(([, v]) => Number.isFinite(v) && (v ?? 0) !== 0);
+  if (parts.length === 0) return '—';
+  return parts.map(([k, v]) => {
+    const m = RESOURCE_META[k as keyof typeof RESOURCE_META];
+    return `${m?.icon ?? '•'}${fmt(v ?? 0, 0)}`;
+  }).join(' ');
+}
+
 function cellCard(game: Game, pid: string, c: CellView, charge: number): string {
   const icon = CELL_ICONS[c.type] ?? '·';
   const typeName = CELL_TYPE_NAMES[c.type as CellType] ?? '?';
@@ -62,14 +79,9 @@ function cellCard(game: Game, pid: string, c: CellView, charge: number): string 
   return parts.join('');
 }
 
-export function renderSnapshot(game: Game, root: HTMLElement, selectedCellId: number | null = null): void {
+export function renderSnapshot(game: Game, root: HTMLElement): void {
   const s: GameSnapshot = game.snapshot();
   const active = s.planets.find((p) => p.id === s.activePlanetId) ?? s.planets[0];
-  const cells = active ? active.cells.map((c) => cellCard(game, active.id, c, s.scan.charge)).join('') : '<p>Нет планет</p>';
-  const selectedCell = active?.cells.find((c) => c.id === selectedCellId) ?? null;
-  const selectedPanel = active
-    ? `<section class="selected-cell"><h2>Выбранная клетка</h2>${selectedCell ? cellCard(game, active.id, selectedCell, s.scan.charge) : '<div class="selection-empty">Коснитесь клетки на поверхности планеты, чтобы выбрать её.</div>'}</section>`
-    : '';
   const wh = s.warehouse;
   const logistics = s.logistics;
   const logisticsRows = (Object.keys(RESOURCE_META) as LedgerResourceKey[]).filter((key) => Number.isFinite(cargoWeight(key))).map((key) => {
@@ -87,10 +99,34 @@ export function renderSnapshot(game: Game, root: HTMLElement, selectedCellId: nu
     .map((tx) => `<div class="tx"><b>#${tx.id}</b> ${tx.reason}: ${Object.entries(tx.delta).map(([k, v]) => `${(v ?? 0) > 0 ? '+' : ''}${fmt(v ?? 0, 2)}${RESOURCE_META[k as keyof typeof RESOURCE_META]?.icon ?? k}`).join(' ')}</div>`)
     .join('');
 
+  // Этап 9.3 (Этап 7/8 ТЗ): дерево технологий и реактор — рендер только из снапшота,
+  // команды — только через dispatch (STAGE1 §4); никаких карточек снизу, всё в колонке HUD.
+  const techNameById = new Map(s.tech.nodes.map((n) => [n.id, n.name] as const));
+  const techRows = s.tech.nodes.map((n) => {
+    const affordable = Object.entries(n.cost).every(([k, v]) => (s.resources[k as keyof typeof s.resources] ?? 0) >= (v ?? 0));
+    const maxed = n.maxLevel > 0 && n.level >= n.maxLevel;
+    const state = maxed
+      ? '<span class="tech-state">✓ максимум</span>'
+      : !n.available
+        ? `<span class="tech-state">🔒 требуется: ${n.prereq.map((p) => techNameById.get(p) ?? p).join(', ') || '—'}</span>`
+        : `<button data-act="buy-tech" data-id="${n.id}" ${affordable ? '' : 'disabled'}>${n.level > 0 ? '⬆' : '🔬'} ${amountsLine(n.cost)}</button>`;
+    const lvl = n.kind === 'level' ? `ур. ${n.level}${n.maxLevel > 0 ? `/${n.maxLevel}` : ''}` : n.bought ? 'изучено' : '';
+    return `<div class="tech-row${n.bought ? ' bought' : ''}"><b>${n.name}${lvl ? ` <small>${lvl}</small>` : ''}</b><small>${n.desc}</small>${state}</div>`;
+  }).join('');
+  const recipeRows = s.reactor.recipes.map((rc) => {
+    const name = RECIPE_NAMES[rc.id] ?? rc.id;
+    const gate = rc.gate ? (techNameById.get(rc.gate) ?? rc.gate) : null;
+    const act = rc.unlocked
+      ? `<span class="craft-btns"><button data-act="craft-enqueue" data-recipe="${rc.id}">+1</button><button data-act="craft-enqueue" data-recipe="${rc.id}" data-runs="10">+10</button></span>`
+      : `<span class="tech-state">🔒 ${gate ?? ''}</span>`;
+    return `<div class="tech-row"><b>${name}</b><small>Вход: ${amountsLine(rc.inputs)} · ${rc.timeSec} с</small><small>Выход: ${amountsLine(rc.output)}</small>${act}</div>`;
+  }).join('');
+  const queueRows = s.reactor.queue.map((j) => `<div class="tech-row craft-job ${j.state}"><b>${RECIPE_NAMES[j.recipeId] ?? j.recipeId} · ${j.done}/${j.runs}</b><div class="craft-bar"><i style="width:${Math.min(100, Math.max(0, j.progressPct)).toFixed(1)}%"></i></div><small>${j.state === 'deficit' ? '⚠ Дефицит ресурсов — run ждёт оплату' : j.state === 'running' ? (j.etaSec !== null ? `⏳ ~${j.etaSec} с до готовности` : '⏳ идёт реакция') : 'в очереди'}</small><button data-act="craft-cancel" data-job="${j.id}" title="Отменить задачу">✕</button></div>`).join('');
+
   root.innerHTML = `
   <div class="hud">
     <div class="col">
-      <h1>⚡ Voronia 2.0 <small>Stage 9.0 · ${active ? active.name : ''}</small></h1>
+      <h1>⚡ Voronia 2.0 <small>Stage 9.3 · ${active ? active.name : ''}</small></h1>
       ${resLine('energy', s.resources.energy ?? 0, s.perSec.energy)}
       ${resLine('iron', s.resources.iron ?? 0, s.perSec.iron)}
       ${resLine('kriogen', s.resources.kriogen ?? 0, s.perSec.kriogen)}
@@ -150,6 +186,11 @@ export function renderSnapshot(game: Game, root: HTMLElement, selectedCellId: nu
       <h2>🏭 Склад · ур. ${wh.level}/${wh.maxLevel}</h2>
       <div>Тонн/клетка: ${wh.tonsPerCell} · бонус ×${wh.bonusMult.toFixed(2)}</div>
       ${wh.nextCost ? `<button data-act="warehouse">⬆ Склад: ${wh.nextCost.alloy}⛓ + ${fmt(wh.nextCost.energy, 0)}⚡</button>` : '<div>Максимум</div>'}
+      <h2>🔬 Технологии</h2>
+      <div class="tech-list">${techRows || '<div class="sonar-state">Исследований пока нет.</div>'}</div>
+      <h2>🏭 Реактор · слоты ${s.reactor.slots}</h2>
+      ${s.reactor.idle ? '<div class="sonar-state">Реактор в покое…</div>' : `<div class="tech-list">${queueRows}</div>`}
+      <div class="tech-list">${recipeRows}</div>
       <h2>💾</h2>
       <div class="saverow">
         <button data-act="save">Сохранить</button>
@@ -162,9 +203,23 @@ export function renderSnapshot(game: Game, root: HTMLElement, selectedCellId: nu
       <div class="session">сканов ${s.session.scanned} · апгрейдов ${s.session.upgraded} · deep ${s.session.deepMined}</div>
     </div>
   </div>
-  ${selectedPanel}
-  <div class="board">${cells}</div>
   <div class="journal"><h3>Журнал транзакций</h3>${journal || '<div class="tx">пусто</div>'}</div>`;
+}
+
+/**
+ * Этап 9.2: плавающий док выбранной клетки поверх 3D-сцены (паритет с v1:
+ * клетку ткнули на планете — рядом появились её действия). Без выбора показывает
+ * подсказку. Рендерится в отдельный контейнер внутри sceneHost, поэтому не
+ * участвует в потоке HUD и не превращается в «карточки внизу».
+ */
+export function renderCellDock(game: Game, root: HTMLElement, selectedCellId: number | null): void {
+  const s: GameSnapshot = game.snapshot();
+  const active = s.planets.find((p) => p.id === s.activePlanetId) ?? s.planets[0];
+  if (!active) { root.innerHTML = ''; return; }
+  const cell = active.cells.find((c) => c.id === selectedCellId) ?? null;
+  root.innerHTML = cell
+    ? `<div class="cell-dock"><div class="cell-dock-head"><span>КЛЕТКА ${cell.id} · ${active.name}</span><button type="button" data-act="dock-close" aria-label="Снять выделение с клетки">×</button></div>${cellCard(game, active.id, cell, s.scan.charge)}</div>`
+    : '<div class="scene-hint">Коснитесь клетки на поверхности планеты: скан и апгрейд работают прямо на планете, как в версии 1</div>';
 }
 
 /** Интерактивная сонарная мини-игра: три сигнала, точность зависит от остановки маркера. */
@@ -226,7 +281,7 @@ function runSonarMinigame(game: Game, onComplete: () => void): void {
 }
 
 /** Делегирование кликов → команды Game (единственная точка входа UI). */
-export function bindCommands(game: Game, root: HTMLElement, onCommand?: () => void): () => void {
+export function bindCommands(game: Game, root: HTMLElement, onCommand?: () => void, onCloseDock?: () => void): () => void {
   const handler = (ev: Event): void => {
     const target = ev.target as HTMLElement | null;
     if (!target) return;
@@ -295,6 +350,20 @@ export function bindCommands(game: Game, root: HTMLElement, onCommand?: () => vo
       case 'switch':
         game.dispatch('setActivePlanet', { pid });
         break;
+      case 'buy-tech':
+        // Этап 9.3 (Этап 7 ТЗ): покупка уровня технологии.
+        game.dispatch('buyTech', { id: btn.dataset['id'] ?? '' });
+        break;
+      case 'craft-enqueue':
+        // Этап 9.3 (Этап 8 ТЗ): постановка run-ов в очередь реактора.
+        game.dispatch('craftEnqueue', { recipeId: btn.dataset['recipe'] ?? '', runs: Number(btn.dataset['runs'] ?? 1) });
+        break;
+      case 'craft-cancel':
+        game.dispatch('craftCancel', { jobId: Number(btn.dataset['job'] ?? 0) });
+        break;
+      case 'dock-close':
+        onCloseDock?.();
+        return;
       case 'save': {
         const res = game.dispatch('save', {});
         persistenceNotice = res.ok ? `Сохранено · ${res.value.sizeBytes.toLocaleString('ru-RU')} байт` : 'Ошибка сохранения';

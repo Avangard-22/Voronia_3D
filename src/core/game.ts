@@ -7,7 +7,7 @@ import type { BalanceConfig } from '../config/types';
 import { loadBalance } from '../config/loader';
 import type { ActionResult } from '../contracts/commands';
 import { fail, ok } from '../contracts/commands';
-import type { CommandMap, CommandName, CommandResultMap, DiscoverPlanetResult } from '../contracts/commands';
+import type { CommandMap, CommandName, CommandResultMap, DiscoverPlanetResult, RejectReason } from '../contracts/commands';
 import type { ClockDriver, StoragePort } from '../contracts/ports';
 import type { GameSnapshot, PlanetView, CellView, SessionStats } from '../contracts/snapshot';
 import { freshSession } from '../contracts/snapshot';
@@ -42,6 +42,8 @@ import { validateGalaxyIntegrity, type GalaxyIntegrityReport } from '../galaxy/v
 import { LogisticsService, type LogisticsPlanetContext } from '../logistics/service';
 import { ScanPricing } from '../progression/scanPricing';
 import { TechState } from '../progression/tech';
+import { researchCost, techNodes } from '../progression/techTree';
+import { Reactor } from '../crafting/reactor';
 import { MemoryStorage, SaveManager, type SaveSource } from '../persistence';
 import { freshSaveV2, validateSaveV2, type DiscoverySpec, type SaveGameV2, type SerializedCellState } from '../persistence/schema';
 
@@ -58,6 +60,13 @@ export interface GameOptions {
 
 export const DEFAULT_START_SEED_XOR = 305419896; // 0x12345678 — parity 1.x gameStartSeed = (Date.now()^305419896)>>>0
 
+/** Этап 9.3: причины отказов реактора → контрактные причины команд (детали — в detail). */
+function craftReject(reason: string): RejectReason {
+  if (reason.startsWith('locked')) return 'locked';
+  if (reason === 'unknown-recipe' || reason === 'queue-full' || reason === 'unknown-job') return reason;
+  return 'state';
+}
+
 export class Game implements SaveSource {
   readonly balance: BalanceConfig;
   readonly catalog: PlanetCatalog;
@@ -67,6 +76,8 @@ export class Game implements SaveSource {
   rng: Rng;
   readonly ledger: ResourceLedger;
   readonly tech: TechState;
+  /** Этап 9.3 (Этап 8 ТЗ): реактор крафта — очередь, списания, выходы. */
+  readonly reactor: Reactor;
   readonly pricing: ScanPricing;
   readonly income: IncomeService;
   readonly production: ProductionService;
@@ -110,6 +121,15 @@ export class Game implements SaveSource {
 
     this.ledger = new ResourceLedger(this.bus);
     this.tech = new TechState(this.balance.registry.tech);
+    // Этап 9.3 (Этап 8 ТЗ): реактор поверх сырой секции registry.craft (входы/время/слоты — v0.0.41).
+    const craftSection = (this.balance.registry.raw['craft'] ?? {}) as Readonly<Record<string, unknown>>;
+    this.reactor = new Reactor(
+      craftSection,
+      (craftSection['recipes'] ?? {}) as ConstructorParameters<typeof Reactor>[1],
+      this.tech,
+      this.ledger,
+      () => this.clock.gameMsNow,
+    );
     this.pricing = new ScanPricing(this.balance, this.tech, (rt) => this.armFor(rt));
     this.income = new IncomeService(this.balance);
     this.production = new ProductionService({
@@ -185,6 +205,10 @@ export class Game implements SaveSource {
         // 1.x Ty(dt): синтез по открытым планетам
         (dtSec) => {
           this.synthService.tick(this.activeRuntimes(), dtSec);
+        },
+        // Этап 9.3 (Этап 8 ТЗ): реактор — крафт-очередь на игровом времени (списания атомарны).
+        (_dtSec, gameMs) => {
+          this.reactor.tick(gameMs);
         },
       ],
     });
@@ -370,6 +394,34 @@ export class Game implements SaveSource {
         if (!res.ok) return ret(fail('cost', res.insufficient.join(',')));
         return ret(ok(undefined));
       }
+      case 'buyTech': {
+        // Этап 9.3 (Этап 7 ТЗ): покупка уровня технологии — требования, потолок, атомарное списание.
+        const p = payload as CommandMap['buyTech'];
+        const can = this.tech.canResearch(p.id);
+        if (!can.ok) return ret(fail(can.reason, p.id));
+        const cost = researchCost(this.balance.registry.tech, p.id, this.tech.level(p.id));
+        const delta: Record<string, number> = {};
+        for (const [k, v] of Object.entries(cost)) delta[k] = -(v ?? 0);
+        const tx = this.ledger.tryCommit({ reason: `tech:${p.id}`, scope: 'global', delta: delta, gameMs: this.clock.gameMsNow });
+        if (!tx.ok) return ret(fail('cost', tx.insufficient.join(',')));
+        const level = this.tech.applyResearch(p.id);
+        this.bumpSession('techsBought');
+        return ret(ok({ techId: p.id, level }));
+      }
+      case 'craftEnqueue': {
+        // Этап 9.3 (Этап 8 ТЗ): постановка крафт-задачи (входы спишутся атомарно на старте run).
+        const p = payload as CommandMap['craftEnqueue'];
+        const res = this.reactor.enqueue(p.recipeId, p.runs ?? 1);
+        if (!res.ok) return ret(fail(craftReject(res.reason), res.reason));
+        return ret(ok(res.value));
+      }
+      case 'craftCancel': {
+        // Этап 9.3 (Этап 8 ТЗ): отмена — снимаются только не стартовавшие run.
+        const p = payload as CommandMap['craftCancel'];
+        const res = this.reactor.cancel(p.jobId);
+        if (!res.ok) return ret(fail(craftReject(res.reason), res.reason));
+        return ret(ok(res.value));
+      }
       case 'save':
         return ret(ok(this.saves.save()));
       case 'load': {
@@ -397,6 +449,7 @@ export class Game implements SaveSource {
     this.exploration.setRng(this.rng);
     this.ledger.hydrate({ balances: {}, nextId: 1 });
     this.tech.hydrate(undefined);
+    this.reactor.hydrate(undefined);
     this.pricing.setCurrentCost(this.balance.baseline.scan.baseCost);
     this.warehouse.setLevel(0);
     this.logistics.reset();
@@ -859,6 +912,9 @@ export class Game implements SaveSource {
       sonarCharges: this.sonarChargesValue,
       sonar: this.sonarStatus(),
       synth: active ? this.synthService.status(active) : null,
+      // Этап 9.3 (Этап 7/8 ТЗ): дерево технологий и реактор — UI рендерит только из снапшота.
+      tech: { nodes: techNodes(this.tech, this.balance.registry.tech) },
+      reactor: this.reactor.view(),
       galaxy: {
         nodes: graphNodes.map((node) => {
           const point = graphPoints.get(node.id)!;
@@ -925,6 +981,7 @@ export class Game implements SaveSource {
       planets,
       pricing: { currentCost: this.pricing.getCurrentCost() },
       tech: (() => { const t = this.tech.serialize(); return { levels: t.tech, research: t.research }; })(),
+      reactor: this.reactor.serialize(),
       warehouseLevel: this.warehouse.getLevel(),
       logistics: this.logistics.serialize(),
       session: { ...this.sessionValue },
@@ -944,6 +1001,7 @@ export class Game implements SaveSource {
     this.exploration.setRng(this.rng);
     this.ledger.hydrate({ balances: save.ledger.balances, nextId: save.ledger.nextId });
     this.tech.hydrate({ tech: save.tech?.levels, research: save.tech?.research });
+    this.reactor.hydrate(save.reactor);
     this.pricing.setCurrentCost(save.pricing?.currentCost ?? this.balance.baseline.scan.baseCost);
     this.warehouse.setLevel(save.warehouseLevel ?? 0);
     this.logistics.hydrate(save.logistics);
@@ -996,7 +1054,7 @@ export class Game implements SaveSource {
     return { exploredCells: rt?.explored.size ?? 0, tonsPerCell: this.warehouse.tonsPerCell(), specializedResources };
   }
 
-  private bumpSession(key: 'scanned' | 'upgraded' | 'deepMined' | 'anomalies' | 'warehouseUpgrades' | 'chargesDone' | 'surges' | 'synthRuns' | 'planetsUnlocked'): void {
+  private bumpSession(key: 'scanned' | 'upgraded' | 'deepMined' | 'anomalies' | 'warehouseUpgrades' | 'chargesDone' | 'surges' | 'synthRuns' | 'planetsUnlocked' | 'techsBought'): void {
     this.sessionValue[key] += 1;
   }
 

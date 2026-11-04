@@ -179,6 +179,9 @@ export class IncomeService {
             dust: hp('dust'),
             meta: hp('meta'),
             tech: hp('techMods'),
+            // Этап 9.3 (Этап 7 ТЗ): typed-модификаторы технологий (ADR-021).
+            boost: isKriogen ? ctx.tech.yieldMult('kriogen') : ((node.resourceKey ?? 'iron') === 'iron' ? ctx.tech.yieldMult('iron') : 1),
+            hyperdrill: ctx.tech.veinYieldMult(),
             seal: hp('seal'),
             event: hp('eventIron'),
           };
@@ -252,9 +255,9 @@ export class IncomeService {
       research += planetResearch;
 
       energy += pIncome.energy;
-      iron += pIncome.iron;
-      kriogen += pIncome.kriogen;
-      crystals += pIncome.crystals;
+      iron += pIncome.iron * ctx.tech.yieldMult('iron');
+      kriogen += pIncome.kriogen * ctx.tech.yieldMult('kriogen');
+      crystals += pIncome.crystals * ctx.tech.yieldMult('crystal');
       for (const [k, v] of Object.entries(pIncome.extra)) extra[k] = (extra[k] ?? 0) + v;
       byPlanet[pid] = pIncome;
     }

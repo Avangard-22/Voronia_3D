@@ -44,6 +44,23 @@ export const STAR_MAP_POLICY = Object.freeze({
   /** Доля радиуса галактики, внутри которой фоновые системы плотнее (рукава у ядра). */
   coreBias: 0.22,
   /**
+   * Этап 9.2: доля радиуса диска, полностью отведённая центральной звезде.
+   * Внутри coreClearRadius нет НИЧЕГО, кроме якорной системы ядра: запрос владельца —
+   * «зачем в центре ядра столько солнечных систем». Центр читается как одна звезда
+   * с планетами на орбитах, а не как каша из систем.
+   */
+  coreClearRadius: 0.3,
+  /**
+   * Этап 9.2: поселенческое кольцо систем игровых планет (доли радиуса диска).
+   * Узлы PlanetaryGraph живут в собственных координатах графа (радиус ~4–8 единиц),
+   * которые на диске радиусом 95 слипались бы в центре. Система узла получает
+   * НАПРАВЛЕНИЕ узла (угол сохраняется — ментальная карта игрока не ломается),
+   * но радиус из кольца [nodeRingInner, nodeRingOuter]: детерминировано от seed узла,
+   * не зависит от порядка открытий и от состава других узлов.
+   */
+  nodeRingInner: 0.38,
+  nodeRingOuter: 0.56,
+  /**
    * Центральная звезда галактики. Seed подобран так, что ядро — аналог Солнца:
    * жёлтый класс, 5772 K, 1.02 L☉ (запрос владельца: «центр Галактики — некая звезда, как Солнце»).
    */
@@ -110,10 +127,10 @@ export function systemDesignation(armId: string, ordinal: number): string {
  * Позиция фоновой системы на спиральном рукаве (та же логарифмическая спираль, что и в
  * `galaxy/position.ts`, но без привязки к существующим узлам графа).
  */
-function armPosition(random: () => number, spiral: SpiralConfig, outerRadius: number, thickness: number, coreBias: number): GalaxyPos {
+function armPosition(random: () => number, spiral: SpiralConfig, outerRadius: number, thickness: number, coreBias: number, minRadius: number): GalaxyPos {
   const armIndex = Math.floor(random() * Math.max(1, spiral.arms));
   const t = coreBias * random() + (1 - coreBias) * Math.pow(random(), 0.72);
-  const r = Math.max(spiral.r0 * 0.6, spiral.r0 + t * Math.max(1, outerRadius - spiral.r0));
+  const r = Math.max(minRadius, spiral.r0 * 0.6, spiral.r0 + t * Math.max(1, outerRadius - spiral.r0));
   const wind = Math.log(Math.max(0.1, r / spiral.r0)) / Math.max(0.05, spiral.b);
   const spread = (random() - 0.5) * (spiral.width / Math.max(1, r)) * 2.6;
   const angle = armIndex * ((Math.PI * 2) / Math.max(1, spiral.arms)) + wind + spread;
@@ -138,6 +155,7 @@ function placeSystems(
   minSeparation: number,
   tries: number,
   coreBias: number,
+  minRadius: number,
 ): GalaxyPos[] {
   const placed: GalaxyPos[] = [];
   const occupied = [...taken];
@@ -145,7 +163,7 @@ function placeSystems(
     const random = mulberry32(mix32(seed ^ Math.imul(index + 1, 0x9e3779b1)));
     let position: GalaxyPos | null = null;
     for (let attempt = 0; attempt < tries; attempt++) {
-      const candidate = armPosition(random, spiral, outerRadius, thickness, coreBias);
+      const candidate = armPosition(random, spiral, outerRadius, thickness, coreBias, minRadius);
       if (occupied.every((other) => distance2d(other, candidate) >= minSeparation)) {
         position = candidate;
         break;
@@ -154,7 +172,7 @@ function placeSystems(
     if (!position) {
       // Запасная детерминированная сетка: золотой угол, как fallback в galaxy/position.ts.
       const golden = (index + 1) * 2.399963229728653;
-      const r = spiral.r0 + ((index + 1) / Math.max(1, count)) * Math.max(1, outerRadius - spiral.r0);
+      const r = Math.max(minRadius, spiral.r0 + ((index + 1) / Math.max(1, count)) * Math.max(1, outerRadius - spiral.r0));
       position = { x: Math.cos(golden) * r, y: ((index % 5) - 2) * thickness * 0.2, z: Math.sin(golden) * r };
     }
     occupied.push(position);
@@ -164,6 +182,24 @@ function placeSystems(
 }
 
 /* ——————————————————— сборка карты ————————————————— */
+
+/**
+ * Этап 9.2: позиция системы узла графа на поселенческом кольце.
+ * Угол берётся ИЗ УЗЛА (направление сохраняется), радиус — детерминированная доля
+ * кольца от seed узла. Не зависит от других узлов и от порядка открытий: добавление
+ * нового мира не сдвигает уже нанесённые системы (инвариант Этапа 9.0).
+ */
+export function nodeRingPosition(node: GraphNode, outerRadius: number, policy: { nodeRingInner: number; nodeRingOuter: number } = STAR_MAP_POLICY): GalaxyPos {
+  const graphRadius = Math.hypot(node.x, node.z);
+  const angle = graphRadius > 1e-6 ? Math.atan2(node.z, node.x) : (mix32(node.seed >>> 0) % 360) * (Math.PI / 180);
+  const frac = (mix32((node.seed >>> 0) ^ 0x51a7e) % 10000) / 10000;
+  const radius = outerRadius * (policy.nodeRingInner + frac * (policy.nodeRingOuter - policy.nodeRingInner));
+  return {
+    x: Math.cos(angle) * radius,
+    y: node.y,
+    z: Math.sin(angle) * radius,
+  };
+}
 
 function makeSystem(input: {
   id: string;
@@ -176,9 +212,11 @@ function makeSystem(input: {
   core: boolean;
   ordinal: number;
   planets: readonly SystemPlanetOrbit[];
+  /** Этап 9.2: каноничный рукав узла графа (иначе спиральная закрутка на радиусе кольца уводила бы систему в другой рукав). */
+  armIdOverride?: string;
 }): StarSystemDescriptor {
   const star = classifyStar(input.seed);
-  const armId = input.core ? 'core' : armIdAt(input.position, input.spiral);
+  const armId = input.core ? 'core' : (input.armIdOverride ?? armIdAt(input.position, input.spiral));
   return {
     id: input.id,
     name: input.core ? 'Центральная звезда' : (input.hostName ?? generateSystemName(input.seed)),
@@ -231,7 +269,7 @@ export function buildGalaxyStarMap(input: StarMapInput): GalaxyStarMap {
     systems.push(makeSystem({
       id: `sys:${node.id}`,
       seed: systemSeed,
-      position: { x: node.x, y: node.y, z: node.z },
+      position: nodeRingPosition(node, input.outerRadius, policy),
       spiral: input.spiral,
       hostNodeId: node.id,
       hostName: node.discovered ? node.name : null,
@@ -239,6 +277,7 @@ export function buildGalaxyStarMap(input: StarMapInput): GalaxyStarMap {
       core: false,
       ordinal: mix32(node.seed >>> 0) % 900,
       planets,
+      armIdOverride: node.armId,
     }));
   }
 
@@ -248,6 +287,7 @@ export function buildGalaxyStarMap(input: StarMapInput): GalaxyStarMap {
   const positions = placeSystems(
     seed, policy.backgroundSystems, [{ x: 0, y: 0, z: 0 }], input.spiral, input.outerRadius, input.thickness,
     policy.minSystemSeparation, policy.placementTries, policy.coreBias,
+    policy.coreClearRadius * input.outerRadius,
   );
   positions.forEach((position, index) => {
     const systemSeed = mix32(seed ^ Math.imul(index + 1, 0x85ebca6b));
@@ -304,6 +344,11 @@ export function validateStarMap(map: GalaxyStarMap): readonly string[] {
     if (axes.some((value, index) => index > 0 && value <= axes[index - 1]!)) issues.push(`orbits-not-monotonic:${system.id}`);
     if (system.planets.some((planet) => planet.orbitIndex < 0)) issues.push(`invalid-orbit-index:${system.id}`);
     if (system.core && system.hostNodeId) issues.push('core-system-must-not-have-host');
+    // Этап 9.2: зона центральной звезды принадлежит только якорной системе.
+    if (!system.core) {
+      const radial = Math.hypot(system.position.x, system.position.z);
+      if (radial < map.radius * STAR_MAP_POLICY.coreClearRadius * 0.999) issues.push(`core-zone-violation:${system.id}`);
+    }
   }
   if (!map.byId[CORE_SYSTEM_ID]) issues.push('missing-core-system');
   return issues;

@@ -104,7 +104,7 @@ export class ProductionService {
   cooldownMs(st: CellState): number {
     const c = this.deps.balance.registry.cells;
     const cnt = Math.min(c.reactCooldownCntCap, Math.max(0, st.reactCount));
-    return Math.min(c.reactCooldownMaxMs, c.reactCooldownBaseMs + c.reactCooldownPerCntMs * cnt);
+    return Math.min(c.reactCooldownMaxMs, c.reactCooldownBaseMs + c.reactCooldownPerCntMs * cnt) * this.deps.tech.veinCooldownMult();
   }
 
   /** 1.x Xs(): min(14, 1+0.55×reactCount) — рост выхода/цены реактивации. */

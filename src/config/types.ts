@@ -45,6 +45,8 @@ export interface RegistryCellsSection {
 }
 
 export interface RegistryTechSection {
+  /** Этап 9.3: таблицы стоимостей многоуровневых технологий v1 (techId → строки уровней). */
+  readonly costScaleTable: Readonly<Record<string, readonly Readonly<Record<string, number>>[]>>;
   readonly costScaleCurve: { readonly costScale: readonly number[] };
   readonly costCurveLate: { readonly tableDepth: number; readonly lastRow: number; readonly expFrom: number; readonly lateGrowth: number };
   readonly maxLevel?: number;

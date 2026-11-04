@@ -29,4 +29,28 @@ describe('Stage 7.3 — star system detail', () => {
     expect(anomaly?.anomaly).toBe(true);
     expect(anomaly?.starClass).toBe('violet');
   });
+
+  // Этап 9.2: подпись системы берётся из каталога, а не дублирует классы сигналов
+  // (прежнее «BLUE · CRYO» читалось на панели как «BLUEBLUE»).
+  it('Этап 9.2: без каталога подпись — имя подтверждённого мира, catalog null', () => {
+    const detail = buildGalaxySystemDetail(node());
+    expect(detail?.title).toBe('Криос-9');
+    expect(detail?.catalog).toBeNull();
+  });
+
+  it('Этап 9.2: с каталожной сводкой имя/обозначение/цвет звезды берутся из каталога', () => {
+    const catalog = {
+      title: 'Ворантея',
+      designation: 'VOR-Ζ-114',
+      starColor: '#ffe39a',
+      starLabel: 'yellow · 5772 K',
+      temperatureK: 5772,
+      luminosity: 1.02,
+      planetCount: 3,
+    };
+    const detail = buildGalaxySystemDetail(node(), catalog);
+    expect(detail?.title).toBe('Ворантея');
+    expect(detail?.starColor).toBe('#ffe39a');
+    expect(detail?.catalog).toEqual(catalog);
+  });
 });

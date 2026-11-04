@@ -32,7 +32,8 @@ export class ScanPricing implements ScanPricingPort {
     const perk = rt.data.perks.scanCostMult;
     const arm = this.armFor(rt);
     const armScan = arm ? arm.scan : 1;
-    return Math.floor(this.currentCost * perk * armScan);
+    // Этап 9.3: recon снижает цену скана (пол задан RESEARCH_POLICY).
+    return Math.floor(this.currentCost * perk * armScan * this.tech.scanCostMult());
   }
 
   /** Наука за скан (неаномальные): min(10, 1+floor(charge/1000)). */

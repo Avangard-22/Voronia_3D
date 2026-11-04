@@ -87,7 +87,8 @@ export class CellUpgradeService {
   constructor(private readonly deps: UpgradeDeps) {}
 
   maxLevel(): number {
-    return this.deps.balance.baseline.upgrade.maxLevel;
+    // Этап 9.3: технология maxLevel добавляет +1 к потолку уровня клетки за уровень.
+    return this.deps.balance.baseline.upgrade.maxLevel + this.deps.tech.cellMaxLevelBonus();
   }
 
   /** Первичный/вторичный ресурс планеты (1.x ii/h0): ferrum → iron, вторичного нет. */

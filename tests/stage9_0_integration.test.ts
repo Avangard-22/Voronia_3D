@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { makeGame } from './helpers';
-import { STAR_MAP_POLICY, buildGalaxyStarMap, systemForNode, validateStarMap } from '../src/galaxy/starMap';
+import { STAR_MAP_POLICY, buildGalaxyStarMap, nodeRingPosition, systemForNode, validateStarMap } from '../src/galaxy/starMap';
 import { SYSTEM_POLICY, buildStarSystemCatalog } from '../src/galaxy/starSystems';
 import { buildGalaxyRenderData, findRenderSystemByNode } from '../src/renderer/galaxyModel';
 import type { Game } from '../src/core/game';
@@ -45,12 +45,16 @@ describe('Этап 9.0 — интеграция карты систем с ре�
     expect(map.radius).toBeGreaterThan(game.balance.registry.galaxy.gen.outerRadius * 0.5);
   });
 
-  it('система стартовой планеты: координаты узла без изменений, орбита 0 занята Феррумом', () => {
+  it('система стартовой планеты: направление узла сохранено, радиус из поселенческого кольца (Этап 9.2), орбита 0 занята Феррумом', () => {
     const { game } = makeGame();
     const map = starMapOf(game);
     const ferrum = systemForNode(map, 'ferrum')!;
     const node = game.snapshot().galaxy.nodes.find((item) => item.id === 'ferrum')!;
-    expect(ferrum.position).toEqual({ x: node.x, y: node.y, z: node.z });
+    // Этап 9.2: собственные координаты узла графа (радиус ~4–8) на диске галактики
+    // сливались бы в центре, поэтому система стоит на кольце, сохраняя направление узла.
+    const outer = game.balance.registry.galaxy.gen.outerRadius;
+    expect(ferrum.position).toEqual(nodeRingPosition(node, outer));
+    expect(Math.atan2(ferrum.position.z, ferrum.position.x)).toBeCloseTo(Math.atan2(node.z, node.x), 9);
     expect(ferrum.charted).toBe(true);
     expect(ferrum.planets.length).toBeGreaterThanOrEqual(SYSTEM_POLICY.hostMinPlanets);
     expect(ferrum.planets.length).toBeLessThanOrEqual(SYSTEM_POLICY.hostMaxPlanets);

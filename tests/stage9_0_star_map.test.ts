@@ -88,12 +88,18 @@ describe('Этап 9.0 — карта звёздных систем', () => {
     expect(core?.planets.length).toBe(STAR_MAP_POLICY.corePlanetCount);
   });
 
-  it('система игровой планеты стоит ровно в координатах узла графа, орбита 0 занята этим миром', () => {
+  it('система игровой планеты стоит на поселенческом кольце: направление узла сохранено, радиус из полосы (Этап 9.2)', () => {
     const map = buildMap();
     for (const source of STARTERS) {
       const system = systemForNode(map, source.id);
       expect(system?.id).toBe(`sys:${source.id}`);
-      expect(system?.position).toEqual({ x: source.x, y: source.y, z: source.z });
+      // Этап 9.2: координаты узла графа (радиус ~4–8) на диске 95 сливались бы в центре,
+      // поэтому система получает направление узла, но радиус из кольца политики.
+      const radius = Math.hypot(system?.position.x ?? 0, system?.position.z ?? 0);
+      expect(radius).toBeGreaterThanOrEqual(OUTER_RADIUS * STAR_MAP_POLICY.nodeRingInner * 0.999);
+      expect(radius).toBeLessThanOrEqual(OUTER_RADIUS * STAR_MAP_POLICY.nodeRingOuter * 1.001);
+      expect(Math.atan2(system?.position.z ?? 0, system?.position.x ?? 1)).toBeCloseTo(Math.atan2(source.z, source.x), 9);
+      expect(system?.position.y).toBe(source.y);
       expect(system?.hostNodeId).toBe(source.id);
       expect(system?.planets[0]).toMatchObject({ orbitIndex: 0, planetId: source.id, status: 'bound', eccentricity: 0, inclination: 0 });
       expect(system?.planets.slice(1).every((planet) => planet.status === 'candidate' && planet.planetId === null)).toBe(true);

@@ -63,6 +63,30 @@ function createGeologicalSurfaceMaterial(): THREE.MeshStandardMaterial {
   return material;
 }
 
+/**
+ * Этап 9.2: звёздное небо surface-сцены. В версии 1 планета висела в космосе со
+ * звёздами; пустой чёрный фон читался как «графика хуже». Точки детерминированы
+ * (LCG с фиксированным seed) и не входят в planetGroup — не вращаются с планетой.
+ */
+function buildSurfaceStarField(): THREE.Points {
+  const count = 520;
+  const positions = new Float32Array(count * 3);
+  let state = 0x5eed1234;
+  const rnd = (): number => { state = (Math.imul(state, 1664525) + 1013904223) >>> 0; return state / 4294967296; };
+  for (let i = 0; i < count; i++) {
+    const radius = 26 + rnd() * 30;
+    const theta = rnd() * Math.PI * 2;
+    const phi = Math.acos(2 * rnd() - 1);
+    positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+    positions[i * 3 + 1] = radius * Math.cos(phi);
+    positions[i * 3 + 2] = radius * Math.sin(phi) * Math.sin(theta);
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  const material = new THREE.PointsMaterial({ color: 0x9fc9e8, size: 0.09, sizeAttenuation: true, transparent: true, opacity: 0.7, depthWrite: false });
+  return new THREE.Points(geometry, material);
+}
+
 export function createPlanetViewer(canvas: HTMLCanvasElement, initial: PlanetMeshData, borderColor = '#8fd7ff'): PlanetViewer {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
   const adaptiveQuality = new AdaptiveSurfaceQuality();
@@ -83,6 +107,8 @@ export function createPlanetViewer(canvas: HTMLCanvasElement, initial: PlanetMes
 
   const planetGroup = new THREE.Group();
   scene.add(planetGroup);
+  const surfaceStarField = buildSurfaceStarField();
+  scene.add(surfaceStarField);
   let rotX = -0.08; // 1.x n.rotX после setActivePlanet
   let rotY = 0;
   const idleSpin = 0.0016;
@@ -315,33 +341,70 @@ export function createPlanetViewer(canvas: HTMLCanvasElement, initial: PlanetMes
     planetGroup.add(selectionRing);
   }
 
-  function pickCell(clientX: number, clientY: number): void {
-    if (!surface && surfaceChunks.length === 0) return;
+  let hoverRing: THREE.Mesh | null = null;
+  let hoverCellId: number | null = null;
+
+  /**
+   * Этап 9.2: кольцо наведения (v1: подсветка подсказывала, что клетку можно ткнуть).
+   * Тоньше и холоднее кольца выбора, чтобы не спорить с ним.
+   */
+  function setHover(cellId: number | null): void {
+    if (cellId === hoverCellId) return;
+    hoverCellId = cellId;
+    if (hoverRing) {
+      planetGroup.remove(hoverRing);
+      hoverRing.geometry.dispose();
+      (hoverRing.material as THREE.Material).dispose();
+      hoverRing = null;
+    }
+    if (cellId === null || cellId === selectedCellId) return;
+    const index = cellIndexById.get(cellId);
+    if (index === undefined) return;
+    const x = currentData.cellSurfaceCenters[index * 3]!;
+    const y = currentData.cellSurfaceCenters[index * 3 + 1]!;
+    const z = currentData.cellSurfaceCenters[index * 3 + 2]!;
+    const normal = new THREE.Vector3(x, y, z).normalize();
+    hoverRing = new THREE.Mesh(
+      new THREE.TorusGeometry(0.05, 0.0045, 6, 24),
+      new THREE.MeshBasicMaterial({ color: 0x8fd7ff, transparent: true, opacity: 0.5, depthTest: true }),
+    );
+    hoverRing.position.copy(normal.clone().multiplyScalar(Math.hypot(x, y, z) + 0.01));
+    hoverRing.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), normal);
+    planetGroup.add(hoverRing);
+  }
+
+  /** id клетки под курсором (null — мимо или клетка недоступна). Общий для клика и наведения. */
+  function cellAt(clientX: number, clientY: number): number | null {
+    if (!surface && surfaceChunks.length === 0) return null;
     const rect = canvas.getBoundingClientRect();
-    if (!rect.width || !rect.height) return;
+    if (!rect.width || !rect.height) return null;
     pointerNdc.set(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1);
     raycaster.setFromCamera(pointerNdc, camera);
     if (surface) {
       const hit = raycaster.intersectObject(surface, false)[0];
       const faceIndex = hit?.faceIndex;
-      if (faceIndex == null) return;
+      if (faceIndex == null) return null;
       const cellId = currentData.faceCellIds[faceIndex];
-      if (cellId === undefined) return;
+      if (cellId === undefined) return null;
       const cellIndex = cellIndexById.get(cellId);
-      if (cellIndex === undefined || currentData.cellSelectable[cellIndex] !== 1) return;
-      selectCell(cellId);
-      onCellSelected?.(cellId);
-      return;
+      if (cellIndex === undefined || currentData.cellSelectable[cellIndex] !== 1) return null;
+      return cellId;
     }
     const hits = raycaster.intersectObjects(surfaceChunks.map((item) => item.mesh), false);
     const hit = hits[0];
     const hitFaceIndex = hit?.faceIndex;
-    if (hitFaceIndex == null || !hit?.object) return;
+    if (hitFaceIndex == null || !hit?.object) return null;
     const chunk = surfaceChunks.find((item) => item.mesh === hit.object);
     const cellId = chunk?.faceCellIds[hitFaceIndex];
-    if (cellId === undefined) return;
+    if (cellId === undefined) return null;
     const cellIndex = cellIndexById.get(cellId);
-    if (cellIndex === undefined || currentData.cellSelectable[cellIndex] !== 1) return;
+    if (cellIndex === undefined || currentData.cellSelectable[cellIndex] !== 1) return null;
+    return cellId;
+  }
+
+  function pickCell(clientX: number, clientY: number): void {
+    const cellId = cellAt(clientX, clientY);
+    if (cellId === null) return;
     selectCell(cellId);
     onCellSelected?.(cellId);
   }
@@ -397,8 +460,27 @@ export function createPlanetViewer(canvas: HTMLCanvasElement, initial: PlanetMes
   canvas.addEventListener('webglcontextlost', onContextLost, false);
   canvas.addEventListener('webglcontextrestored', onContextRestored, false);
 
+  // Этап 9.2: наведение — кольцо + курсор-pointer (v1-паритет «клетки кликабельны»).
+  // Пикинг дорогой, поэтому не чаще одного кадра (rAF-троттлинг).
+  let hoverRaf = 0;
+  const onHoverMove = (e: PointerEvent): void => {
+    if (dragging || activePointers.size > 0) { if (hoverCellId !== null) setHover(null); return; }
+    const x = e.clientX;
+    const y = e.clientY;
+    if (hoverRaf) return;
+    hoverRaf = requestAnimationFrame(() => {
+      hoverRaf = 0;
+      const id = cellAt(x, y);
+      setHover(id);
+      canvas.style.cursor = id === null ? 'grab' : 'pointer';
+    });
+  };
+  const onHoverLeave = (): void => { if (hoverRaf) { cancelAnimationFrame(hoverRaf); hoverRaf = 0; } setHover(null); canvas.style.cursor = 'grab'; };
+
   canvas.addEventListener('pointerdown', onDown);
   canvas.addEventListener('pointermove', onMove);
+  canvas.addEventListener('pointermove', onHoverMove);
+  canvas.addEventListener('pointerleave', onHoverLeave);
   canvas.addEventListener('pointerup', onUp);
   canvas.addEventListener('pointercancel', onCancel);
   canvas.addEventListener('wheel', onWheel, { passive: false });
@@ -498,6 +580,8 @@ export function createPlanetViewer(canvas: HTMLCanvasElement, initial: PlanetMes
   function dispose(): void {
     canvas.removeEventListener('pointerdown', onDown);
     canvas.removeEventListener('pointermove', onMove);
+    canvas.removeEventListener('pointermove', onHoverMove);
+    canvas.removeEventListener('pointerleave', onHoverLeave);
     canvas.removeEventListener('pointerup', onUp);
     canvas.removeEventListener('pointercancel', onCancel);
     canvas.removeEventListener('wheel', onWheel);

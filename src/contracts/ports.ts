@@ -72,7 +72,19 @@ export interface LedgerPort {
 export interface TechPort {
   isUnlocked(resourceKey: string): boolean;
   hasResearch(id: string): boolean;
+  /** Этап 9.3: текущий уровень технологии/исследования (0 — не куплено). */
+  level(id: string): number;
   costScaleMult(): number;
+  /** Этап 9.3: множитель дохода железа/кристаллов/криогена (ironBoost/crystalBoost/kriogenBoost). */
+  yieldMult(kind: 'iron' | 'crystal' | 'kriogen'): number;
+  /** Этап 9.3: множитель кулдауна жил (therm). */
+  veinCooldownMult(): number;
+  /** Этап 9.3: множитель дохода жил (hyperdrill). */
+  veinYieldMult(): number;
+  /** Этап 9.3: множитель цены скана (recon). */
+  scanCostMult(): number;
+  /** Этап 9.3: бонус к потолку уровня клетки (maxLevel). */
+  cellMaxLevelBonus(): number;
 }
 
 /** Порт ценообразования скана (реализация — progression/scanPricing ScanPricing). */

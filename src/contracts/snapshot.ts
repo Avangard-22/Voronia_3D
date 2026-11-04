@@ -9,6 +9,8 @@ import type { TransactionRecord } from './events';
 import type { GraphNode } from './galaxy';
 import type { GalaxyRoute } from './galaxy';
 import type { LogisticsSnapshot } from './logistics';
+import type { TechSnapshot } from './tech';
+import type { ReactorView } from './crafting';
 
 /** Статистика сессии (parity-подмножество 1.x n.gameSession; полные 40 полей — по мере подключения доменов). */
 export interface SessionStats {
@@ -96,6 +98,10 @@ export interface GameSnapshot {
   readonly sonarCharges: number;
   readonly sonar: { readonly available: boolean; readonly cost: number; readonly targetName: string; readonly targetBiome: string; readonly targetResources: readonly string[]; readonly bonusMult: number; readonly bonusLeftMs: number; readonly bonusAccuracy: number | null; readonly discoveryCost: number; readonly discoveryCharges: number; readonly rerollCost: number; readonly rerolls: number; readonly rerollsRemaining: number; readonly anomalyGate: { readonly unlocked: boolean; readonly discoveredWorlds: number; readonly requiredWorlds: number; readonly discoveredArms: number; readonly requiredArms: number; readonly research: number; readonly requiredResearch: number; readonly missing: readonly ('worlds' | 'arms' | 'research')[] }; readonly nextPreview: { readonly id: string; readonly index: number; readonly name: string; readonly biome: string; readonly geometry: string; readonly resources: readonly string[]; readonly seed: number; readonly signalClass: 'anomaly' | 'energy' | 'cryo' | 'resource' | 'unknown'; readonly sectorId: 'core' | 'inner' | 'mid' | 'outer'; readonly sectorLabel: string } | null };
   readonly synth: SynthStatus | null;
+  /** Этап 9.3 (Этап 7 ТЗ): дерево исследований — узлы с уровнями/ценами/доступностью. */
+  readonly tech: TechSnapshot;
+  /** Этап 9.3 (Этап 8 ТЗ): реактор — рецепты, очередь, idle («Реактор в покое…»). */
+  readonly reactor: ReactorView;
   /** Этап 5: граф галактики (1.x ge.PlanetaryGraph) — узлы c позициями/рукавами и рёбра. */
   readonly galaxy: {
     readonly nodes: readonly (GraphNode & { readonly signalClass: 'anomaly' | 'energy' | 'cryo' | 'resource' | 'unknown'; readonly mapX: number; readonly mapY: number; readonly sectorId: 'core' | 'inner' | 'mid' | 'outer'; readonly sectorLabel: string })[];

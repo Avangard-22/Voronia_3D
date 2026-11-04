@@ -6,7 +6,7 @@ import type { ResourceAmounts } from './resources';
 import type { ChooseBranchResult, DischargeResult, UpgradeAnomalyResult } from './anomalies';
 import type { GameSnapshot } from './snapshot';
 
-export const REJECT_REASONS = ['state', 'energy', 'cost', 'max', 'type', 'cooldown', 'hidden', 'unknown-cell', 'not-implemented'] as const;
+export const REJECT_REASONS = ['state', 'energy', 'cost', 'max', 'type', 'cooldown', 'hidden', 'unknown-cell', 'not-implemented', 'locked', 'unknown-tech', 'unknown-recipe', 'queue-full', 'unknown-job'] as const;
 export type RejectReason = (typeof REJECT_REASONS)[number];
 
 export type ActionResult<T = void> = { readonly ok: true; readonly value: T } | { readonly ok: false; readonly reason: RejectReason; readonly detail?: string };
@@ -132,6 +132,12 @@ export interface CommandMap {
   /** Совместимость старого UI/API; теперь также требует реального маршрута и оплаты. */
   setActivePlanet: { readonly pid: string };
   grant: GrantSpec;
+  /** Этап 9.3 (Этап 7 ТЗ): покупка уровня технологии/исследования. */
+  buyTech: { readonly id: string };
+  /** Этап 9.3 (Этап 8 ТЗ): постановка крафт-задачи в очередь реактора. */
+  craftEnqueue: { readonly recipeId: string; readonly runs?: number };
+  /** Этап 9.3 (Этап 8 ТЗ): отмена задачи (возврат только не стартовавших run). */
+  craftCancel: { readonly jobId: number };
   save: Record<string, never>;
   load: Record<string, never>;
   exportSave: Record<string, never>;
@@ -150,6 +156,12 @@ export interface CommandResultMap {
   discoverPlanet: DiscoverPlanetResult;
   setActivePlanet: TravelToPlanetResult;
   travelToPlanet: TravelToPlanetResult;
+  /** Этап 9.3: результат покупки технологии — новый уровень. */
+  buyTech: { readonly techId: string; readonly level: number };
+  /** Этап 9.3: результат постановки в очередь. */
+  craftEnqueue: { readonly jobId: number; readonly queueLength: number };
+  /** Этап 9.3: результат отмены — сколько не стартовавших run снято. */
+  craftCancel: { readonly removedRuns: number };
   travelWithinSystem: { readonly pid: string; readonly prev: string; readonly hostPlanetId: string };
   scanOrbitalBody: { readonly hostPlanetId: string; readonly bodyId: string; readonly energySpent: number; readonly researchSpent: number };
   activateOrbitalBody: DiscoverPlanetResult & { readonly hostPlanetId: string; readonly bodyId: string };

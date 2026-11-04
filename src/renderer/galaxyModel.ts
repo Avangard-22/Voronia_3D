@@ -54,6 +54,8 @@ export interface GalaxyRenderSystem {
   readonly glowRadius: number;
   readonly starClass: string;
   readonly temperatureK: number;
+  /** Этап 9.2: светимость звезды в L☉ (0 — система не нанесена на карту). */
+  readonly luminosity: number;
   readonly charted: boolean;
   readonly core: boolean;
   readonly hostNodeId: string | null;
@@ -227,6 +229,7 @@ export function buildGalaxyRenderData(input: {
       glowRadius: starRadius * GALAXY_RENDER_POLICY.glowMultiplier * (system.core ? GALAXY_RENDER_POLICY.coreGlowBoost : 1),
       starClass: system.star.class,
       temperatureK: system.star.temperatureK,
+      luminosity: charted ? system.star.luminosity : 0,
       charted,
       core: system.core,
       hostNodeId,
