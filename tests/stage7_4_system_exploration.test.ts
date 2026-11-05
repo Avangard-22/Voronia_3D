@@ -38,7 +38,9 @@ describe('Stage 7.4 — deterministic domain star-system catalog', () => {
     const second = buildStarSystemCatalog({ id: 'ferrum', name: 'Феррум', seed: 4421, discovered: true });
     expect(first).toEqual(second);
     expect(first?.bodies[0]).toMatchObject({ status: 'confirmed', sourcePlanetId: 'ferrum', name: 'Феррум' });
-    expect(first?.bodies.length).toBeGreaterThan(1);
+    expect(first?.bodies).toHaveLength(5);
+    expect(new Set(first?.bodies.map((body) => body.ascendingNode)).size).toBeGreaterThan(1);
+    expect(first?.bodies.every((body) => body.bodyClass !== 'asteroid-belt')).toBe(true);
     expect(first ? validateStarSystemCatalog(first) : ['missing']).toEqual([]);
   });
 
