@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * tests/stage9_3_reactor.test.ts — Этап 9.3 (Этап 8 ТЗ): реактор и крафт.
  *
@@ -6,7 +7,6 @@
  * прогресса; выход — атомарно по завершении); очередь и прогресс сохраняются;
  * UI не «прыгает» при смене рецепта (рендер из снапшота).
  */
-// @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
 import { makeGame, grant, advance } from './helpers';
 import { RECIPE_GATE, Reactor } from '../src/crafting/reactor';
