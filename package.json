@@ -1,7 +1,7 @@
 {
   "name": "voronia2",
   "private": true,
-  "version": "2.0.0-stage9.3.0",
+  "version": "2.0.0-stage9.10.0",
   "type": "module",
   "description": "Voronia 2.0 — модульный rewrite монолита v0.0.41 (ТЗ ред. 1.0). Баланс меняется только через ledger (ТЗ §15).",
   "engines": {
@@ -21,7 +21,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "extract": "node tools/extract_stage0.cjs",
-    "ci": "npm run lint && npm run typecheck && npm run typecheck:node && npm run check:arch && npm run test && npm run build && npm run build:single && npm run check:size"
+    "ci": "npm run lint && npm run typecheck && npm run typecheck:node && npm run check:arch && npm run test && npm run build && npm run build:single && npm run check:size",
+    "check:stage9.8": "node tools/check_stage9_8.mjs"
   },
   "dependencies": {
     "three": "^0.170.0"

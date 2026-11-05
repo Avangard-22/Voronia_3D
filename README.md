@@ -444,3 +444,8 @@ Added frame-budgeted restoration of evicted polygon-boundary and neighbour-graph
 ## Stage 8.0.24 — Surface GPU Resource Lifecycle & Memory Pressure Recovery
 
 Added an explicit GPU-resource lifecycle registry for base surface geometry and streamed chunks. Resource disposal is idempotent, residency records are removed with their resources, duplicate IDs are safely replaced, and context restoration re-marks retained geometry attributes for upload. Existing decorative resources retain their reconstructible eviction path. See `docs/STAGE8_0_24_REPORT.md` for scope and verification limits.
+
+
+## Stage 9.4 — Legacy UI Restoration & Title Screen Integration
+
+Current implementation: Stage 9.4.1 UI baseline extracted from the live v0.0.41.0 reference; Stage 9.4.2 title screen integrated over the existing Three.js planet renderer. See `docs/STAGE9_4_1_UI_BASELINE.md` and `docs/STAGE9_4_2_TITLE_SCREEN_REPORT.md`. Stages 9.4.3–9.4.7 are implemented in source. Stage 9.6 restores a local SVG icon set (provisional artwork, not original v0.0.41.0 assets); Stage 9.8 restores the HUD quick actions (Sonar, Galaxy Map, Fullscreen, Combat Events status). Full browser/WebGL/Android QA remains pending.
