@@ -24,7 +24,7 @@ const root = document.getElementById('app');
 if (!root) throw new Error('#app не найден');
 
 const logger = new Logger('info');
-logger.info('boot', 'Voronia 2.0 — Stage 8.0.1 PLANET SURFACE INTERACTION', {
+logger.info('boot', 'Voronia 2.0 — Stage 9.11 PLANETARY SYSTEM', {
   balance: 'v0.0.41',
   domainsNotImplemented: [RENDERER_STATUS, GALAXY_STATUS, CRAFTING_STATUS, LOGISTICS_STATUS, COMBAT_STATUS, AUDIO_STATUS].map((d) => `${d.domain}(Этап ${d.stage})`),
 });
@@ -40,6 +40,10 @@ const loaded = game.saves.load();
 if (loaded.ok) logger.info('boot', loaded.migrated ? 'загружен и мигрирован legacy-сейв v39' : 'сейв загружен');
 
 bindStyles();
+// Restore device-local presentation preferences from Stage 9.4.6.
+const savedUiScale = localStorage.getItem('voronia.uiScale');
+if (savedUiScale === '0.9' || savedUiScale === '1' || savedUiScale === '1.1') document.documentElement.style.setProperty('--voronia-ui-scale', savedUiScale);
+if (localStorage.getItem('voronia.reducedMotion') === 'true') document.documentElement.classList.add('voronia-reduced-motion');
 
 // Постоянная оболочка: HUD обновляется отдельно и никогда не удаляет WebGL-canvas.
 const sceneHost = document.createElement('div');
@@ -74,10 +78,64 @@ galaxyPanel.hidden = true;
 galaxyHost.append(galaxyCanvas, galaxyCaption, galaxyControls, galaxyPanel);
 const sceneSwitch = document.createElement('div');
 sceneSwitch.className = 'scene-switch';
-sceneSwitch.innerHTML = '<button type="button" data-scene="planet" class="active">Поверхность</button><button type="button" data-scene="galaxy">Галактика</button><button type="button" data-scene="system">Звёздная система</button>'; 
+sceneSwitch.innerHTML = '<button type="button" data-scene="planet" class="active">Планета</button><button type="button" data-scene="system">Система</button>';  
 const hudHost = document.createElement('div');
 hudHost.id = 'game-hud';
-root.replaceChildren(sceneSwitch, sceneHost, galaxyHost, hudHost);
+
+// Stage 9.4.2: титульный экран использует тот же живой Three.js canvas,
+// что и игровой режим. Игровое состояние и рендерер не дублируются.
+const titleScreen = document.createElement('section');
+titleScreen.className = 'title-screen';
+titleScreen.setAttribute('aria-label', 'Главный экран Voronia');
+titleScreen.innerHTML = `
+  <div class="title-topline"><span>VORONIA PROJECT</span><span>2.0 · STAGE 9.11</span></div>
+  <div class="title-content">
+    <div class="title-kicker">ЦИКЛЫ · ПЫЛЬ · ОСКОЛКИ</div>
+    <div class="title-logo">VORONIA</div>
+    <div class="title-subtitle">ГРАНИ ЗАБЫТОГО МИРА</div>
+    <p class="title-lore">Ворония раскололась на циклы. Её миры — грани,<br>её память — пыль, её сердце — осколки.</p>
+    <p class="title-prompt">Исследуй клетки · пробуждай ядра · слушай Хранителей</p>
+    <div class="title-actions">
+      <button type="button" class="title-primary" data-title-action="enter">${loaded.ok ? 'ПРОДОЛЖИТЬ' : 'НАЧАТЬ ИГРУ'}</button>
+      <button type="button" class="title-secondary" data-title-action="new">НОВАЯ ИГРА</button>
+    </div>
+    <div class="title-footnote">${loaded.ok ? 'СОХРАНЕНИЕ НАЙДЕНО · ПРОГРЕСС БУДЕТ ВОССТАНОВЛЕН' : 'НОВАЯ ЭКСПЕДИЦИЯ · СИГНАЛ ОЖИДАЕТ ОТВЕТА'}</div>
+  </div>
+  <div class="title-bottomline"><span>VORONOI CELLULAR UNIVERSE</span><span>v2.0.0</span></div>
+`;
+root.replaceChildren(hudHost, sceneSwitch, sceneHost, galaxyHost, titleScreen);
+root.classList.add('title-mode');
+sceneHost.classList.add('title-backdrop');
+sceneSwitch.hidden = true;
+hudHost.hidden = true;
+let inGame = false;
+const enterGame = (): void => {
+  if (inGame) return;
+  inGame = true;
+  root.classList.remove('title-mode');
+  root.classList.add('game-mode');
+  sceneHost.classList.remove('title-backdrop');
+  titleScreen.classList.add('title-screen-leaving');
+  window.setTimeout(() => titleScreen.remove(), 460);
+  sceneSwitch.hidden = false;
+  hudHost.hidden = false;
+  viewer?.resize();
+};
+titleScreen.addEventListener('click', (event) => {
+  const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-title-action]');
+  if (!button) return;
+  if (button.dataset['titleAction'] === 'new') {
+    if (loaded.ok && !window.confirm('Начать новую игру? Текущий прогресс будет заменён.')) return;
+    game.newGame();
+    game.saves.save();
+    selectedCellId = null;
+    viewer?.selectCell(null);
+    planetVisualDirty = true;
+    galaxyVisualDirty = true;
+    paintHud();
+  }
+  enterGame();
+});
 let selectedCellId: number | null = null;
 const paintHud = (): void => { renderSnapshot(game, hudHost); renderCellDock(game, cellDockHost, selectedCellId); };
 
@@ -88,6 +146,17 @@ bindCommands(game, hudHost, () => {
   planetVisualDirty = true;
   galaxyVisualDirty = true;
   paintHud();
+});
+// Stage 9.4.5: legacy bottom navigation drives the existing scene switch without duplicating renderers.
+hudHost.addEventListener('voronia:navigate', (event) => {
+  const tab = (event as CustomEvent<{ tab: string }>).detail?.tab;
+  if (tab === 'galaxy' || tab === 'system') {
+    const systemButton = sceneSwitch.querySelector<HTMLButtonElement>('[data-scene="system"]');
+    systemButton?.click();
+  } else {
+    const planetButton = sceneSwitch.querySelector<HTMLButtonElement>('[data-scene="planet"]');
+    planetButton?.click();
+  }
 });
 // Док клетки живёт в отдельном контейнере: свои команды + снятие выделения.
 bindCommands(game, cellDockHost, () => {
@@ -175,29 +244,44 @@ try {
     const orbitalState = game.orbitalExplorationState(node.id);
     const bodyLabel = (bodyClass: string): string => ({ terrestrial: 'Землеподобная', ice: 'Ледяная', 'gas-giant': 'Газовый гигант', dwarf: 'Карлик', 'asteroid-belt': 'Пояс астероидов', unknown: 'Не идентифицировано' } as Record<string, string>)[bodyClass] ?? bodyClass;
     const orbitPeriod = (days: number): string => (days < 365.25 ? `${Math.round(days)} сут` : `${(days / 365.25).toFixed(2)} г.`);
-    const orbitRows = (starSystem?.planets ?? []).map((planet) => {
+    const orbitalPlanets = starSystem?.planets ?? [];
+    const revealedOrbitRows = orbitalPlanets.filter((planet) => {
+      const bodyId = `body:${node.id}:${planet.orbitIndex}`;
+      return planet.status === 'bound' || orbitalState.scannedBodyIds.includes(bodyId) || Boolean(orbitalState.activatedBodies[bodyId]);
+    });
+    const orbitRows = revealedOrbitRows.map((planet) => {
       const bodyId = `body:${node.id}:${planet.orbitIndex}`;
       const host = planet.status === 'bound';
       const scanned = orbitalState.scannedBodyIds.includes(bodyId);
       const activatedId = orbitalState.activatedBodies[bodyId];
-      const known = host || scanned || Boolean(activatedId);
-      const label = known ? bodyLabel(planet.bodyClass) : 'Неидентифицированное орбитальное тело';
-      const title = host ? node.name : activatedId ? activatedId : `Орбита ${planet.orbitIndex + 1}`;
+      const label = bodyLabel(planet.bodyClass);
+      const title = host ? node.name : activatedId ? activatedId : `Планета · орбита ${planet.orbitIndex + 1}`;
       const meta = `${planet.semiMajorAxis.toFixed(2)} а.е. · период ${orbitPeriod(planet.periodDays)} · e ${planet.eccentricity.toFixed(2)}`;
       const action = host
         ? (active ? '<strong>АКТИВНА</strong>' : unlocked ? `<button type="button" class="galaxy-orbit-action" data-system-travel="${escapeHtml(node.id)}">ПЕРЕЙТИ</button>` : '<strong>ЗАКРЫТА</strong>')
         : !unlocked ? '<strong>СИСТЕМА ЗАКРЫТА</strong>'
           : activatedId ? `<button type="button" class="galaxy-orbit-action" data-system-travel="${escapeHtml(activatedId)}">ПЕРЕЙТИ</button>`
-            : scanned ? `<button type="button" class="galaxy-orbit-action" data-orbit-activate="${escapeHtml(bodyId)}">АКТИВИРОВАТЬ · 2 000 ⚡ / 500 🔬</button>`
-              : `<button type="button" class="galaxy-orbit-action" data-orbit-scan="${escapeHtml(bodyId)}">ИССЛЕДОВАТЬ · 500 ⚡ / 100 🔬</button>`;
-      return `<div class="galaxy-world-row${host ? '' : ' galaxy-world-candidate'}"><span class="galaxy-world-orbit">${host ? '◎' : scanned ? '◍' : '◌'}</span><span><b>${escapeHtml(title)}</b><em>${escapeHtml(label)} · ${escapeHtml(meta)}</em></span>${action}</div>`;
+            : scanned ? `<button type="button" class="galaxy-orbit-action" data-orbit-activate="${escapeHtml(bodyId)}">АКТИВИРОВАТЬ · 2 000 ⚡ / 500 🔬</button>` : '<strong>ОБНАРУЖЕНА</strong>';
+      return `<div class="galaxy-world-row${host ? '' : ' galaxy-world-candidate'}"><span class="galaxy-world-orbit">${host ? '◎' : '◍'}</span><span><b>${escapeHtml(title)}</b><em>${escapeHtml(label)} · ${escapeHtml(meta)}</em></span>${action}</div>`;
     }).join('');
+    const nextUnscanned = orbitalPlanets.find((planet) => planet.status !== 'bound' && !orbitalState.scannedBodyIds.includes(`body:${node.id}:${planet.orbitIndex}`));
+    const sonarAction = unlocked && nextUnscanned
+      ? `<button type="button" class="galaxy-orbit-action" data-orbit-scan="body:${escapeHtml(node.id)}:${nextUnscanned.orbitIndex}">СОНАР · ОБНАРУЖИТЬ СЛЕДУЮЩУЮ ОРБИТУ · 500 ⚡ / 100 🔬</button>`
+      : '';
+    if (activeScene === 'system') {
+      galaxyPanel.innerHTML = `<button class="galaxy-panel-close" type="button" aria-label="Закрыть панель">×</button>`
+        + `<div class="galaxy-panel-kicker">ПЛАНЕТАРНАЯ СИСТЕМА</div><h3>${escapeHtml(node.name)}</h3>`
+        + `<div class="galaxy-system-summary"><span class="galaxy-system-star" style="--star-color:${escapeHtml(starSystem?.star.color ?? '#ffe39a')}"></span><div><small>ЦЕНТРАЛЬНАЯ ЗВЕЗДА · ${escapeHtml(STAR_CLASS_LABELS[starSystem?.star.class ?? 'yellow'])}</small><b>${escapeHtml(starSystem?.name ?? node.name)}</b><em>${starSystem?.star.temperatureK.toLocaleString('ru-RU') ?? 0} K · ${starSystem?.planets.length ?? 5} планет в системе</em></div></div>`
+        + `<div class="galaxy-world-list"><small>ОБНАРУЖЕННЫЕ ПЛАНЕТЫ</small>${orbitRows || '<p>Пока обнаружена только текущая планета.</p>'}</div>${sonarAction}`;
+      galaxyPanel.hidden = false;
+      return;
+    }
     const worldAction = active
       ? `<button type="button" class="galaxy-travel-button" data-enter-world="${escapeHtml(node.id)}">ОТКРЫТЬ ПОВЕРХНОСТЬ ПЛАНЕТЫ</button>`
       : unlocked && route
         ? `<button type="button" class="galaxy-travel-button" data-galaxy-travel="${escapeHtml(node.id)}" ${(snap.resources.energy ?? 0) < route.firstLeg.energyCost ? 'disabled' : ''}>ПЕРЕЛЁТ К ПЛАНЕТЕ · ${Math.ceil(route.firstLeg.energyCost).toLocaleString('ru-RU')} ⚡</button>`
         : '<div class="galaxy-panel-status">Мир обнаружен, но ещё не открыт. Завершите сонарное открытие.</div>';
-    galaxyPanel.innerHTML = `<button class="galaxy-panel-close" type="button" aria-label="Закрыть карточку">×</button><div class="galaxy-panel-kicker">${active ? 'АКТИВНАЯ СИСТЕМА' : unlocked ? 'ОТКРЫТАЯ СИСТЕМА' : 'ОБНАРУЖЕННЫЙ СИГНАЛ'}</div><div class="galaxy-nav-actions"><button type="button" data-system-view>ОТКРЫТЬ СИСТЕМУ</button><button type="button" data-galaxy-return>К ГАЛАКТИКЕ</button></div><h3>${escapeHtml(node.name)}</h3><div class="galaxy-panel-meta">${escapeHtml(node.biome)} · ${escapeHtml(node.geometryName)}</div><div class="galaxy-system-summary"><span class="galaxy-system-star" style="--star-color:${escapeHtml(starSystem?.star.color ?? '#d8e8f5')}"></span><div><small>${starSystem?.core ? 'ЦЕНТРАЛЬНАЯ ЗВЕЗДА ГАЛАКТИКИ' : 'ЗВЕЗДА СИСТЕМЫ'} · ${escapeHtml(STAR_CLASS_LABELS[starSystem?.star.class ?? 'yellow'] ?? starSystem?.star.class ?? 'неизвестно')}</small><b>${escapeHtml(starSystem?.name ?? node.name)}</b><em>${escapeHtml(starSystem?.designation ?? '')} · ${starSystem?.star.temperatureK.toLocaleString('ru-RU') ?? 0} K · ${(starSystem?.star.luminosity ?? 0).toFixed(2)} L☉ · планет ${starSystem?.planets.length ?? 0}</em></div></div><div class="galaxy-panel-grid"><span>Рукав <b>${escapeHtml(node.armId)}</b></span><span>Сектор <b>${escapeHtml(node.sectorLabel)}</b></span><span>Координаты <b>${node.x.toFixed(1)}, ${node.y.toFixed(1)}, ${node.z.toFixed(1)}</b></span><span>Состояние <b>${active ? 'Здесь' : unlocked ? 'Доступна' : 'Не открыта'}</b></span></div>${orbitRows}${anomaly ? `<div class="galaxy-panel-anomaly">✧ ${escapeHtml(anomaly.title)} · ${anomaly.resolved ? 'исследована' : anomaly.available ? 'экспедиция доступна' : 'условия не выполнены'}</div>` : ''}<div class="galaxy-panel-route"><small>МАРШРУТ ОТ ТЕКУЩЕЙ ПЛАНЕТЫ</small><b>${routeLabel}</b>${route ? `<span>${route.path.map((id) => escapeHtml(snap.galaxy.nodes.find((item) => item.id === id)?.name ?? id)).join(' → ')}</span>` : ''}</div>${worldAction}`;
+    galaxyPanel.innerHTML = `<button class="galaxy-panel-close" type="button" aria-label="Закрыть карточку">×</button><div class="galaxy-panel-kicker">${active ? 'АКТИВНАЯ СИСТЕМА' : unlocked ? 'ОТКРЫТАЯ СИСТЕМА' : 'ОБНАРУЖЕННЫЙ СИГНАЛ'}</div><div class="galaxy-nav-actions"><button type="button" data-system-view>ОТКРЫТЬ СИСТЕМУ</button><button type="button" data-galaxy-return>К ГАЛАКТИКЕ</button></div><h3>${escapeHtml(node.name)}</h3><div class="galaxy-panel-meta">${escapeHtml(node.biome)} · ${escapeHtml(node.geometryName)}</div><div class="galaxy-system-summary"><span class="galaxy-system-star" style="--star-color:${escapeHtml(starSystem?.star.color ?? '#d8e8f5')}"></span><div><small>${starSystem?.core ? 'ЦЕНТРАЛЬНАЯ ЗВЕЗДА ГАЛАКТИКИ' : 'ЗВЕЗДА СИСТЕМЫ'} · ${escapeHtml(STAR_CLASS_LABELS[starSystem?.star.class ?? 'yellow'] ?? starSystem?.star.class ?? 'неизвестно')}</small><b>${escapeHtml(starSystem?.name ?? node.name)}</b><em>${escapeHtml(starSystem?.designation ?? '')} · ${starSystem?.star.temperatureK.toLocaleString('ru-RU') ?? 0} K · ${(starSystem?.star.luminosity ?? 0).toFixed(2)} L☉ · планет ${starSystem?.planets.length ?? 0}</em></div></div><div class="galaxy-panel-grid"><span>Рукав <b>${escapeHtml(node.armId)}</b></span><span>Сектор <b>${escapeHtml(node.sectorLabel)}</b></span><span>Координаты <b>${node.x.toFixed(1)}, ${node.y.toFixed(1)}, ${node.z.toFixed(1)}</b></span><span>Состояние <b>${active ? 'Здесь' : unlocked ? 'Доступна' : 'Не открыта'}</b></span></div>${orbitRows}${sonarAction}${anomaly ? `<div class="galaxy-panel-anomaly">✧ ${escapeHtml(anomaly.title)} · ${anomaly.resolved ? 'исследована' : anomaly.available ? 'экспедиция доступна' : 'условия не выполнены'}</div>` : ''}<div class="galaxy-panel-route"><small>МАРШРУТ ОТ ТЕКУЩЕЙ ПЛАНЕТЫ</small><b>${routeLabel}</b>${route ? `<span>${route.path.map((id) => escapeHtml(snap.galaxy.nodes.find((item) => item.id === id)?.name ?? id)).join(' → ')}</span>` : ''}</div>${worldAction}`;
     galaxyPanel.hidden = false;
   };
   /**
@@ -239,7 +323,7 @@ try {
       viewer?.resize(); startRenderLoop();
     });
     activeScene = 'system'; sceneHost.hidden = true; galaxyHost.hidden = false;
-    galaxyCaption.textContent = `STAR SYSTEM · ${node.name.toUpperCase()}`;
+    galaxyCaption.textContent = `ПЛАНЕТАРНАЯ СИСТЕМА · ${node.name.toUpperCase()}`;
     sceneSwitch.querySelectorAll('button').forEach((item) => item.classList.toggle('active', (item).dataset['scene'] === 'system'));
     galaxyViewer.resize(); paintGalaxyPanel(); startRenderLoop();
   };
@@ -324,6 +408,7 @@ try {
         const bodyId = scanOrbit.dataset['orbitScan'] ?? '';
         const result = game.dispatch('scanOrbitalBody', { hostPlanetId: selectedGalaxyNodeId ?? '', bodyId });
         if (!result.ok) { paintHud(); paintGalaxyPanel(); return; }
+        galaxyVisualDirty = true;
         paintHud(); paintGalaxyPanel();
         return;
       }
@@ -366,8 +451,7 @@ try {
       const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button[data-scene]');
       if (!button) return;
       const requested = button.dataset['scene'];
-      if (requested === 'system') { if (selectedGalaxyNodeId) showSystemView(selectedGalaxyNodeId); else openSystemViewById(starMapOf().coreSystemId); return; }
-      if (requested === 'galaxy') { showGalaxyView(); return; }
+      if (requested === 'system') { const hostId = game.activePlanetId(); selectedGalaxyNodeId = hostId; showSystemView(hostId); return; }
       activeScene = 'planet'; sceneHost.hidden = false; galaxyHost.hidden = true;
       sceneSwitch.querySelectorAll('button').forEach((item) => item.classList.toggle('active', item === button));
       viewer?.resize(); startRenderLoop();

@@ -1,17 +1,28 @@
 /**
- * ui/app.ts — минимальный HUD среза Этапов 2–6: ресурсы/скорости, клетки активной планеты, склад, журнал транзакций.
+ * ui/app.ts — snapshot-driven legacy HUD: ресурсы, поверхность, навигация и тематические панели.
  * Правило STAGE1 §4: UI рендерит ИЗ СНАПШОТА и шлёт КОМАНДЫ через Game.dispatch — никаких прямых мутаций доменов.
  */
 import type { Game } from '../core/game';
 import type { GameSnapshot, CellView } from '../contracts/snapshot';
 import { RESOURCE_META, cargoWeight, type LedgerResourceKey } from '../contracts/resources';
 import { CELL_TYPE_NAMES, ANOMALY_META, type CellType } from '../contracts/cells';
+import { COMBAT_DOMAIN_STATUS } from '../contracts/combat';
 
 
 let persistenceNotice = '';
+let activeNavigationTab: 'planet' | 'galaxy' | 'science' | 'meta' = 'planet';
 const SIGNAL_META = { anomaly: ['✧', 'Аномальный'], energy: ['ϟ', 'Энергетический'], cryo: ['❄', 'Криогенный'], resource: ['◆', 'Ресурсный'], unknown: ['◌', 'Неизвестный'] } as const;
 
-const CELL_ICONS: Record<number, string> = { 0: '⚡', 1: '🔋', 2: '💠', 3: '⛏', 4: '🌌', 5: '❄', 6: '🔬', 7: '⚛️' };
+const CELL_ICON_KEYS: Record<number, string> = { 0: 'cell_energy', 1: 'cell_battery', 2: 'cell_crystal', 3: 'cell_mine', 4: 'cell_anomaly', 5: 'cell_ice', 6: 'cell_research', 7: 'cell_core' };
+const RESOURCE_ICON_KEYS: Record<LedgerResourceKey, string> = {
+  energy: 'energy', iron: 'iron', kriogen: 'kriogen', crystals: 'crystals', research: 'research', dust: 'dust', essence: 'essence', shards: 'shards',
+  carbon: 'carbon', silicon: 'silicon', titanium: 'titanium', uranium: 'uranium', helium3: 'helium3', biomass: 'biomass', platinum: 'platinum', darkMatter: 'darkMatter',
+  steel: 'steel', chip: 'chip', alloy: 'alloy', core: 'core', relic: 'relic',
+};
+function iconSvg(key: string, className = 'legacy-icon'): string {
+  const safeKey = /^[a-zA-Z0-9_-]+$/.test(key) ? key : 'dust';
+  return `<img class="${className}" src="./assets/legacy-icons/${safeKey}.svg" alt="" aria-hidden="true" loading="eager" decoding="async">`;
+}
 
 function fmt(v: number, digits = 1): string {
   if (!Number.isFinite(v)) return '∞';
@@ -21,10 +32,13 @@ function fmt(v: number, digits = 1): string {
   return v.toFixed(digits);
 }
 
-function resLine(key: keyof typeof RESOURCE_META, amount: number, perSec?: number): string {
-  const m = RESOURCE_META[key];
-  const rate = perSec !== undefined && perSec > 0 ? ` <span class="rate">+${fmt(perSec, 3)}/с</span>` : '';
-  return `<div class="res"><span class="ic">${m.icon}</span> <b>${fmt(amount)}</b>${rate}</div>`;
+/** Stage 9.4.3: compact top HUD chip; all values are read-only snapshot data. */
+function resourceChip(key: LedgerResourceKey, amount: number, perSec?: number): string {
+  const meta = RESOURCE_META[key];
+  const rate = perSec !== undefined && perSec > 0
+    ? `<small class="hud-resource-rate">+${fmt(perSec, 2)}/с</small>`
+    : '';
+  return `<div class="hud-resource-chip" data-resource-chip="${key}" title="${meta.name}"><span class="hud-resource-icon" aria-hidden="true">${iconSvg(RESOURCE_ICON_KEYS[key], 'legacy-icon hud-svg-icon')}</span><span class="hud-resource-value">${fmt(amount)}</span>${rate}</div>`;
 }
 
 /** Этап 9.3 (Этап 8 ТЗ): русские имена рецептов реактора (parity v1). */
@@ -40,43 +54,102 @@ function amountsLine(amounts: Readonly<Record<string, number>>): string {
   if (parts.length === 0) return '—';
   return parts.map(([k, v]) => {
     const m = RESOURCE_META[k as keyof typeof RESOURCE_META];
-    return `${m?.icon ?? '•'}${fmt(v ?? 0, 0)}`;
+    return `${m ? iconSvg(RESOURCE_ICON_KEYS[k as LedgerResourceKey] ?? 'dust', 'legacy-icon inline-resource-icon') : '•'}${fmt(v ?? 0, 0)}`;
   }).join(' ');
 }
 
-function cellCard(game: Game, pid: string, c: CellView, charge: number): string {
-  const icon = CELL_ICONS[c.type] ?? '·';
-  const typeName = CELL_TYPE_NAMES[c.type as CellType] ?? '?';
-  if (c.status === 'hidden') return `<div class="cell hidden" data-cell="${c.id}">❔</div>`;
-  if (c.status === 'revealed') {
-    return `<div class="cell revealed" data-cell="${c.id}"><span class="ic">${icon}</span><button data-act="scan" data-pid="${pid}" data-cell="${c.id}">Скан ${charge}⚡</button></div>`;
+function cellCard(game: Game, pid: string, c: CellView, charge: number, energy: number): string {
+  const icon = iconSvg(CELL_ICON_KEYS[c.type] ?? 'cell_anomaly', 'legacy-icon cell-svg-icon');
+  const typeName = CELL_TYPE_NAMES[c.type as CellType] ?? 'Неизвестная структура';
+  const statusLabel = c.status === 'hidden' ? 'НЕ ИССЛЕДОВАНА' : c.status === 'revealed' ? 'СИГНАЛ ОБНАРУЖЕН' : 'ИССЛЕДОВАНА';
+  const header = `<div class="cell-panel-title"><span class="cell-panel-icon" aria-hidden="true">${icon}</span><span class="cell-panel-heading"><b>${typeName}</b><small>${statusLabel} · СЕКТОР ${c.id}</small></span></div>`;
+  if (c.status === 'hidden') {
+    return `<section class="cell-action-panel is-hidden" aria-label="Информация о клетке">${header}<p>Данные поверхности не получены. Сначала обнаружьте сигнатуру клетки.</p></section>`;
   }
-  const parts: string[] = [`<div class="cell explored t${c.type}" data-cell="${c.id}">`, `<span class="ic">${icon}</span> <b>Ур. ${c.level}</b> <small>${typeName}</small>`];
+  if (c.status === 'revealed') {
+    const canScan = energy >= charge;
+    return `<section class="cell-action-panel is-revealed" aria-label="Сканирование клетки">${header}<div class="cell-panel-description">Обнаружена неидентифицированная структура. Сканирование раскроет тип клетки и доступные действия.</div><div class="cell-panel-cost"><span>Стоимость сканирования</span><b>${fmt(charge, 0)} ⚡</b></div><button class="cell-action-primary" data-act="scan" data-pid="${pid}" data-cell="${c.id}" ${canScan ? '' : 'disabled'}>⌕ СКАНИРОВАТЬ КЛЕТКУ</button>${canScan ? '' : '<small class="cell-panel-warning">Недостаточно энергии</small>'}</section>`;
+  }
+
+  const parts: string[] = [`<section class="cell-action-panel is-explored t${c.type}" aria-label="Управление клеткой">${header}`];
+  parts.push(`<div class="cell-panel-stats"><div><small>УРОВЕНЬ</small><b>${c.level}</b></div><div><small>ДОХОД / ПОТЕНЦИАЛ</small><b>${fmt(c.yield, 2)}</b></div><div><small>СОСЕДИ</small><b>${c.neighbors.length}</b></div></div>`);
   if (c.type === 3 || c.type === 5) {
     const cooling = c.cooldownUntil > game.clock.gameMsNow;
-    parts.push(`<div class="vein">резерв ${fmt(c.reserve, 1)}/${fmt(c.maxReserve, 1)}${c.mutant ? ' 🧬' + c.mutant : ''}${c.isDeep ? ' 🕳' : ''}</div>`);
-    if (cooling) parts.push(`<div class="cool">⏳ ${Math.ceil((c.cooldownUntil - game.clock.gameMsNow) / 1000)}с</div>`);
-    else parts.push(`<button data-act="reactivate" data-pid="${pid}" data-cell="${c.id}">↻ Реактивация</button>`);
+    const reservePct = c.maxReserve > 0 ? Math.max(0, Math.min(100, c.reserve / c.maxReserve * 100)) : 0;
+    parts.push(`<div class="cell-panel-resource"><div><span>РЕЗЕРВ МЕСТОРОЖДЕНИЯ</span><b>${fmt(c.reserve, 1)} / ${fmt(c.maxReserve, 1)}</b></div><i><em style="width:${reservePct.toFixed(1)}%"></em></i>${c.mutant ? `<small>Мутация: ${c.mutant}</small>` : ''}${c.isDeep ? '<small>◆ Глубокая жила</small>' : ''}</div>`);
+    if (cooling) parts.push(`<div class="cell-panel-cooldown">◷ Реактивация через ${Math.ceil((c.cooldownUntil - game.clock.gameMsNow) / 1000)} с</div>`);
+    else parts.push(`<button class="cell-action-secondary" data-act="reactivate" data-pid="${pid}" data-cell="${c.id}">↻ РЕАКТИВИРОВАТЬ ЖИЛУ</button>`);
   }
-  // Этап 4: разряд жил type1/2 (1.x i0) — кулдаун 45/90с из CellView.chargeCooldownUntil
   if (c.type === 1 || c.type === 2) {
     const cooling = c.chargeCooldownUntil > game.clock.gameMsNow;
-    if (cooling) parts.push(`<div class="cool">⏳ ${Math.ceil((c.chargeCooldownUntil - game.clock.gameMsNow) / 1000)}с</div>`);
-    else parts.push(`<button data-act="discharge" data-pid="${pid}" data-cell="${c.id}">⚡ Разряд</button>`);
+    if (cooling) parts.push(`<div class="cell-panel-cooldown">⚡ Разряд доступен через ${Math.ceil((c.chargeCooldownUntil - game.clock.gameMsNow) / 1000)} с</div>`);
+    else parts.push(`<button class="cell-action-secondary" data-act="discharge" data-pid="${pid}" data-cell="${c.id}">⚡ РАЗРЯДИТЬ КЛЕТКУ</button>`);
   }
-  // Этап 4: аномалия type4 — выбор ветви (1.x um) + апгрейд/deep-конверсия (1.x tl)
   if (c.type === 4) {
     if (c.anomalyType) {
       const m = ANOMALY_META[c.anomalyType];
-      parts.push(`<div class="anom" style="color:${m.color}">${m.icon} ${m.name}${c.isDeep ? ' 🕳 deep' : ''}</div>`);
-      parts.push(`<button data-act="anomaly" data-pid="${pid}" data-cell="${c.id}">▲ Аномалия</button>`);
+      parts.push(`<div class="cell-panel-anomaly" style="--anomaly-color:${m.color}">${iconSvg(`anomaly_${c.anomalyType}`, 'legacy-icon inline-resource-icon')} ВЕТВЬ: ${m.name}${c.isDeep ? ' · ГЛУБИННАЯ' : ''}</div>`);
+      parts.push(`<button class="cell-action-secondary" data-act="anomaly" data-pid="${pid}" data-cell="${c.id}">▲ РАЗВИТЬ АНОМАЛИЮ</button>`);
     } else {
-      parts.push('<div class="anom">Ветвь: ' + (['synth', 'power', 'resonance'] as const).map((b) => `<button data-act="branch" data-branch="${b}" data-pid="${pid}" data-cell="${c.id}">${ANOMALY_META[b].icon} ${ANOMALY_META[b].name}</button>`).join(' ') + '</div>');
+      parts.push(`<div class="cell-panel-branch"><small>ВЫБЕРИТЕ НАПРАВЛЕНИЕ АНОМАЛИИ</small>${(['synth', 'power', 'resonance'] as const).map((b) => `<button data-act="branch" data-branch="${b}" data-pid="${pid}" data-cell="${c.id}">${iconSvg(`anomaly_${b}`, 'legacy-icon inline-resource-icon')} ${ANOMALY_META[b].name}</button>`).join('')}</div>`);
     }
+  } else {
+    parts.push(`<button class="cell-action-primary" data-act="upgrade" data-pid="${pid}" data-cell="${c.id}">▲ УЛУЧШИТЬ КЛЕТКУ</button>`);
   }
-  if (c.type !== 4) parts.push(`<button data-act="upgrade" data-pid="${pid}" data-cell="${c.id}">▲ Апгрейд</button>`);
-  parts.push('</div>');
+  parts.push(`<div class="cell-panel-foot">${c.isDeep ? 'ГЛУБИННАЯ СТРУКТУРА' : 'ПОВЕРХНОСТНЫЙ УРОВЕНЬ'} · ID ${c.id}</div></section>`);
   return parts.join('');
+}
+
+/**
+ * Stage 9.10 — patch the existing HUD tree instead of replacing it every timer tick.
+ * Keeping keyed DOM nodes alive prevents scroll jumps, focus loss and visible panel flicker.
+ */
+function patchDomNode(current: Node, next: Node): Node {
+  if (current.nodeType !== next.nodeType || (current instanceof Element && next instanceof Element && current.tagName !== next.tagName)) {
+    const replacement = next.cloneNode(true);
+    current.parentNode?.replaceChild(replacement, current);
+    return replacement;
+  }
+  if (current.nodeType === Node.TEXT_NODE || current.nodeType === Node.COMMENT_NODE) {
+    if (current.nodeValue !== next.nodeValue) current.nodeValue = next.nodeValue;
+    return current;
+  }
+  if (!(current instanceof Element) || !(next instanceof Element)) return current;
+
+  const active = document.activeElement === current;
+  const liveValue = 'value' in current ? (current as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement).value : undefined;
+  for (const attr of Array.from(current.attributes)) {
+    if (!next.hasAttribute(attr.name)) current.removeAttribute(attr.name);
+  }
+  for (const attr of Array.from(next.attributes)) {
+    if (current.getAttribute(attr.name) !== attr.value) current.setAttribute(attr.name, attr.value);
+  }
+
+  const oldChildren = Array.from(current.childNodes);
+  const newChildren = Array.from(next.childNodes);
+  const shared = Math.min(oldChildren.length, newChildren.length);
+  for (let i = 0; i < shared; i += 1) patchDomNode(oldChildren[i]!, newChildren[i]!);
+  for (let i = shared; i < newChildren.length; i += 1) current.appendChild(newChildren[i]!.cloneNode(true));
+  for (let i = oldChildren.length - 1; i >= newChildren.length; i -= 1) oldChildren[i]!.parentNode?.removeChild(oldChildren[i]!);
+
+  // Text/number inputs retain their in-progress edit while the periodic snapshot refreshes.
+  if (active && liveValue !== undefined && 'value' in current) {
+    (current as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement).value = liveValue;
+  }
+  return current;
+}
+
+function patchDom(root: HTMLElement, markup: string): void {
+  const template = document.createElement('template');
+  template.innerHTML = markup;
+  const nextRoot = document.createElement('div');
+  nextRoot.append(template.content.cloneNode(true));
+  const currentChildren = Array.from(root.childNodes);
+  const nextChildren = Array.from(nextRoot.childNodes);
+  const shared = Math.min(currentChildren.length, nextChildren.length);
+  for (let i = 0; i < shared; i += 1) patchDomNode(currentChildren[i]!, nextChildren[i]!);
+  for (let i = shared; i < nextChildren.length; i += 1) root.appendChild(nextChildren[i]!.cloneNode(true));
+  for (let i = currentChildren.length - 1; i >= nextChildren.length; i -= 1) currentChildren[i]!.parentNode?.removeChild(currentChildren[i]!);
 }
 
 export function renderSnapshot(game: Game, root: HTMLElement): void {
@@ -91,14 +164,8 @@ export function renderSnapshot(game: Game, root: HTMLElement): void {
     const specialized = logistics.specializedResources.includes(key);
     if (globalAmount <= 0 && cargoAmount <= 0 && depotAmount <= 0 && !specialized) return '';
     const meta = RESOURCE_META[key];
-    return `<div class="logistics-row"><b>${meta.icon} ${meta.name}${specialized ? ' ★' : ''}</b><small>Запас ${fmt(globalAmount, 2)} · трюм ${fmt(cargoAmount, 2)} · депо ${fmt(depotAmount, 2)}</small><div><button data-act="load-cargo" data-resource="${key}" ${globalAmount <= 0 || logistics.cargoMass >= logistics.cargoCapacity ? 'disabled' : ''}>Погрузить</button><button data-act="unload-cargo" data-resource="${key}" ${cargoAmount <= 0 ? 'disabled' : ''}>Выгрузить</button><button data-act="withdraw-depot" data-resource="${key}" ${depotAmount <= 0 ? 'disabled' : ''}>Забрать</button></div></div>`;
+    return `<div class="logistics-row"><b>${iconSvg(RESOURCE_ICON_KEYS[key], 'legacy-icon logistics-svg-icon')} ${meta.name}${specialized ? ' ★' : ''}</b><small>Запас ${fmt(globalAmount, 2)} · трюм ${fmt(cargoAmount, 2)} · депо ${fmt(depotAmount, 2)}</small><div><button data-act="load-cargo" data-resource="${key}" ${globalAmount <= 0 || logistics.cargoMass >= logistics.cargoCapacity ? 'disabled' : ''}>Погрузить</button><button data-act="unload-cargo" data-resource="${key}" ${cargoAmount <= 0 ? 'disabled' : ''}>Выгрузить</button><button data-act="withdraw-depot" data-resource="${key}" ${depotAmount <= 0 ? 'disabled' : ''}>Забрать</button></div></div>`;
   }).join('');
-  const journal = s.journal
-    .slice(-8)
-    .reverse()
-    .map((tx) => `<div class="tx"><b>#${tx.id}</b> ${tx.reason}: ${Object.entries(tx.delta).map(([k, v]) => `${(v ?? 0) > 0 ? '+' : ''}${fmt(v ?? 0, 2)}${RESOURCE_META[k as keyof typeof RESOURCE_META]?.icon ?? k}`).join(' ')}</div>`)
-    .join('');
-
   // Этап 9.3 (Этап 7/8 ТЗ): дерево технологий и реактор — рендер только из снапшота,
   // команды — только через dispatch (STAGE1 §4); никаких карточек снизу, всё в колонке HUD.
   const techNameById = new Map(s.tech.nodes.map((n) => [n.id, n.name] as const));
@@ -123,18 +190,26 @@ export function renderSnapshot(game: Game, root: HTMLElement): void {
   }).join('');
   const queueRows = s.reactor.queue.map((j) => `<div class="tech-row craft-job ${j.state}"><b>${RECIPE_NAMES[j.recipeId] ?? j.recipeId} · ${j.done}/${j.runs}</b><div class="craft-bar"><i style="width:${Math.min(100, Math.max(0, j.progressPct)).toFixed(1)}%"></i></div><small>${j.state === 'deficit' ? '⚠ Дефицит ресурсов — run ждёт оплату' : j.state === 'running' ? (j.etaSec !== null ? `⏳ ~${j.etaSec} с до готовности` : '⏳ идёт реакция') : 'в очереди'}</small><button data-act="craft-cancel" data-job="${j.id}" title="Отменить задачу">✕</button></div>`).join('');
 
-  root.innerHTML = `
-  <div class="hud">
-    <div class="col">
-      <h1>⚡ Voronia 2.0 <small>Stage 9.3 · ${active ? active.name : ''}</small></h1>
-      ${resLine('energy', s.resources.energy ?? 0, s.perSec.energy)}
-      ${resLine('iron', s.resources.iron ?? 0, s.perSec.iron)}
-      ${resLine('kriogen', s.resources.kriogen ?? 0, s.perSec.kriogen)}
-      ${resLine('crystals', s.resources.crystals ?? 0, s.perSec.crystals)}
-      ${resLine('research', s.resources.research ?? 0, s.perSec.research)}
-      ${resLine('steel', s.resources.steel ?? 0)}
-      ${resLine('alloy', s.resources.alloy ?? 0)}
+  const primaryResources: LedgerResourceKey[] = ['energy', 'iron', 'kriogen', 'essence', 'crystals', 'research'];
+  const rareResources: LedgerResourceKey[] = ['carbon', 'silicon', 'titanium', 'uranium', 'darkMatter'];
+  const resourceHud = [
+    ...primaryResources.map((key) => resourceChip(key, s.resources[key] ?? 0, s.perSec[key as keyof typeof s.perSec])),
+    ...rareResources.filter((key) => (s.resources[key] ?? 0) > 0).map((key) => resourceChip(key, s.resources[key] ?? 0, s.perSec[key as keyof typeof s.perSec])),
+  ].join('');
+
+  const markup = `
+  <section class="legacy-resource-hud" aria-label="Ресурсы империи">
+    <div class="hud-planet-context"><span class="hud-context-mark">◈</span><span><b>${active ? active.name : 'Планета не выбрана'}</b><small>АКТИВНЫЙ МИР</small></span></div>
+    <div class="hud-resource-track">${resourceHud}</div>
+    <div class="hud-quick-actions" aria-label="Быстрые действия">
+      <button type="button" data-quick-action="sonar" title="Сонарная станция" aria-label="Сонарная станция">⌁<small>СОНАР</small></button>
+      <button type="button" data-quick-action="map" title="Карта галактики" aria-label="Карта галактики">✧<small>КАРТА</small></button>
+      <button type="button" data-quick-action="fullscreen" title="Полный экран" aria-label="Полный экран">⛶<small>ЭКРАН</small></button>
+      <button type="button" data-quick-action="combat" title="Боевые события" aria-label="Боевые события" class="is-unavailable">⚔<small>БОЙ</small></button>
     </div>
+    <div class="hud-window-actions" aria-label="Окна игры"><button type="button" data-modal-open="save" title="Сохранения" aria-label="Сохранения">▣</button><button type="button" data-modal-open="settings" title="Настройки" aria-label="Настройки">⚙</button><button type="button" data-modal-open="about" title="Об игре" aria-label="Об игре">i</button></div>
+  </section>
+  <div class="hud">
     <div class="col">
       <h2>🔍 Скан</h2>
       <div>Цена: <b>${s.scan.charge}⚡</b> (база ${s.scan.currentCost})</div>
@@ -203,7 +278,44 @@ export function renderSnapshot(game: Game, root: HTMLElement): void {
       <div class="session">сканов ${s.session.scanned} · апгрейдов ${s.session.upgraded} · deep ${s.session.deepMined}</div>
     </div>
   </div>
-  <div class="journal"><h3>Журнал транзакций</h3>${journal || '<div class="tx">пусто</div>'}</div>`;
+  <nav class="legacy-bottom-nav" role="tablist" aria-label="Основная навигация">
+    <button type="button" role="tab" id="nav-tab-planet" aria-controls="nav-panel-planet" aria-selected="${activeNavigationTab === 'planet'}" tabindex="${activeNavigationTab === 'planet' ? '0' : '-1'}" data-nav-tab="planet" class="${activeNavigationTab === 'planet' ? 'active' : ''}"><span aria-hidden="true">◈</span>ПЛАНЕТА</button>
+    <button type="button" role="tab" id="nav-tab-galaxy" aria-controls="nav-panel-galaxy" aria-selected="${activeNavigationTab === 'galaxy'}" tabindex="${activeNavigationTab === 'galaxy' ? '0' : '-1'}" data-nav-tab="galaxy" class="${activeNavigationTab === 'galaxy' ? 'active' : ''}"><span aria-hidden="true">✧</span>ГАЛАКТИКА</button>
+    <button type="button" role="tab" id="nav-tab-science" aria-controls="nav-panel-science" aria-selected="${activeNavigationTab === 'science'}" tabindex="${activeNavigationTab === 'science' ? '0' : '-1'}" data-nav-tab="science" class="${activeNavigationTab === 'science' ? 'active' : ''}"><span aria-hidden="true">⌬</span>НАУКА</button>
+    <button type="button" role="tab" id="nav-tab-meta" aria-controls="nav-panel-meta" aria-selected="${activeNavigationTab === 'meta'}" tabindex="${activeNavigationTab === 'meta' ? '0' : '-1'}" data-nav-tab="meta" class="${activeNavigationTab === 'meta' ? 'active' : ''}"><span aria-hidden="true">⟁</span>МЕТА</button>
+  </nav>`;
+
+  // Group the detached template before diffing it against the live DOM. The live
+  // navigation panels are then patched in place, preserving their scroll/focus.
+  const templateRoot = document.createElement('div');
+  templateRoot.innerHTML = markup;
+  const column = templateRoot.querySelector<HTMLElement>('.hud .col');
+  if (column) {
+    const groups: Record<typeof activeNavigationTab, HTMLElement> = {
+      planet: document.createElement('section'), galaxy: document.createElement('section'),
+      science: document.createElement('section'), meta: document.createElement('section'),
+    };
+    Object.entries(groups).forEach(([key, section]) => {
+      section.className = 'legacy-nav-panel'; section.dataset['navPanel'] = key;
+      section.id = `nav-panel-${key}`; section.setAttribute('role', 'tabpanel');
+      section.setAttribute('aria-labelledby', `nav-tab-${key}`); section.tabIndex = 0;
+      section.hidden = key !== activeNavigationTab;
+    });
+    let current: typeof activeNavigationTab = 'planet';
+    const nodes = Array.from(column.childNodes);
+    for (const node of nodes) {
+      if (node instanceof HTMLElement && node.tagName === 'H2') {
+        const heading = node.textContent ?? '';
+        if (/Карта галактики|Сонарная станция|Аномальные экспедиции|Журнал экспедиции|Межпланетная логистика/i.test(heading)) current = 'galaxy';
+        else if (/Технологии|Реактор/i.test(heading)) current = 'science';
+        else if (/Склад|💾/i.test(heading)) current = 'meta';
+        else if (/Скан|Заряды|Синтез/i.test(heading)) current = 'planet';
+      }
+      groups[current].append(node);
+    }
+    column.replaceChildren(groups.planet, groups.galaxy, groups.science, groups.meta);
+  }
+  patchDom(root, templateRoot.innerHTML);
 }
 
 /**
@@ -215,11 +327,12 @@ export function renderSnapshot(game: Game, root: HTMLElement): void {
 export function renderCellDock(game: Game, root: HTMLElement, selectedCellId: number | null): void {
   const s: GameSnapshot = game.snapshot();
   const active = s.planets.find((p) => p.id === s.activePlanetId) ?? s.planets[0];
-  if (!active) { root.innerHTML = ''; return; }
+  if (!active) { patchDom(root, ''); return; }
   const cell = active.cells.find((c) => c.id === selectedCellId) ?? null;
-  root.innerHTML = cell
-    ? `<div class="cell-dock"><div class="cell-dock-head"><span>КЛЕТКА ${cell.id} · ${active.name}</span><button type="button" data-act="dock-close" aria-label="Снять выделение с клетки">×</button></div>${cellCard(game, active.id, cell, s.scan.charge)}</div>`
-    : '<div class="scene-hint">Коснитесь клетки на поверхности планеты: скан и апгрейд работают прямо на планете, как в версии 1</div>';
+  const markup = cell
+    ? `<aside class="cell-dock" aria-live="polite"><div class="cell-dock-head"><span>ПОВЕРХНОСТЬ · ${active.name}</span><button type="button" data-act="dock-close" aria-label="Снять выделение с клетки">×</button></div>${cellCard(game, active.id, cell, s.scan.charge, s.resources.energy ?? 0)}</aside>`
+    : '<div class="scene-hint">Выберите клетку на поверхности · сканирование и развитие доступны непосредственно здесь</div>';
+  patchDom(root, markup);
 }
 
 /** Интерактивная сонарная мини-игра: три сигнала, точность зависит от остановки маркера. */
@@ -280,11 +393,121 @@ function runSonarMinigame(game: Game, onComplete: () => void): void {
   raf = requestAnimationFrame(animate);
 }
 
+/** Stage 9.4.6 — reusable legacy-style modal windows. Modal state is UI-only; game mutations still go through Game.dispatch. */
+function openLegacyModal(game: Game, kind: 'save' | 'settings' | 'about', onCommand?: () => void): void {
+  document.getElementById('voronia-modal-overlay')?.remove();
+  const snap = game.snapshot();
+  const titles = { save: 'СОХРАНЕНИЯ', settings: 'НАСТРОЙКИ', about: 'О ПРОЕКТЕ' };
+  let body = '';
+  if (kind === 'save') body = `<p class="modal-lead">Управление локальным прогрессом экспедиции.</p><div class="modal-action-grid"><button data-modal-action="save">СОХРАНИТЬ</button><button data-modal-action="load">ЗАГРУЗИТЬ</button><button data-modal-action="export">ЭКСПОРТ JSON</button><button data-modal-action="import">ИМПОРТ JSON</button></div><input id="voronia-modal-import" type="file" accept=".json,application/json" hidden><div class="modal-note" role="status">Сохранение хранится локально в браузере.</div>`;
+  if (kind === 'settings') body = `<p class="modal-lead">Параметры интерфейса этого устройства.</p><label class="modal-setting"><span>Масштаб интерфейса</span><select id="voronia-ui-scale"><option value="0.9">Компактный</option><option value="1">Стандартный</option><option value="1.1">Крупный</option></select></label><label class="modal-setting"><span>Уменьшить анимацию</span><input id="voronia-reduced-motion" type="checkbox"></label><div class="modal-note">Настройки применяются локально и не меняют игровой баланс.</div>`;
+  if (kind === 'about') body = `<div class="modal-about-logo">V O R O N I A</div><p class="modal-lead">Грани забытого мира</p><div class="modal-info-grid"><span>ВЕРСИЯ<b>2.0 · Stage 9.10</b></span><span>ДВИЖОК<b>Three.js · WebGL</b></span><span>МИР<b>${snap.planets.find((p) => p.id === snap.activePlanetId)?.name ?? '—'}</b></span><span>ИССЛЕДОВАНО<b>${snap.planets.reduce((n,p) => n + p.exploredCount, 0)} клеток</b></span></div>`;
+  const overlay = document.createElement('div');
+  overlay.id = 'voronia-modal-overlay'; overlay.className = 'legacy-modal-overlay'; overlay.setAttribute('role','presentation');
+  overlay.innerHTML = `<section class="legacy-modal" role="dialog" aria-modal="true" aria-labelledby="voronia-modal-title"><header class="legacy-modal-head"><span class="legacy-modal-mark">◈</span><div><small>VORONIA · СИСТЕМНОЕ ОКНО</small><h2 id="voronia-modal-title">${titles[kind]}</h2></div><button type="button" class="legacy-modal-close" data-modal-close aria-label="Закрыть окно">×</button></header><div class="legacy-modal-body">${body}</div><footer class="legacy-modal-foot"><span>VORONOI CELLULAR UNIVERSE</span><button type="button" data-modal-close>ЗАКРЫТЬ</button></footer></section>`;
+  document.body.appendChild(overlay);
+  const keyHandler = (event: KeyboardEvent): void => { if (event.key === 'Escape') close(); };
+  const close = (): void => { overlay.remove(); document.removeEventListener('keydown', keyHandler); };
+  overlay.addEventListener('click', (event) => {
+    const target = event.target as HTMLElement;
+    if (target === overlay || target.closest('[data-modal-close]')) { close(); return; }
+    const action = target.closest<HTMLButtonElement>('[data-modal-action]')?.dataset['modalAction'];
+    if (action === 'import') { overlay.querySelector<HTMLInputElement>('#voronia-modal-import')?.click(); return; }
+    if (action === 'save') {
+      const result = game.dispatch('save', {});
+      const note = overlay.querySelector<HTMLElement>('.modal-note');
+      if (note) note.textContent = result.ok ? `Сохранено · ${result.value.sizeBytes.toLocaleString('ru-RU')} байт` : 'Ошибка сохранения';
+      onCommand?.(); return;
+    }
+    if (action === 'load') {
+      const result = game.dispatch('load', {});
+      const note = overlay.querySelector<HTMLElement>('.modal-note');
+      if (note) note.textContent = result.ok ? 'Сохранение загружено' : `Не удалось загрузить: ${result.reason}`;
+      onCommand?.(); return;
+    }
+    if (action === 'export') {
+      const result = game.dispatch('exportSave', {});
+      if (result.ok) { const url = URL.createObjectURL(new Blob([result.value.payload], {type:'application/json'})); const a=document.createElement('a'); a.href=url; a.download='voronia2-save.json'; a.click(); URL.revokeObjectURL(url); }
+      const note = overlay.querySelector<HTMLElement>('.modal-note'); if (note) note.textContent = result.ok ? 'Файл экспорта подготовлен.' : 'Ошибка экспорта.';
+    }
+  });
+  overlay.querySelector<HTMLInputElement>('#voronia-modal-import')?.addEventListener('change', (event) => {
+    const input = event.target as HTMLInputElement; const file = input.files?.[0]; if (!file) return;
+    void file.text().then((payload) => { const result=game.dispatch('importSave',{payload}); const note=overlay.querySelector<HTMLElement>('.modal-note'); if(note) note.textContent=result.ok ? `Импортировано · ${result.value.sizeBytes.toLocaleString('ru-RU')} байт` : 'Импорт отклонён: файл повреждён или имеет неподдерживаемую структуру'; input.value=''; onCommand?.(); });
+  });
+  if (kind === 'settings') {
+    const scale = overlay.querySelector<HTMLSelectElement>('#voronia-ui-scale')!;
+    const motion = overlay.querySelector<HTMLInputElement>('#voronia-reduced-motion')!;
+    scale.value = localStorage.getItem('voronia.uiScale') ?? '1'; motion.checked = localStorage.getItem('voronia.reducedMotion') === 'true';
+    scale.addEventListener('change', () => { document.documentElement.style.setProperty('--voronia-ui-scale', scale.value); localStorage.setItem('voronia.uiScale', scale.value); });
+    motion.addEventListener('change', () => { document.documentElement.classList.toggle('voronia-reduced-motion', motion.checked); localStorage.setItem('voronia.reducedMotion', String(motion.checked)); });
+  }
+  document.addEventListener('keydown', keyHandler);
+  overlay.querySelector<HTMLElement>('[data-modal-close]')?.focus();
+}
+
+/** Stage 9.7: боевой домен пока явно не реализован — не показываем фиктивные события. */
+function openCombatNotice(): void {
+  document.getElementById('voronia-combat-notice')?.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'voronia-combat-notice';
+  overlay.className = 'legacy-modal-overlay';
+  overlay.innerHTML = `<section class="legacy-modal combat-notice" role="dialog" aria-modal="true" aria-labelledby="combat-notice-title"><header class="legacy-modal-head"><span class="legacy-modal-mark">⚔</span><div><small>VORONIA · СИСТЕМНОЕ СОБЫТИЕ</small><h2 id="combat-notice-title">БОЕВЫЕ СОБЫТИЯ</h2></div><button type="button" class="legacy-modal-close" data-combat-close aria-label="Закрыть окно">×</button></header><div class="legacy-modal-body"><p class="modal-lead">${COMBAT_DOMAIN_STATUS.status === 'NOT_IMPLEMENTED' ? 'Система Стражей, боссов и боевых столкновений ещё не подключена.' : 'Боевой модуль доступен.'}</p><div class="combat-status-line"><span>СТАТУС МОДУЛЯ</span><b>${COMBAT_DOMAIN_STATUS.status}</b></div><div class="modal-note">${COMBAT_DOMAIN_STATUS.note}</div></div><footer class="legacy-modal-foot"><span>VORONIA · COMBAT</span><button type="button" data-combat-close>ЗАКРЫТЬ</button></footer></section>`;
+  document.body.appendChild(overlay);
+  const close = (): void => { overlay.remove(); document.removeEventListener('keydown', keyHandler); };
+  const keyHandler = (event: KeyboardEvent): void => { if (event.key === 'Escape') close(); };
+  overlay.addEventListener('click', (event) => { const target = event.target as HTMLElement; if (target === overlay || target.closest('[data-combat-close]')) close(); });
+  document.addEventListener('keydown', keyHandler);
+}
+
+/** Stage 9.8: единая синхронизация legacy-вкладок для мыши, касания и клавиатуры. */
+function activateLegacyTab(root: HTMLElement, tab: 'planet' | 'galaxy' | 'science' | 'meta'): void {
+  activeNavigationTab = tab;
+  root.querySelectorAll<HTMLElement>('[data-nav-panel]').forEach((panel) => {
+    panel.hidden = panel.dataset['navPanel'] !== tab;
+  });
+  root.querySelectorAll<HTMLButtonElement>('[data-nav-tab]').forEach((button) => {
+    const selected = button.dataset['navTab'] === tab;
+    button.classList.toggle('active', selected);
+    button.setAttribute('aria-selected', String(selected));
+    button.tabIndex = selected ? 0 : -1;
+  });
+  root.dispatchEvent(new CustomEvent('voronia:navigate', { bubbles: true, detail: { tab } }));
+}
+
 /** Делегирование кликов → команды Game (единственная точка входа UI). */
 export function bindCommands(game: Game, root: HTMLElement, onCommand?: () => void, onCloseDock?: () => void): () => void {
   const handler = (ev: Event): void => {
     const target = ev.target as HTMLElement | null;
     if (!target) return;
+    const quickButton = target.closest<HTMLButtonElement>('button[data-quick-action]');
+    if (quickButton) {
+      const action = quickButton.dataset['quickAction'];
+      if (action === 'sonar') {
+        const snapshot = game.snapshot();
+        if (snapshot.sonar.available) runSonarMinigame(game, () => onCommand?.());
+        else {
+          activateLegacyTab(root, 'galaxy');
+          root.querySelector<HTMLElement>('[data-nav-panel="galaxy"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      } else if (action === 'map') {
+        activateLegacyTab(root, 'galaxy');
+      } else if (action === 'fullscreen') {
+        if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
+        else void (document.documentElement.requestFullscreen?.().catch(() => undefined));
+      } else if (action === 'combat') openCombatNotice();
+      return;
+    }
+    const modalButton = target.closest<HTMLButtonElement>('button[data-modal-open]');
+    if (modalButton) { const kind = modalButton.dataset['modalOpen']; if (kind === 'save' || kind === 'settings' || kind === 'about') openLegacyModal(game, kind, onCommand); return; }
+    const navButton = target.closest<HTMLButtonElement>('button[data-nav-tab]');
+    if (navButton) {
+      const tab = navButton.dataset['navTab'];
+      if (tab === 'planet' || tab === 'galaxy' || tab === 'science' || tab === 'meta') {
+        activateLegacyTab(root, tab);
+      }
+      return;
+    }
     const btn = target.closest<HTMLButtonElement>('button[data-act]');
     if (!btn) return;
     const act = btn.dataset['act'];
@@ -405,7 +628,43 @@ export function bindCommands(game: Game, root: HTMLElement, onCommand?: () => vo
       onCommand?.();
     }).catch(() => { persistenceNotice = 'Не удалось прочитать файл'; input.value = ''; onCommand?.(); });
   };
+  const navKeyHandler = (event: KeyboardEvent): void => {
+    const current = (event.target as HTMLElement | null)?.closest<HTMLButtonElement>('[data-nav-tab]');
+    if (!current) return;
+    const tabs = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-nav-tab]'));
+    const index = tabs.indexOf(current);
+    let next = index;
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') next = (index + 1) % tabs.length;
+    else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') next = (index - 1 + tabs.length) % tabs.length;
+    else if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = tabs.length - 1;
+    else return;
+    event.preventDefault();
+    const tab = tabs[next]?.dataset['navTab'];
+    if (tab === 'planet' || tab === 'galaxy' || tab === 'science' || tab === 'meta') {
+      activateLegacyTab(root, tab);
+      tabs[next]?.focus();
+    }
+  };
+  const fullscreenStateHandler = (): void => {
+    const button = root.querySelector<HTMLButtonElement>('[data-quick-action="fullscreen"]');
+    if (!button) return;
+    const active = Boolean(document.fullscreenElement);
+    button.setAttribute('aria-pressed', String(active));
+    button.title = active ? 'Выйти из полноэкранного режима' : 'Полный экран';
+    button.setAttribute('aria-label', button.title);
+    const label = button.querySelector('small');
+    if (label) label.textContent = active ? 'СВЕРНУТЬ' : 'ЭКРАН';
+  };
   root.addEventListener('click', handler);
   root.addEventListener('change', importInput);
-  return () => { root.removeEventListener('click', handler); root.removeEventListener('change', importInput); };
+  root.addEventListener('keydown', navKeyHandler);
+  document.addEventListener('fullscreenchange', fullscreenStateHandler);
+  fullscreenStateHandler();
+  return () => {
+    root.removeEventListener('click', handler);
+    root.removeEventListener('change', importInput);
+    root.removeEventListener('keydown', navKeyHandler);
+    document.removeEventListener('fullscreenchange', fullscreenStateHandler);
+  };
 }

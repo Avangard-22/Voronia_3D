@@ -493,6 +493,14 @@ export function createPlanetViewer(canvas: HTMLCanvasElement, initial: PlanetMes
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
   }
+  // Stage 9.4.7: react to container changes (orientation, responsive layout,
+  // title-screen exit), not only to global window resize events.
+  const resizeObserver = typeof ResizeObserver !== 'undefined'
+    ? new ResizeObserver(() => resize())
+    : null;
+  if (canvas.parentElement) resizeObserver?.observe(canvas.parentElement);
+  window.addEventListener('resize', resize, { passive: true });
+  window.visualViewport?.addEventListener('resize', resize, { passive: true });
 
   function render(nowMs: number): void {
     if (contextLost) return;
@@ -578,6 +586,9 @@ export function createPlanetViewer(canvas: HTMLCanvasElement, initial: PlanetMes
   }
 
   function dispose(): void {
+    resizeObserver?.disconnect();
+    window.removeEventListener('resize', resize);
+    window.visualViewport?.removeEventListener('resize', resize);
     canvas.removeEventListener('pointerdown', onDown);
     canvas.removeEventListener('pointermove', onMove);
     canvas.removeEventListener('pointermove', onHoverMove);

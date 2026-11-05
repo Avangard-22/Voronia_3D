@@ -9,7 +9,7 @@ import { renderPixelRatio } from './pixelRatio';
 import { galaxyLodForDistance, galaxyVisualBudget } from './galaxyVisualDepth';
 import { findSelectableGalaxyNode, resolveGalaxyRoute, routePositionAtProgress } from './galaxyInteraction';
 import { buildGalaxySystemDetail } from './galaxySystemDetail';
-export interface OrbitalTopologyRenderData { readonly systemId: string; readonly hostPlanetId: string; readonly star: { readonly class: string; readonly temperatureK: number; readonly luminosity: number }; readonly bodies: readonly { readonly bodyId: string; readonly orbitIndex: number; readonly orbitRadius: number; readonly eccentricity: number; readonly inclination: number; readonly orbitalPhase: number; readonly bodyClass: string; readonly discovered: boolean; readonly planetId: string | null; readonly parentSystemId: string }[] }
+export interface OrbitalTopologyRenderData { readonly systemId: string; readonly hostPlanetId: string; readonly star: { readonly class: string; readonly temperatureK: number; readonly luminosity: number }; readonly bodies: readonly { readonly bodyId: string; readonly orbitIndex: number; readonly orbitRadius: number; readonly eccentricity: number; readonly inclination: number; readonly ascendingNode: number; readonly orbitalPhase: number; readonly bodyClass: string; readonly discovered: boolean; readonly planetId: string | null; readonly parentSystemId: string }[] }
 
 export interface GalaxyViewer {
   setData(data: GalaxyRenderData): void;
@@ -266,7 +266,7 @@ export function createGalaxyViewer(canvas: HTMLCanvasElement, initial: GalaxyRen
   let systemOrbitTilt = 0;
   let systemOrbitPhase = 0;
   let orbitalSystemGroup: THREE.Group | null = null;
-  let orbitalBodies: { planetId: string; mesh: THREE.Mesh; semiMajor: number; eccentricity: number; phase: number; speed: number; inclination: number }[] = [];
+  let orbitalBodies: { planetId: string | null; mesh: THREE.Mesh; semiMajor: number; eccentricity: number; phase: number; speed: number; inclination: number; ascendingNode: number }[] = [];
   let onOrbitalNavigate: ((planetId: string) => void) | null = null;
   let flightMarker: THREE.Mesh | null = null;
   let flightStartedAt = 0;
@@ -597,29 +597,32 @@ export function createGalaxyViewer(canvas: HTMLCanvasElement, initial: GalaxyRen
     group.add(star, glow);
     const colors: Record<string, string> = { terrestrial: '#55b8a0', ice: '#9fe8ff', 'gas-giant': '#d9a66c', dwarf: '#b6a8c9', 'asteroid-belt': '#8b929d', unknown: '#587080' };
     for (const body of topology.bodies) {
-      if (!body.discovered || !body.planetId) continue;
+      // Неразведанные сонаром тела не имеют ни орбиты, ни планеты в визуальной сцене.
+      if (!body.discovered) continue;
       const a = Math.max(1.35, body.orbitRadius * 1.05);
       const e = clamp(body.eccentricity, 0, 0.35);
       const inclination = body.inclination;
+      const ascendingNode = body.ascendingNode;
+      const orient = (v: THREE.Vector3): THREE.Vector3 => v.applyAxisAngle(new THREE.Vector3(1, 0, 0), inclination).applyAxisAngle(new THREE.Vector3(0, 1, 0), ascendingNode);
       const orbitPoints: THREE.Vector3[] = [];
       for (let i = 0; i <= 160; i++) {
         const angle = (i / 160) * Math.PI * 2;
         const x = a * (Math.cos(angle) - e);
         const z = a * Math.sqrt(1 - e * e) * Math.sin(angle);
-        orbitPoints.push(new THREE.Vector3(x, z * Math.sin(inclination), z * Math.cos(inclination)));
+        orbitPoints.push(orient(new THREE.Vector3(x, 0, z)));
       }
       const orbitGeometry = new THREE.BufferGeometry().setFromPoints(orbitPoints);
-      const orbit = new THREE.LineLoop(orbitGeometry, new THREE.LineBasicMaterial({ color: '#7794a8', transparent: true, opacity: 0.42, depthWrite: false }));
+      const orbit = new THREE.LineLoop(orbitGeometry, new THREE.LineBasicMaterial({ color: '#7794a8', transparent: true, opacity: 0.48, depthWrite: false }));
       group.add(orbit);
       const size = body.orbitIndex === 0 ? 0.19 : Math.max(0.105, 0.18 - body.orbitIndex * 0.012);
       const color = colors[body.bodyClass] ?? '#8bb8c9';
       const planet = new THREE.Mesh(new THREE.SphereGeometry(size, 20, 14), new THREE.MeshStandardMaterial({ color, roughness: body.bodyClass === 'gas-giant' ? 0.58 : 0.82, metalness: 0.06, emissive: color, emissiveIntensity: 0.08 }));
       group.add(planet);
-      orbitalBodies.push({ planetId: body.planetId, mesh: planet, semiMajor: a, eccentricity: e, phase: body.orbitalPhase, speed: 0.00012 / Math.sqrt(Math.max(1, a)), inclination });
+      orbitalBodies.push({ planetId: body.planetId, mesh: planet, semiMajor: a, eccentricity: e, phase: body.orbitalPhase, speed: 0.00012 / Math.sqrt(Math.max(1, a)), inclination, ascendingNode });
     }
     orbitalSystemGroup = group; scene.add(group);
     target.set(0, 0, 0);
-    const maxOrbit = Math.max(2, ...topology.bodies.filter((b) => b.discovered && b.planetId).map((b) => b.orbitRadius * (1 + b.eccentricity) * 1.25));
+    const maxOrbit = Math.max(2, ...topology.bodies.filter((b) => b.discovered).map((b) => b.orbitRadius * (1 + b.eccentricity) * 1.25));
     distance = clamp(maxOrbit * 2.2, 5.5, 15);
     focusDuration = 0; updateCamera(); applyLod();
   }
@@ -703,7 +706,7 @@ export function createGalaxyViewer(canvas: HTMLCanvasElement, initial: GalaxyRen
     if (!nodeMesh?.visible) return;
     if (orbitalSystemGroup?.visible) {
       const orbitalHit = raycaster.intersectObjects(orbitalBodies.map((body) => body.mesh), false)[0];
-      if (orbitalHit?.object) { const body = orbitalBodies.find((item) => item.mesh === orbitalHit.object); if (body) { onOrbitalNavigate?.(body.planetId); return; } }
+      if (orbitalHit?.object) { const body = orbitalBodies.find((item) => item.mesh === orbitalHit.object); if (body?.planetId) { onOrbitalNavigate?.(body.planetId); return; } }
     }
     const hit = nodeMesh ? raycaster.intersectObject(nodeMesh, false)[0] : undefined;
     const id = hit?.instanceId === undefined ? undefined : nodeByInstance[hit.instanceId];
@@ -727,7 +730,17 @@ export function createGalaxyViewer(canvas: HTMLCanvasElement, initial: GalaxyRen
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
   }
+  // Stage 9.4.7: keep galaxy projection synchronized with its responsive host.
+  const resizeObserver = typeof ResizeObserver !== 'undefined'
+    ? new ResizeObserver(() => resize())
+    : null;
+  if (canvas.parentElement) resizeObserver?.observe(canvas.parentElement);
+  window.addEventListener('resize', resize, { passive: true });
+  window.visualViewport?.addEventListener('resize', resize, { passive: true });
   function dispose(): void {
+    resizeObserver?.disconnect();
+    window.removeEventListener('resize', resize);
+    window.visualViewport?.removeEventListener('resize', resize);
     canvas.removeEventListener('pointerdown', onDown);
     canvas.removeEventListener('pointermove', onMove);
     canvas.removeEventListener('pointerup', onUp);
@@ -779,7 +792,7 @@ export function createGalaxyViewer(canvas: HTMLCanvasElement, initial: GalaxyRen
     render(nowMs) {
       coreHalo.rotation.y = nowMs * 0.00004;
       updatePlanetInstances(nowMs);
-      for (const body of orbitalBodies) { const mean = body.phase + nowMs * body.speed; let eccentric = mean; for (let i = 0; i < 4; i++) eccentric -= (eccentric - body.eccentricity * Math.sin(eccentric) - mean) / (1 - body.eccentricity * Math.cos(eccentric)); const x = body.semiMajor * (Math.cos(eccentric) - body.eccentricity); const z = body.semiMajor * Math.sqrt(1 - body.eccentricity * body.eccentricity) * Math.sin(eccentric); body.mesh.position.set(x, z * Math.sin(body.inclination), z * Math.cos(body.inclination)); body.mesh.rotation.y += 0.002; }
+      for (const body of orbitalBodies) { const mean = body.phase + nowMs * body.speed; let eccentric = mean; for (let i = 0; i < 4; i++) eccentric -= (eccentric - body.eccentricity * Math.sin(eccentric) - mean) / (1 - body.eccentricity * Math.cos(eccentric)); const x = body.semiMajor * (Math.cos(eccentric) - body.eccentricity); const z = body.semiMajor * Math.sqrt(1 - body.eccentricity * body.eccentricity) * Math.sin(eccentric); body.mesh.position.set(x, 0, z).applyAxisAngle(new THREE.Vector3(1, 0, 0), body.inclination).applyAxisAngle(new THREE.Vector3(0, 1, 0), body.ascendingNode); body.mesh.rotation.y += 0.002; }
       if (systemOrbitBody) {
         const phase = systemOrbitPhase + nowMs * 0.00022;
         systemOrbitBody.position.set(Math.cos(phase) * systemOrbitRadius, Math.sin(phase) * systemOrbitRadius * Math.sin(systemOrbitTilt), Math.sin(phase) * systemOrbitRadius);
