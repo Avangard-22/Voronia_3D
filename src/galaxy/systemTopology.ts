@@ -7,6 +7,7 @@ export interface SystemTopologyBody {
   readonly orbitRadius: number;
   readonly eccentricity: number;
   readonly inclination: number;
+  readonly ascendingNode: number;
   readonly orbitalPhase: number;
   readonly bodyClass: string;
   readonly discovered: boolean;
@@ -37,6 +38,7 @@ export function buildStarSystemTopology(
       orbitRadius: body.semiMajorAxis,
       eccentricity: body.eccentricity,
       inclination: body.inclination,
+      ascendingNode: body.ascendingNode,
       orbitalPhase: body.orbitalPhase,
       bodyClass: body.status === 'confirmed' || scanned.has(body.id) ? body.bodyClass : 'unknown',
       discovered: body.status === 'confirmed' || scanned.has(body.id),

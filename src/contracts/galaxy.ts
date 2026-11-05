@@ -92,6 +92,7 @@ export interface SystemPlanetOrbit {
   readonly semiMajorAxis: number;
   readonly eccentricity: number;
   readonly inclination: number;
+  readonly ascendingNode: number;
   readonly orbitalPhase: number;
   /** Сидерический период в сутках (III закон Кеплера, масса звезды в массах Солнца). */
   readonly periodDays: number;

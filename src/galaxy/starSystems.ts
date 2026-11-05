@@ -33,8 +33,8 @@ export type SystemBodyStatus = 'confirmed' | 'unscanned';
  * Все числа Этапа 9.0 меняются здесь и больше нигде.
  */
 export const SYSTEM_POLICY = Object.freeze({
-  /** Система с подтверждённой игровой планетой: host + 1..4 неразведанные орбиты. */
-  hostMinPlanets: 2,
+  /** Первая игровая планетарная система: одна активная планета-хост и четыре скрытые до сканирования планеты. */
+  hostMinPlanets: 5,
   hostMaxPlanets: 5,
   /** Фоновая система галактики: бывает и одна планета, и пять. */
   freeMinPlanets: 1,
@@ -47,7 +47,7 @@ export const SYSTEM_POLICY = Object.freeze({
   orbitJitterAu: 0.3,
   maxEccentricity: 0.2,
   /** Наклонение орбиты, рад (±). */
-  maxInclinationRad: 0.14,
+  maxInclinationRad: Math.PI / 2,
   /** Масса звезды в массах Солнца по спектральному классу — для периода обращения. */
   starMassByClass: Object.freeze({ blue: 6.2, white: 2.0, yellow: 1.0, orange: 0.72, red: 0.45 }),
   /** Визуальный радиус звезды относительно солнечного. */
@@ -66,6 +66,7 @@ export interface StarSystemBody {
   readonly semiMajorAxis: number;
   readonly eccentricity: number;
   readonly inclination: number;
+  readonly ascendingNode: number;
   readonly orbitalPhase: number;
   readonly sourcePlanetId: string | null;
 }
@@ -132,7 +133,7 @@ export function systemPlanetCount(seed: number, min: number, max: number, salt =
   return lo + Math.floor(random01(seed, salt) * (hi - lo + 1));
 }
 
-const BODY_CLASSES: readonly OrbitBodyClass[] = ['terrestrial', 'ice', 'gas-giant', 'dwarf', 'asteroid-belt'];
+const BODY_CLASSES: readonly OrbitBodyClass[] = ['terrestrial', 'ice', 'gas-giant', 'dwarf'];
 
 export interface OrbitBuildOptions {
   /** Планета-хост на орбите 0 (игровая планета системы). Без хоста все орбиты — кандидаты. */
@@ -161,6 +162,7 @@ export function buildSystemOrbits(seed: number, star: StarDescriptor, options: O
       semiMajorAxis,
       eccentricity: isHost ? 0 : random01(seed, 30 + index) * policy.maxEccentricity,
       inclination: isHost ? 0 : (random01(seed, 40 + index) - 0.5) * 2 * policy.maxInclinationRad,
+      ascendingNode: isHost ? 0 : random01(seed, 60 + index) * Math.PI * 2,
       orbitalPhase: random01(seed, 50 + index) * Math.PI * 2,
       periodDays: orbitalPeriodDays(semiMajorAxis, star),
       bodyClass: isHost ? 'terrestrial' : BODY_CLASSES[Math.floor(roll * BODY_CLASSES.length)] ?? 'terrestrial',
@@ -191,6 +193,7 @@ export function buildStarSystemCatalog(node: Pick<GraphNode, 'id' | 'name' | 'se
     semiMajorAxis: orbit.semiMajorAxis,
     eccentricity: orbit.eccentricity,
     inclination: orbit.inclination,
+    ascendingNode: orbit.ascendingNode,
     orbitalPhase: orbit.orbitalPhase,
     sourcePlanetId: orbit.status === 'bound' ? node.id : null,
   }));
