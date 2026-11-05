@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 /**
  * tests/stage9_3_reactor.test.ts — Этап 9.3 (Этап 8 ТЗ): реактор и крафт.
  *
@@ -6,7 +7,6 @@
  * прогресса; выход — атомарно по завершении); очередь и прогресс сохраняются;
  * UI не «прыгает» при смене рецепта (рендер из снапшота).
  */
-// @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
 import { makeGame, grant, advance } from './helpers';
 import { RECIPE_GATE, Reactor } from '../src/crafting/reactor';
@@ -282,7 +282,7 @@ describe('Этап 9.3 — реактор в UI (ТЗ §6: «Реактор в �
   it('idle: точный текст «Реактор в покое…», панели технологий и реактора на месте', () => {
     const { game } = makeGame();
     const root = fakeRoot();
-    renderSnapshot(game, root as unknown as HTMLElement);
+    renderSnapshot(game, root);
     expect(root.innerHTML).toContain('Реактор в покое…');
     expect(root.innerHTML).toContain('🔬 Технологии');
     expect(root.innerHTML).toContain('🏭 Реактор');
@@ -298,7 +298,7 @@ describe('Этап 9.3 — реактор в UI (ТЗ §6: «Реактор в �
     game.dispatch('craftEnqueue', { recipeId: 'steel', runs: 1 });
     advance(game, 10, 500);
     const root = fakeRoot();
-    renderSnapshot(game, root as unknown as HTMLElement);
+    renderSnapshot(game, root);
     expect(root.innerHTML).not.toContain('Реактор в покое…');
     expect(root.innerHTML).toContain('Сталь');
     expect(root.innerHTML).toContain('craft-bar');
@@ -314,7 +314,7 @@ describe('Этап 9.3 — реактор в UI (ТЗ §6: «Реактор в �
     game.dispatch('craftEnqueue', { recipeId: 'steel', runs: 1 });
     advance(game, 4, 500); // оплата не прошла (нет carbon/energy) → дефицит
     const root = fakeRoot();
-    renderSnapshot(game, root as unknown as HTMLElement);
+    renderSnapshot(game, root);
     expect(root.innerHTML).toContain('Дефицит ресурсов');
   });
 
@@ -323,11 +323,11 @@ describe('Этап 9.3 — реактор в UI (ТЗ §6: «Реактор в �
     unlock(game, 'recipe_steel');
     unlock(game, 'recipe_datablock');
     const root = fakeRoot();
-    renderSnapshot(game, root as unknown as HTMLElement);
+    renderSnapshot(game, root);
     const panelsBefore = (root.innerHTML.match(/<h2>/g) ?? []).length;
     grant(game, { carbon: 10, energy: 200_000, silicon: 50_000, steel: 1_000 });
     game.dispatch('craftEnqueue', { recipeId: 'steel', runs: 1 });
-    renderSnapshot(game, root as unknown as HTMLElement);
+    renderSnapshot(game, root);
     const panelsAfter = (root.innerHTML.match(/<h2>/g) ?? []).length;
     expect(panelsAfter).toBe(panelsBefore);
   });
