@@ -6,6 +6,6 @@ describe('Stage 9.7 quick-action capability contract', () => {
     expect(COMBAT_DOMAIN_STATUS.domain).toBe('combat');
     expect(COMBAT_DOMAIN_STATUS.status).toBe('NOT_IMPLEMENTED');
     expect(COMBAT_DOMAIN_STATUS.stage).toBe(8);
-    expect(COMBAT_DOMAIN_STATUS.note).toContain('Страж');
+    expect(COMBAT_DOMAIN_STATUS.note).toContain('страж');
   });
 });
