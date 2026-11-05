@@ -25,3 +25,4 @@ export const BASELINE_SAVE_SCHEMA = 39;
 
 /** Лимит уровня клетки (GS-01: MAX_LEVEL=100 ↔ limits.maxCellLevel). */
 export const MAX_CELL_LEVEL = 100;
+export * from './combat';
