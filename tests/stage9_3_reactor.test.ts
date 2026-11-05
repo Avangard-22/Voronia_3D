@@ -6,7 +6,7 @@
  * прогресса; выход — атомарно по завершении); очередь и прогресс сохраняются;
  * UI не «прыгает» при смене рецепта (рендер из снапшота).
  */
-// @vitest-environment happy-dom
+// @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
 import { makeGame, grant, advance } from './helpers';
 import { RECIPE_GATE, Reactor } from '../src/crafting/reactor';
