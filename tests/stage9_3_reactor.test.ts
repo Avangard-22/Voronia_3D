@@ -277,7 +277,7 @@ describe('Этап 9.3 — реактор: персистентность (ТЗ 
 });
 
 describe('Этап 9.3 — реактор в UI (ТЗ §6: «Реактор в покое…», без скачков)', () => {
-  const fakeRoot = (): { innerHTML: string } => ({ innerHTML: '' });
+  const fakeRoot = (): HTMLElement => document.createElement('div');
 
   it('idle: точный текст «Реактор в покое…», панели технологий и реактора на месте', () => {
     const { game } = makeGame();
