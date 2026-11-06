@@ -33,9 +33,11 @@ describe('Phase 10.1.7 — synthesizer, mutants and production parity', () => {
     expect(game.dispatch('setActivePlanet', { pid: 'krios' }).ok).toBe(true);
     grant(game, { kriogen: 100 });
     const kriosKriogenBefore = game.ledger.balance('kriogen');
+    const kriosCarbonBefore = game.ledger.balance('carbon');
     expect(game.synthService.tick(game.activeRuntimes(), 10)).toBe(true);
     expect(game.ledger.balance('kriogen')).toBeLessThan(kriosKriogenBefore);
-    expect(game.ledger.balance('carbon')).toBeGreaterThan(ferrumCarbon);
+    // Phase 10.1.13: per-planet stock. Синтез на krios растит carbon krios, а не ferrum.
+    expect(game.ledger.balance('carbon')).toBeGreaterThan(kriosCarbonBefore);
     const kriosKriogenAfter = game.ledger.balance('kriogen');
 
     expect(game.dispatch('setActivePlanet', { pid: 'ferrum' }).ok).toBe(true);

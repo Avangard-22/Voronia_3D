@@ -46,7 +46,8 @@ describe('Stage 6.7 — Galaxy Economy / Logistics', () => {
     const withdrawn = game.dispatch('withdrawDepot', { resource: 'iron', amount: 4 });
     expect(withdrawn.ok).toBe(true);
     expect(game.snapshot().logistics.depot.iron).toBe(6);
-    expect(game.ledger.balance('iron')).toBe(94);
+    // Phase 10.1.13: ресурсы per-planet. Активная — krios, withdraw идёт в krios ledger (4).
+    expect(game.ledger.balance('iron')).toBe(4);
   });
 
   it('rejects unloading beyond local depot capacity without losing cargo', () => {

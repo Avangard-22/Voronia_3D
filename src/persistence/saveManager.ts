@@ -81,7 +81,7 @@ export class SaveManager {
     const parsed = this.parse(raw);
     if (!parsed) return { ok: false, reason: this.isJson(raw) ? 'invalid' : 'corrupt' };
     const savedAt = Number.isFinite(parsed.savedAt) ? parsed.savedAt : this.now();
-    const offlineElapsedMs = Math.max(0, this.now() - savedAt);
+    const offlineElapsedMs = legacyRaw !== null ? 0 : Math.max(0, this.now() - savedAt);
     this.source.applyState(parsed, offlineElapsedMs);
     // Re-anchor the save immediately: a repeated load must not grant the same offline interval twice.
     this.save();

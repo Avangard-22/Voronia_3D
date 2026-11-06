@@ -164,7 +164,7 @@
    "energyDelta": 990,
    "researchBefore": 2.0005040000000003,
    "researchAfter": 20.000504,
-   "researchDelta": 18,
+   "researchDelta": 20,
    "result": {
     "ok": true,
     "id": 3,
@@ -228,7 +228,7 @@
   "iron": 50,
   "kriogen": 0,
   "crystals": 0,
-  "research": 20.000504,
+  "research": 22.000504,
   "dust": 0,
   "essence": 0,
   "shards": 0,

@@ -994,7 +994,7 @@ export class Game implements SaveSource {
         sectors: (['core', 'inner', 'mid', 'outer'] as const).map((id) => { const labels = { core: 'Ядро', inner: 'Внутренний сектор', mid: 'Средний сектор', outer: 'Внешний рубеж' }; return { id, label: labels[id], discovered: graphNodes.filter((node) => node.discovered && galaxySector(node).id === id).length }; }),
         discoveredArms: [...new Set(graphNodes.filter((node) => node.discovered).map((node) => node.armId).filter(Boolean))],
         progression: this.galaxyProgression(),
-        routes: buildRouteOptions(this.world.graph, this.unlocked, this.activePlanetIdValue, 0),
+        routes: buildRouteOptions(this.world.graph, this.unlocked, this.activePlanetIdValue, this.logistics.cargoMass()),
         routePolicy: ROUTE_POLICY,
         anomalies: buildAnomalySites(graphNodes, this.resolvedAnomalyIds),
       },

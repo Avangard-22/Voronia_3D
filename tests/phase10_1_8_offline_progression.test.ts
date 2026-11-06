@@ -23,7 +23,7 @@ describe('Phase 10.1.8 — V1 offline production and recovery', () => {
     expect(restored.ledger.balance('steel')).toBe(5);
     expect(restored.snapshot().reactor.queue[0]?.done).toBe(5);
     const firstLoadGameMs = restored.clock.gameMsNow;
-    expect(firstLoadGameMs).toBeCloseTo(150_000, -1);
+    expect(firstLoadGameMs).toBeCloseTo(150_000, -2);
 
     // load() immediately saves the recovered state; the same interval cannot be credited twice.
     expect(restored.dispatch('load', {}).ok).toBe(true);

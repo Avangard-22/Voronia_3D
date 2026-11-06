@@ -129,12 +129,7 @@ describe('buildPlanetMeshData (поли-сетка + граф соседства
   });
 
   it('Stage 5.4: кристаллы и аномалии получают дополнительные радиальные вершины', () => {
-const all = buildPlanetMeshData(ferrum); // без опции — все explored
-// Phase 10.1.13: coastal shoreMix сдвигает explored-цвет в сторону shoreTint.
-const exploredRgb = rgbOf(all, idx);
-for (let ch = 0; ch < 3; ch++) {
-  expect(exploredRgb[ch]!).toBeCloseTo(Math.fround(exploredColor[ch]), 1);
-}
+    const all = buildPlanetMeshData(ferrum);
     const plain = buildPlanetMeshData(ferrum, { explored: new Set(ferrum.cells.filter((c) => ![2, 4, 6, 7].includes(c.type)).map((c) => c.id)) });
     expect(all.facetCount).toBeGreaterThan(plain.facetCount);
     for (let i = 0; i < all.positions.length; i += 3) {
@@ -187,7 +182,14 @@ for (let ch = 0; ch < 3; ch++) {
     const rgbOf = (d: ReturnType<typeof buildPlanetMeshData>, i: number): number[] => [d.cellColors[i * 3]!, d.cellColors[i * 3 + 1]!, d.cellColors[i * 3 + 2]!];
 
     const all = buildPlanetMeshData(ferrum); // без опции — все explored
-    expect(rgbOf(all, idx)).toEqual([Math.fround(exploredColor[0]), Math.fround(exploredColor[1]), Math.fround(exploredColor[2])]);
+    // Phase 10.1.13: coastal shoreMix сдвигает explored-цвет в сторону shoreTint.
+    const exploredRgb = rgbOf(all, idx);
+    // Phase 10.1.13: shoreMix сдвигает explored-цвет на ~0.06 по каналу — точное
+    // значение зависит от рельефа клетки. Даём явный допуск вместо toBeCloseTo(…, 1).
+    for (let ch = 0; ch < 3; ch++) {
+      const expected = Math.fround(exploredColor[ch]);
+      expect(Math.abs(exploredRgb[ch]! - expected)).toBeLessThan(0.06);
+    }
 
     // Отклонение от 1.x (Stage 8.0.2): per-type unexplored-палитра раскрыла бы тип клетки до исследования.
     // Неисследованная, но открытая для взаимодействия клетка получает единый нейтральный тон от palette.border.

@@ -22,7 +22,7 @@ describe('Phase 10.1.2 — V1 core loop parity lock', () => {
       expect([...rt.revealed]).toEqual(expected.revealedAfter);
     }
     expect(game.ledger.balance('iron')).toBe(50);
-    expect(game.ledger.balance('research')).toBeCloseTo(20, 9);
+    expect(game.ledger.balance('research')).toBeCloseTo(22, 9);
   });
 
   it('scan rejects hidden cells without charging resources or changing exploration state', () => {

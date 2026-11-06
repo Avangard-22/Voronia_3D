@@ -10,7 +10,11 @@ const matrix = JSON.parse(fs.readFileSync(path.resolve('docs/PHASE10_1_12_PARITY
 
 describe('Phase 10.1.12 — V1/V2 parity audit', () => {
   it('anchors the audit to the exact V1 release and save schema', () => {
-    expect(matrix.baseline).toEqual({ v1: 'v0.0.41.0', save_schema: 39 });
+expect(matrix.baseline).toEqual({
+  v1: 'v0.0.41.0',
+  save_schema: 39,
+  authority: 'checked-in V1 runtime fixtures and source-level behavior',
+});
   });
 
   it('has unique mechanics, explicit evidence and internally consistent status counts', () => {
