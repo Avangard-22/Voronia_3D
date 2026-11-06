@@ -187,7 +187,7 @@ describe('buildPlanetMeshData (поли-сетка + граф соседства
     // Phase 10.1.13: shoreMix сдвигает explored-цвет на ~0.06 по каналу — точное
     // значение зависит от рельефа клетки. Даём явный допуск вместо toBeCloseTo(…, 1).
     for (let ch = 0; ch < 3; ch++) {
-      const expected = Math.fround(exploredColor[ch]);
+      const expected = Math.fround(exploredColor[ch]!);
       expect(Math.abs(exploredRgb[ch]! - expected)).toBeLessThan(0.06);
     }
 

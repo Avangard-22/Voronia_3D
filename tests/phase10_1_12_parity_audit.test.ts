@@ -22,10 +22,10 @@ expect(matrix.baseline).toEqual({
     for (const item of matrix.mechanics) {
       expect(['PASS', 'PARTIAL', 'GAP', 'BLOCKED']).toContain(item.status);
       expect(item.evidence.length).toBeGreaterThan(0);
-      for (const ref of item.evidence) expect(fs.existsSync(path.resolve(ref.split('#')[0]))).toBe(true);
+      for (const ref of item.evidence) expect(fs.existsSync(path.resolve(ref.split("#")[0]!))).toBe(true);
     }
     for (const status of ['PASS', 'PARTIAL', 'GAP', 'BLOCKED']) {
-      expect(matrix.mechanics.filter((item) => item.status === status)).toHaveLength(matrix.summary[status]);
+      expect(matrix.mechanics.filter((item) => item.status === status)).toHaveLength(matrix.summary[status]!);
     }
     expect(matrix.summary.total).toBe(matrix.mechanics.length);
   });

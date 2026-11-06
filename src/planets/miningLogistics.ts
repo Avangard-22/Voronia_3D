@@ -42,7 +42,7 @@ export function buildMiningLogistics(cells: readonly CellView[], gameMs = 0): Mi
   const activeRows = ranked.filter((entry) => entry.status === 'active');
   if (activeRows.length > 0) {
     const allocated = activeRows.slice(0, -1).reduce((sum, entry) => sum + entry.allocationPct, 0);
-    const last = activeRows[activeRows.length - 1];
+    const last = activeRows[activeRows.length - 1]!;
     const index = ranked.findIndex((entry) => entry.cellId === last.cellId);
     ranked[index] = { ...last, allocationPct: Math.max(0, Math.round((100 - allocated) * 10) / 10) };
   }

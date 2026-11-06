@@ -28,7 +28,6 @@ describe('Phase 10.1.7 — synthesizer, mutants and production parity', () => {
     expect(game.synthService.tick(game.activeRuntimes(), 10)).toBe(true);
     expect(game.ledger.balance('iron')).toBeLessThan(ferrumIronBefore);
     const ferrumIronAfter = game.ledger.balance('iron');
-    const ferrumCarbon = game.ledger.balance('carbon');
 
     expect(game.dispatch('setActivePlanet', { pid: 'krios' }).ok).toBe(true);
     grant(game, { kriogen: 100 });

@@ -16,7 +16,7 @@ function deposit(id: number, quality: 'common' | 'enriched' | 'high-grade' | 'ex
 describe('Stage 10.0.9 — mining logistics', () => {
   it('ranks higher-grade deposits above common deposits and allocates active capacity', () => {
     const plan = buildMiningLogistics([deposit(1, 'common', 80, 2), deposit(2, 'exceptional', 80, 2)]);
-    expect(plan.entries[0].cellId).toBe(2);
+    expect(plan.entries[0]!.cellId).toBe(2);
     expect(plan.active).toBe(2);
     expect(plan.fleetAllocationPct).toBe(100);
     expect(plan.entries.reduce((sum, entry) => sum + entry.allocationPct, 0)).toBe(100);

@@ -8,7 +8,7 @@
 import type { ActionResult, WarehouseUpgradeResult } from '../contracts/commands';
 import { fail, ok } from '../contracts/commands';
 import type { WarehouseCost, WarehouseInfo } from '../contracts/economy';
-import { cargoWeight, PLANET_STORAGE_RESOURCES, type LedgerResourceKey, type ResourceAmounts } from '../contracts/resources';
+import { cargoWeight, PLANET_STORAGE_RESOURCES, type ResourceAmounts } from '../contracts/resources';
 import type { BalanceConfig } from '../config/types';
 import type { EventPort, LedgerPort } from '../contracts/ports';
 import type { PlanetRuntime } from '../contracts/planets';

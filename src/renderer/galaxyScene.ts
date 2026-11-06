@@ -100,6 +100,32 @@ function makeStarField(count: number, radius: number): THREE.Points {
 }
 
 
+function makeDeepSpaceDust(count: number, radius: number): THREE.Points {
+  const random = seeded(0x0d0570a);
+  const positions = new Float32Array(count * 3);
+  const colors = new Float32Array(count * 3);
+  const color = new THREE.Color();
+  for (let i = 0; i < count; i++) {
+    const z = random() * 2 - 1;
+    const a = random() * Math.PI * 2;
+    const r = radius * Math.cbrt(random());
+    const ring = Math.sqrt(1 - z * z);
+    positions[i * 3] = Math.cos(a) * ring * r;
+    positions[i * 3 + 1] = z * r * 0.28;
+    positions[i * 3 + 2] = Math.sin(a) * ring * r;
+    // Пыль тусклее звёзд: холодный оттенок, низкая насыщенность, мелкий размер.
+    color.setHSL(0.58 + random() * 0.08, 0.18 + random() * 0.2, 0.32 + random() * 0.22);
+    colors[i * 3] = color.r; colors[i * 3 + 1] = color.g; colors[i * 3 + 2] = color.b;
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  return new THREE.Points(geometry, new THREE.PointsMaterial({
+    size: 0.012, vertexColors: true, transparent: true, opacity: 0.14,
+    sizeAttenuation: true, depthWrite: false,
+  }));
+}
+
 function nodeColor(node: GalaxyRenderNode): THREE.Color {
   if (node.active) return new THREE.Color('#ffd36a');
   if (!node.discovered) return new THREE.Color('#263b50');

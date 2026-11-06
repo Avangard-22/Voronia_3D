@@ -7,7 +7,7 @@ const cell = (overrides: Partial<CellView>): CellView => ({
   neighbors: [], level: 1, yield: 0, reserve: 0, maxReserve: 0,
   depletionPerSec: 0, reserveLifetimeSeconds: null, cooldownUntil: 0,
   reactCount: 0, anomalyType: null, mutant: null, isDeep: false,
-  chargeCooldownUntil: 0, chargedEver: false, ...overrides,
+  chargeCooldownUntil: 0, chargedEver: false, miningOperations: null, ...overrides,
 });
 
 describe('Stage 10.0.7 geological survey', () => {
