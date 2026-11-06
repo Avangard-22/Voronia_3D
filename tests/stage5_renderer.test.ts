@@ -129,7 +129,12 @@ describe('buildPlanetMeshData (поли-сетка + граф соседства
   });
 
   it('Stage 5.4: кристаллы и аномалии получают дополнительные радиальные вершины', () => {
-    const all = buildPlanetMeshData(ferrum);
+    const all = buildPlanetMeshData(ferrum); // без опции — все explored
+// Phase 10.1.13: coastal shoreMix сдвигает explored-цвет в сторону shoreTint.
+const exploredRgb = rgbOf(all, idx);
+for (let ch = 0; ch < 3; ch++) {
+  expect(exploredRgb[ch]!).toBeCloseTo(Math.fround(exploredColor[ch]), 1);
+}
     const plain = buildPlanetMeshData(ferrum, { explored: new Set(ferrum.cells.filter((c) => ![2, 4, 6, 7].includes(c.type)).map((c) => c.id)) });
     expect(all.facetCount).toBeGreaterThan(plain.facetCount);
     for (let i = 0; i < all.positions.length; i += 3) {
