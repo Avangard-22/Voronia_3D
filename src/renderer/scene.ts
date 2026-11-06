@@ -22,11 +22,12 @@ import { AdaptiveSurfaceStreamingController } from './adaptiveSurfaceStreamingCo
 import { SurfaceStreamingDiagnostics, type SurfaceDiagnosticSnapshot } from './surfaceDiagnostics';
 import { SurfaceStabilityMonitor } from './surfaceStabilityMonitor';
 import { createSurfaceDiagnosticsDashboard } from './surfaceDiagnosticsDashboard';
+import { getPlanetAtmosphereProfile, atmosphereQualityScale, getPlanetarySolarState, getPlanetWeatherState } from './planetAtmosphere';
 
 export interface PlanetViewer {
   setPlanet(data: PlanetMeshData, borderColor: string): void;
   selectCell(cellId: number | null): void;
-  setCellSelectHandler(handler: ((cellId: number) => void) | null): void;
+  setCellSelectHandler(handler: ((cellId: number | null) => void) | null): void;
   render(nowMs: number): void;
   resize(): void;
   zoomBy(delta: number): void;
@@ -140,12 +141,14 @@ export function createPlanetViewer(canvas: HTMLCanvasElement, initial: PlanetMes
   let stagedSurfaceMeshes: Array<{ id: number; mesh: THREE.Mesh; faceCellIds: Uint32Array }> = [];
   let stagedSurfaceReady = false;
   let surfaceMaterial: THREE.MeshStandardMaterial | null = null;
+  let atmosphereGroup: THREE.Group | null = null;
+  let atmosphereUniforms: { rimTime: { value: number }; cloudTime: { value: number }; cloudCoverage: { value: number }; cloudOpacity: { value: number }; storm: { value: number }; lightning: { value: number }; haze: { value: number }; aurora: { value: number }; sunDirection: { value: THREE.Vector3 }; sunIntensity: { value: number } } | null = null;
   let markers: THREE.LOD | null = null;
   let graph: THREE.LineSegments | null = null;
   let cellBoundaries: THREE.LineSegments | null = null;
   let selectionRing: THREE.Mesh | null = null;
   let currentData = initial;
-  let onCellSelected: ((cellId: number) => void) | null = null;
+  let onCellSelected: ((cellId: number | null) => void) | null = null;
   let selectedCellId: number | null = null;
   let runtimeCellChunkById = new Map<number, number>();
   const raycaster = new THREE.Raycaster();
@@ -178,6 +181,8 @@ export function createPlanetViewer(canvas: HTMLCanvasElement, initial: PlanetMes
     surfaceChunks = [];
     residency.clear();
     surfaceMaterial = null;
+    atmosphereGroup = null;
+    atmosphereUniforms = null;
     markers = null;
     graph = null;
     cellBoundaries = null;
@@ -231,6 +236,30 @@ export function createPlanetViewer(canvas: HTMLCanvasElement, initial: PlanetMes
     };
     surface = new THREE.Mesh(g, material);
     planetGroup.add(surface);
+    // Individual atmospheric envelope: a fresnel scattering shell and a slowly drifting cloud shell.
+    const atmosphere = getPlanetAtmosphereProfile(data.biome);
+    const atmosphereScale = new THREE.Group();
+    const rimUniforms = { uAtmosphereColor: { value: new THREE.Color(atmosphere.color) }, uAtmosphereOpacity: { value: atmosphere.opacity }, uScattering: { value: atmosphere.scattering }, uSunDirection: { value: new THREE.Vector3(0.4, 0.3, 0.8) }, uSunIntensity: { value: 1.0 } };
+    const rimMaterial = new THREE.ShaderMaterial({
+      uniforms: rimUniforms, transparent: true, depthWrite: false, side: THREE.BackSide,
+      vertexShader: `varying vec3 vNormal; varying vec3 vViewPosition; void main(){ vec4 mvPosition=modelViewMatrix*vec4(position,1.0); vNormal=normalize(normalMatrix*normal); vViewPosition=-mvPosition.xyz; gl_Position=projectionMatrix*mvPosition; }`,
+      fragmentShader: `uniform vec3 uAtmosphereColor; uniform float uAtmosphereOpacity; uniform float uScattering; uniform vec3 uSunDirection; uniform float uSunIntensity; varying vec3 vNormal; varying vec3 vViewPosition; void main(){ vec3 n=normalize(vNormal); vec3 v=normalize(vViewPosition); vec3 sun=normalize(uSunDirection); float rim=pow(1.0-max(dot(n,v),0.0),2.15); float limb=smoothstep(0.02,0.88,rim); float sunFacing=0.22+0.78*smoothstep(-0.35,0.72,dot(n,sun)); float glow=limb*uAtmosphereOpacity*uScattering*sunFacing*(0.72+0.28*uSunIntensity); gl_FragColor=vec4(uAtmosphereColor,glow); }`,
+    });
+    const rim = new THREE.Mesh(new THREE.SphereGeometry(1, 48, 32), rimMaterial);
+    rim.scale.setScalar(atmosphere.altitude);
+    atmosphereScale.add(rim);
+    const cloudUniforms = { uTime: { value: 0 }, uCoverage: { value: atmosphere.cloudCoverage }, uOpacity: { value: atmosphere.cloudOpacity }, uCloudColor: { value: new THREE.Color(atmosphere.cloudColor) }, uSpeed: { value: atmosphere.cloudSpeed }, uStorm: { value: 0 }, uLightning: { value: 0 }, uHaze: { value: 0 }, uAurora: { value: 0 }, uSunDirection: rimUniforms.uSunDirection, uSunIntensity: rimUniforms.uSunIntensity };
+    const cloudMaterial = new THREE.ShaderMaterial({
+      uniforms: cloudUniforms, transparent: true, depthWrite: false, side: THREE.DoubleSide,
+      vertexShader: `varying vec3 vDirection; void main(){ vDirection=normalize(position); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
+      fragmentShader: `uniform float uTime; uniform float uCoverage; uniform float uOpacity; uniform float uSpeed; uniform float uStorm; uniform float uLightning; uniform float uHaze; uniform float uAurora; uniform vec3 uCloudColor; uniform vec3 uSunDirection; uniform float uSunIntensity; varying vec3 vDirection; float hash(vec3 p){ return fract(sin(dot(p,vec3(127.1,311.7,74.7)))*43758.5453); } void main(){ vec3 p=normalize(vDirection); p.xz=mat2(cos(uTime*uSpeed),-sin(uTime*uSpeed),sin(uTime*uSpeed),cos(uTime*uSpeed))*p.xz; float n=hash(floor(p*42.0))+0.48*hash(floor(p*86.0)); float bands=0.5+0.5*sin(p.y*(18.0+uStorm*13.0)+p.x*7.0+uTime*uSpeed*9.0+sin(p.z*11.0+uTime*0.08)*uStorm); float cloud=smoothstep(1.0-uCoverage-uStorm*0.08,1.22-uCoverage,n*0.72+bands*0.42); float daylight=0.18+0.82*smoothstep(-0.25,0.65,dot(normalize(vDirection),normalize(uSunDirection))); vec3 litColor=uCloudColor*(0.48+daylight*0.72*uSunIntensity); litColor=mix(litColor,vec3(0.46,0.55,0.68),uHaze*0.42); litColor+=vec3(0.28,0.72,0.92)*uAurora*(0.25+0.75*sin(p.y*34.0+uTime*0.18)); litColor+=vec3(0.78,0.88,1.0)*uLightning*2.4; float alpha=cloud*uOpacity*(0.72+daylight*0.28)*(1.0+uStorm*0.18); gl_FragColor=vec4(litColor,alpha); }`,
+    });
+    const clouds = new THREE.Mesh(new THREE.SphereGeometry(1, 48, 32), cloudMaterial);
+    clouds.scale.setScalar(atmosphere.altitude - 0.018);
+    atmosphereScale.add(clouds);
+    atmosphereGroup = atmosphereScale;
+    atmosphereUniforms = { rimTime: { value: 0 }, cloudTime: cloudUniforms.uTime, cloudCoverage: cloudUniforms.uCoverage, cloudOpacity: cloudUniforms.uOpacity, storm: cloudUniforms.uStorm, lightning: cloudUniforms.uLightning, haze: cloudUniforms.uHaze, aurora: cloudUniforms.uAurora, sunDirection: rimUniforms.uSunDirection, sunIntensity: rimUniforms.uSunIntensity };
+    planetGroup.add(atmosphereScale);
     trackGeometry('base-surface', g, 'base', true);
     // Decorative resources are reconstructible from retained CPU-side PlanetMeshData.
     const restoreBoundaries = (): boolean => {
@@ -404,7 +433,7 @@ export function createPlanetViewer(canvas: HTMLCanvasElement, initial: PlanetMes
 
   function pickCell(clientX: number, clientY: number): void {
     const cellId = cellAt(clientX, clientY);
-    if (cellId === null) return;
+    // Tapping empty space clears the active cell dock; dragging never reaches this path.
     selectCell(cellId);
     onCellSelected?.(cellId);
   }
@@ -417,11 +446,12 @@ export function createPlanetViewer(canvas: HTMLCanvasElement, initial: PlanetMes
   let downY = 0;
   const activePointers = new Map<number, { x: number; y: number }>();
   let pinchDistance = 0;
+  let multiTouchGesture = false;
   const distance = (): number => {
     const pts = [...activePointers.values()];
     return pts.length >= 2 ? Math.hypot(pts[0]!.x - pts[1]!.x, pts[0]!.y - pts[1]!.y) : 0;
   };
-  const onDown = (e: PointerEvent): void => { activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY }); pinchDistance = distance(); dragging = true; px = downX = e.clientX; py = downY = e.clientY; try { canvas.setPointerCapture(e.pointerId); } catch { /* capture may be unavailable in embedded browsers */ } };
+  const onDown = (e: PointerEvent): void => { if (activePointers.size > 0) multiTouchGesture = true; activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY }); pinchDistance = distance(); dragging = true; px = downX = e.clientX; py = downY = e.clientY; try { canvas.setPointerCapture(e.pointerId); } catch { /* capture may be unavailable in embedded browsers */ } };
   const onMove = (e: PointerEvent): void => {
     if (activePointers.has(e.pointerId)) activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (activePointers.size >= 2) {
@@ -441,9 +471,12 @@ export function createPlanetViewer(canvas: HTMLCanvasElement, initial: PlanetMes
     activePointers.delete(e.pointerId);
     pinchDistance = distance();
     dragging = activePointers.size > 0;
-    if (moved < 6 && activePointers.size === 0) pickCell(e.clientX, e.clientY);
+    if (activePointers.size === 0) {
+      if (!multiTouchGesture && moved < 6) pickCell(e.clientX, e.clientY);
+      multiTouchGesture = false;
+    }
   };
-  const onCancel = (e: PointerEvent): void => { activePointers.delete(e.pointerId); pinchDistance = distance(); dragging = activePointers.size > 0; };
+  const onCancel = (e: PointerEvent): void => { activePointers.delete(e.pointerId); pinchDistance = distance(); dragging = activePointers.size > 0; if (activePointers.size === 0) multiTouchGesture = false; };
   const onWheel = (e: WheelEvent): void => { e.preventDefault(); camera.position.z = Math.max(2.15, Math.min(5.2, camera.position.z + Math.sign(e.deltaY) * 0.16)); };
   const onContextLost = (event: Event): void => { event.preventDefault(); contextLost = true; gpuLifecycle.onContextLost(); };
   const onContextRestored = (): void => {
@@ -573,6 +606,27 @@ export function createPlanetViewer(canvas: HTMLCanvasElement, initial: PlanetMes
     if (shader?.uniforms.uVoroniaQuality) shader.uniforms.uVoroniaQuality.value = qualityProfile.shaderDetail;
     if (shader?.uniforms.uVoroniaAnimation) shader.uniforms.uVoroniaAnimation.value = Math.min(qualityProfile.animationScale, lodState.animationScale);
     if (shader?.uniforms.uVoroniaLodDetail) shader.uniforms.uVoroniaLodDetail.value = lodState.shaderDetail;
+    if (atmosphereUniforms) {
+      const atmosphereTier = adaptiveQuality.tier === 'low' ? 'low' : adaptiveQuality.tier === 'balanced' ? 'balanced' : 'high';
+      const scale = atmosphereQualityScale(atmosphereTier);
+      atmosphereUniforms.cloudTime.value = nowMs * 0.001;
+      atmosphereUniforms.cloudOpacity.value = getPlanetAtmosphereProfile(currentData.biome).cloudOpacity * scale;
+      const weather = getPlanetWeatherState(nowMs, currentData.biome);
+      atmosphereUniforms.storm.value = weather.storm * scale;
+      atmosphereUniforms.lightning.value = weather.lightning * scale;
+      atmosphereUniforms.haze.value = weather.haze * scale;
+      atmosphereUniforms.aurora.value = weather.aurora * scale;
+      const solar = getPlanetarySolarState(nowMs, currentData.biome);
+      atmosphereUniforms.sunDirection.value.set(...solar.direction);
+      atmosphereUniforms.sunIntensity.value = solar.intensity;
+      const worldSunDirection = new THREE.Vector3(...solar.direction).applyQuaternion(planetGroup.quaternion);
+      dir.position.copy(worldSunDirection).multiplyScalar(5);
+      dir.intensity = solar.intensity;
+      dir.color.setHex(solar.color);
+      fill.intensity = solar.ambient;
+      fill.position.copy(worldSunDirection).multiplyScalar(-3);
+      if (atmosphereGroup) atmosphereGroup.visible = scale > 0.5;
+    }
     planetGroup.rotation.set(rotX, rotY, 0);
     if (selectionRing) {
       const pulse = 1 + Math.sin(nowMs * 0.004) * 0.045;

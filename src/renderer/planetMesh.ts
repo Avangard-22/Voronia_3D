@@ -6,6 +6,7 @@
  */
 import type { GeneratedPlanet } from '../contracts/planets';
 import { surfaceGeometryStats } from './surfaceBudget';
+import { buildContinentalTopology, continentalShoreTint } from '../planets/continental';
 
 /** CSS-цвет палитры 1.x (`#rrggbb` | `hsl(h, s%, l%)`) → rgb 0..1. */
 export function parseColor(css: string): [number, number, number] {
@@ -43,6 +44,8 @@ export function parseColor(css: string): [number, number, number] {
 }
 
 export interface PlanetMeshData {
+  /** Исходный биом планеты для индивидуальной атмосферы. */
+  readonly biome: string;
   /** Треугольники рельефных участков клеток: xyz*3n. */
   readonly positions: Float32Array;
   /** per-vertex rgb граней (explored/unexplored палитра по типу). */
@@ -61,6 +64,14 @@ export interface PlanetMeshData {
   readonly geologicalMotionAmplitude: Float32Array;
   /** Скорость локальной анимации геологического образования. */
   readonly geologicalMotionSpeed: Float32Array;
+  /** ID связного материка/островной группы (0 — вода). */
+  readonly continentalRegionIds: Uint32Array;
+  /** Класс суши: 0 вода, 1 остров, 2 архипелаг, 3 материк. */
+  readonly continentalClasses: Uint8Array;
+  /** Сила берегового перехода 0..1. */
+  readonly coastalInfluence: Float32Array;
+  /** Доля соседей другого поверхностного класса 0..1. */
+  readonly biomeTransition: Float32Array;
   /** Базовые центры клеток на сфере: xyz*n. */
   readonly cellCenters: Float32Array;
   /** Центры визуальной поверхности клеток с радиальным смещением для маркеров/выделения. */
@@ -296,12 +307,26 @@ function sphericalLerp(a: readonly number[], b: readonly number[], t: number): [
   return radialPoint([na[0] * wa + nb[0] * wb, na[1] * wa + nb[1] * wb, na[2] * wa + nb[2] * wb], 1);
 }
 
+/** V1 `ni()` сохраняет геометрию всех объединённых исходных клеток в `_polys`.
+ * Используем эти полигоны как компоненты одной игровой ячейки V2. */
+function sourcePolygons(cell: GeneratedPlanet['cells'][number]): readonly (readonly (readonly number[])[])[] {
+  return cell._polys && cell._polys.length > 1 ? cell._polys : [cell.poly];
+}
+
+function polygonCenter(poly: readonly (readonly number[])[]): [number, number, number] {
+  const sum: [number, number, number] = [0, 0, 0];
+  for (const point of poly) { sum[0] += point[0]!; sum[1] += point[1]!; sum[2] += point[2]!; }
+  const length = Math.hypot(sum[0], sum[1], sum[2]) || 1;
+  return [sum[0] / length, sum[1] / length, sum[2] / length];
+}
+
 /**
  * GeneratedPlanet → PlanetMeshData. Каждая клетка строится как собственный рельефный участок:
  * общая граница остаётся на базовом радиусе, внутренние кольца поднимаются/опускаются радиально.
  * Треугольники каждой клетки идут непрерывным блоком — faceIndex однозначно сопоставляется cellId.
  */
 export function buildPlanetMeshData(planet: GeneratedPlanet, opts: MeshBuildOptions = {}): PlanetMeshData {
+  const continental = buildContinentalTopology(planet);
   const positions: number[] = [];
   const colors: number[] = [];
   const normals: number[] = [];
@@ -342,14 +367,14 @@ export function buildPlanetMeshData(planet: GeneratedPlanet, opts: MeshBuildOpti
   const vertexKey = (v: readonly number[]): string => `${Math.round(v[0]! * 1e7)},${Math.round(v[1]! * 1e7)},${Math.round(v[2]! * 1e7)}`;
   const edgeKey = (a: readonly number[], b: readonly number[]): string => [vertexKey(a), vertexKey(b)].sort().join('|');
   const sharedVertexAccum = new Map<string, { point: [number, number, number]; heightSum: number; count: number }>();
-  const edgeAccum = new Map<string, { a: [number, number, number]; b: [number, number, number]; heightSum: number; count: number; segments: number }>();
+  const edgeAccum = new Map<string, { a: [number, number, number]; b: [number, number, number]; heightSum: number; count: number; segments: number; cellIds: Set<number> }>();
   for (const cell of planet.cells) {
     const isExplored = opts.explored ? opts.explored.has(cell.id) : true;
     const cellLevel = opts.cellLevels?.get(cell.id) ?? cell.level ?? 0;
     const h = isExplored ? reliefHeight(cell.type, cellLevel, cell.id) : UNKNOWN_RELIEF.base;
-    for (let i = 0; i < cell.poly.length; i++) {
-      const a = cell.poly[i]!;
-      const b = cell.poly[(i + 1) % cell.poly.length]!;
+    for (const poly of sourcePolygons(cell)) for (let i = 0; i < poly.length; i++) {
+      const a = poly[i]!;
+      const b = poly[(i + 1) % poly.length]!;
       for (const point of [a, b]) {
         const key = vertexKey(point);
         const entry = sharedVertexAccum.get(key);
@@ -365,8 +390,8 @@ export function buildPlanetMeshData(planet: GeneratedPlanet, opts: MeshBuildOpti
       // Ограничиваем длину сегмента примерно 0.12 радиана, чтобы длинные стороны
       // делились чаще, а короткие сохраняли исходную топологию без лишних треугольников.
       const segments = Math.max(1, Math.min(12, Math.ceil(angle / 0.12)));
-      if (existing) { existing.heightSum += h; existing.count++; existing.segments = Math.max(existing.segments, segments); }
-      else edgeAccum.set(key, { a: [a[0], a[1], a[2]], b: [b[0], b[1], b[2]], heightSum: h, count: 1, segments });
+      if (existing) { existing.heightSum += h; existing.count++; existing.segments = Math.max(existing.segments, segments); existing.cellIds.add(cell.id); }
+      else edgeAccum.set(key, { a: [a[0], a[1], a[2]], b: [b[0], b[1], b[2]], heightSum: h, count: 1, segments, cellIds: new Set([cell.id]) });
     }
   }
   const sharedBoundaryPoints = new Map<string, [number, number, number]>();
@@ -443,15 +468,25 @@ export function buildPlanetMeshData(planet: GeneratedPlanet, opts: MeshBuildOpti
     const table = explored ? planet.palette.explored : planet.palette.unexplored;
     const sourceRgb = parseColor(explored ? (table[String(cell.type)] ?? table[String(cell.displayType)] ?? planet.palette.border) : planet.palette.border);
     // Revealed cells have a restrained neutral tint; hidden cells stay darker. Neither state leaks cell type.
-    const rgb: [number, number, number] = explored
+    const baseRgb: [number, number, number] = explored
       ? sourceRgb
       : revealed
         ? [sourceRgb[0] * 0.72 + 0.12, sourceRgb[1] * 0.72 + 0.16, sourceRgb[2] * 0.72 + 0.20]
         : [0.035, 0.055, 0.075];
+    const cellIndex = cellIds.length;
+    const shore = explored ? continental.coastalInfluence[cellIndex] ?? 0 : 0;
+    const shoreTint = continentalShoreTint(planet.biome, cell.type !== 0);
+    const shoreMix = Math.min(0.30, shore * 0.24);
+    const rgb: [number, number, number] = [
+      baseRgb[0] * (1 - shoreMix) + shoreTint[0] * shoreMix,
+      baseRgb[1] * (1 - shoreMix) + shoreTint[1] * shoreMix,
+      baseRgb[2] * (1 - shoreMix) + shoreTint[2] * shoreMix,
+    ];
     // Не раскрываем тип неизвестной клетки через силуэт: до исследования у неё нейтральный рельеф.
     const profile = explored ? (RELIEF[cell.type] ?? RELIEF[3]!) : UNKNOWN_RELIEF;
     const level = opts.cellLevels?.get(cell.id) ?? cell.level ?? 0;
     const height = explored ? reliefHeight(cell.type, level, cell.id) : UNKNOWN_RELIEF.base;
+    const polys = sourcePolygons(cell);
     const poly = cell.poly;
     const raisedCenter = radialPoint(cell.center, 1.002 + height);
     cellCenters.push(cell.center[0], cell.center[1], cell.center[2]);
@@ -459,7 +494,7 @@ export function buildPlanetMeshData(planet: GeneratedPlanet, opts: MeshBuildOpti
     cellHeights.push(height);
     cellColors.push(rgb[0], rgb[1], rgb[2]);
     cellIds.push(cell.id);
-    cellSideCounts.push(poly.length);
+    cellSideCounts.push(polys.reduce((sum, part) => sum + part.length, 0));
     for (const neighborId of cell.neighbors) neighborIds.push(neighborId);
     neighborOffsets.push(neighborIds.length);
     cellStates.push(explored ? 2 : revealed ? 1 : 0);
@@ -470,50 +505,45 @@ export function buildPlanetMeshData(planet: GeneratedPlanet, opts: MeshBuildOpti
     cellSelectable.push(revealed ? 1 : 0);
     radius = Math.max(radius, Math.hypot(...raisedCenter));
 
-    // Границы повторяют исходный полигон клетки: у Voronia нет универсальной шестиугольной сетки.
-    // Число и форма сторон берутся из cell.poly без нормализации к hexagon.
-    for (let i = 0; i < poly.length; i++) {
-      const a = radialPoint(poly[i]!, 1.004);
-      const b = radialPoint(poly[(i + 1) % poly.length]!, 1.004);
-      boundaryPositions.push(...a, ...b);
-      const boundaryRgb = explored ? [0.38, 0.78, 0.96] : revealed ? [0.20, 0.42, 0.58] : [0.075, 0.11, 0.15];
-      boundaryColors.push(...boundaryRgb, ...boundaryRgb);
-    }
-
-    // Два промежуточных кольца создают видимый склон, плато или кристаллический пик.
-    for (let i = 0; i < poly.length; i++) {
-      const a = poly[i]!;
-      const b = poly[(i + 1) % poly.length]!;
-      const key = edgeKey(a, b);
-      const canonical = edgeAccum.get(key)!;
-      const canonicalPoints = edgePoints.get(key)!;
-      const forward = vertexKey(a) === vertexKey(canonical.a);
-      const seamPoints = forward ? canonicalPoints : [...canonicalPoints].reverse();
-      const ringT = [0.22, 0.46, 0.72, 0.90] as const;
-      let edgeRadius = 1.002;
-      // Каждая подсторона получает те же внешние точки, что и соседняя клетка.
-      // Внутренние кольца остаются индивидуальными и формируют морфологию данного полигона.
-      for (let segment = 0; segment < seamPoints.length - 1; segment++) {
-        const t0 = segment / (seamPoints.length - 1);
-        const t1 = (segment + 1) / (seamPoints.length - 1);
-        const edgeA = sphericalLerp(a, b, t0);
-        const edgeB = sphericalLerp(a, b, t1);
-        const ringsA = ringT.map((t) => reliefPoint(edgeA, cell.center, t, height, profile, i + segment, poly.length, cell.id, level));
-        const ringsB = ringT.map((t) => reliefPoint(edgeB, cell.center, t, height, profile, i + segment + 1, poly.length, cell.id, level));
-        let previousA = seamPoints[segment]!;
-        let previousB = seamPoints[segment + 1]!;
-        for (let ring = 0; ring < ringsA.length; ring++) {
-          const nextA = ringsA[ring]!;
-          const nextB = ringsB[ring]!;
-          addTriangle(previousA, previousB, nextB, rgb, cell.id, explored ? cell.type : -1);
-          addTriangle(previousA, nextB, nextA, rgb, cell.id, explored ? cell.type : -1);
-          edgeRadius = Math.max(edgeRadius, Math.hypot(...nextA), Math.hypot(...nextB));
-          previousA = nextA;
-          previousB = nextB;
+    // Все исходные полигоны V1 внутри объединённой ячейки формируют общий массив суши.
+    // Внутренние швы объединённых фрагментов не рисуем как границы игровых ячеек.
+    for (const part of polys) {
+      const partCenter = polygonCenter(part);
+      const partRaisedCenter = radialPoint(partCenter, 1.002 + height);
+      for (let i = 0; i < part.length; i++) {
+        const a = part[i]!; const b = part[(i + 1) % part.length]!;
+        const edge = edgeAccum.get(edgeKey(a, b));
+        if (!(edge && edge.cellIds.size === 1 && edge.count > 1)) {
+          const boundaryA = radialPoint(a, 1.004); const boundaryB = radialPoint(b, 1.004);
+          boundaryPositions.push(...boundaryA, ...boundaryB);
+          const boundaryRgb = explored ? [0.38, 0.78, 0.96] : revealed ? [0.20, 0.42, 0.58] : [0.075, 0.11, 0.15];
+          boundaryColors.push(...boundaryRgb, ...boundaryRgb);
         }
-        addTriangle(previousA, previousB, raisedCenter, rgb, cell.id, explored ? cell.type : -1);
       }
-      radius = Math.max(radius, edgeRadius);
+      for (let i = 0; i < part.length; i++) {
+        const a = part[i]!; const b = part[(i + 1) % part.length]!;
+        const key = edgeKey(a, b); const canonical = edgeAccum.get(key)!; const canonicalPoints = edgePoints.get(key)!;
+        const forward = vertexKey(a) === vertexKey(canonical.a);
+        const seamPoints = forward ? canonicalPoints : [...canonicalPoints].reverse();
+        const ringT = [0.22, 0.46, 0.72, 0.90] as const;
+        let edgeRadius = 1.002;
+        for (let segment = 0; segment < seamPoints.length - 1; segment++) {
+          const t0 = segment / (seamPoints.length - 1); const t1 = (segment + 1) / (seamPoints.length - 1);
+          const edgeA = sphericalLerp(a, b, t0); const edgeB = sphericalLerp(a, b, t1);
+          const ringsA = ringT.map((t) => reliefPoint(edgeA, partCenter, t, height, profile, i + segment, part.length, cell.id, level));
+          const ringsB = ringT.map((t) => reliefPoint(edgeB, partCenter, t, height, profile, i + segment + 1, part.length, cell.id, level));
+          let previousA = seamPoints[segment]!; let previousB = seamPoints[segment + 1]!;
+          for (let ring = 0; ring < ringsA.length; ring++) {
+            const nextA = ringsA[ring]!; const nextB = ringsB[ring]!;
+            addTriangle(previousA, previousB, nextB, rgb, cell.id, explored ? cell.type : -1);
+            addTriangle(previousA, nextB, nextA, rgb, cell.id, explored ? cell.type : -1);
+            edgeRadius = Math.max(edgeRadius, Math.hypot(...nextA), Math.hypot(...nextB));
+            previousA = nextA; previousB = nextB;
+          }
+          addTriangle(previousA, previousB, partRaisedCenter, rgb, cell.id, explored ? cell.type : -1);
+        }
+        radius = Math.max(radius, edgeRadius, Math.hypot(...partRaisedCenter));
+      }
     }
 
     // Уникальные надстройки появляются только после исследования клетки.
@@ -591,7 +621,12 @@ export function buildPlanetMeshData(planet: GeneratedPlanet, opts: MeshBuildOpti
   }
 
   return {
+    biome: planet.biome,
     positions: new Float32Array(positions),
+    continentalRegionIds: continental.regionIds,
+    continentalClasses: continental.classes,
+    coastalInfluence: continental.coastalInfluence,
+    biomeTransition: continental.biomeTransition,
     colors: new Float32Array(colors),
     normals: new Float32Array(normals),
     geologyBlend: new Float32Array(geologyBlend),

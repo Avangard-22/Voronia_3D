@@ -4,9 +4,11 @@
  */
 import type { Game } from '../core/game';
 import type { GameSnapshot, CellView } from '../contracts/snapshot';
-import { RESOURCE_META, cargoWeight, type LedgerResourceKey } from '../contracts/resources';
+import { RESOURCE_META, type LedgerResourceKey } from '../contracts/resources';
 import { CELL_TYPE_NAMES, ANOMALY_META, type CellType } from '../contracts/cells';
 import { COMBAT_DOMAIN_STATUS } from '../contracts/combat';
+import { cellActionFeedback } from './cellActionFeedback';
+import { formatCompact } from './numberFormat';
 
 
 let persistenceNotice = '';
@@ -24,13 +26,7 @@ function iconSvg(key: string, className = 'legacy-icon'): string {
   return `<img class="${className}" src="./assets/legacy-icons/${safeKey}.svg" alt="" aria-hidden="true" loading="eager" decoding="async">`;
 }
 
-function fmt(v: number, digits = 1): string {
-  if (!Number.isFinite(v)) return '∞';
-  if (Math.abs(v) >= 1e9) return (v / 1e9).toFixed(2) + 'B';
-  if (Math.abs(v) >= 1e6) return (v / 1e6).toFixed(2) + 'M';
-  if (Math.abs(v) >= 1e3) return (v / 1e3).toFixed(1) + 'K';
-  return v.toFixed(digits);
-}
+function fmt(v: number, digits = 1): string { return formatCompact(v, digits); }
 
 /** Stage 9.4.3: compact top HUD chip; all values are read-only snapshot data. */
 function resourceChip(key: LedgerResourceKey, amount: number, perSec?: number): string {
@@ -59,8 +55,9 @@ function amountsLine(amounts: Readonly<Record<string, number>>): string {
 }
 
 function cellCard(game: Game, pid: string, c: CellView, charge: number, energy: number): string {
-  const icon = iconSvg(CELL_ICON_KEYS[c.type] ?? 'cell_anomaly', 'legacy-icon cell-svg-icon');
-  const typeName = CELL_TYPE_NAMES[c.type as CellType] ?? 'Неизвестная структура';
+  const known = c.status === 'explored';
+  const icon = iconSvg(known ? (CELL_ICON_KEYS[c.type] ?? 'cell_unknown') : 'cell_unknown', 'legacy-icon cell-svg-icon');
+  const typeName = known ? (CELL_TYPE_NAMES[c.type as CellType] ?? 'Неизвестная структура') : 'Неидентифицированная структура';
   const statusLabel = c.status === 'hidden' ? 'НЕ ИССЛЕДОВАНА' : c.status === 'revealed' ? 'СИГНАЛ ОБНАРУЖЕН' : 'ИССЛЕДОВАНА';
   const header = `<div class="cell-panel-title"><span class="cell-panel-icon" aria-hidden="true">${icon}</span><span class="cell-panel-heading"><b>${typeName}</b><small>${statusLabel} · СЕКТОР ${c.id}</small></span></div>`;
   if (c.status === 'hidden') {
@@ -73,12 +70,26 @@ function cellCard(game: Game, pid: string, c: CellView, charge: number, energy: 
 
   const parts: string[] = [`<section class="cell-action-panel is-explored t${c.type}" aria-label="Управление клеткой">${header}`];
   parts.push(`<div class="cell-panel-stats"><div><small>УРОВЕНЬ</small><b>${c.level}</b></div><div><small>ДОХОД / ПОТЕНЦИАЛ</small><b>${fmt(c.yield, 2)}</b></div><div><small>СОСЕДИ</small><b>${c.neighbors.length}</b></div></div>`);
+  if (c.geologicalReward) {
+    const rewardName = RESOURCE_META[c.geologicalReward.resourceKey as LedgerResourceKey]?.name ?? c.geologicalReward.resourceKey;
+    const secondary = c.geologicalReward.secondaryResourceKey ? ` · +${fmt(c.geologicalReward.secondaryBaseRate ?? 0, 3)} ${RESOURCE_META[c.geologicalReward.secondaryResourceKey as LedgerResourceKey]?.name ?? c.geologicalReward.secondaryResourceKey}/с` : '';
+    parts.push(`<div class="cell-geological-reward"><span>ГЕОЛОГИЧЕСКАЯ НАХОДКА</span><b>${iconSvg(RESOURCE_ICON_KEYS[c.geologicalReward.resourceKey as LedgerResourceKey] ?? 'dust', 'legacy-icon inline-resource-icon')} ${rewardName}</b><small>Базовый потенциал: ${fmt(c.geologicalReward.baseRate, 3)}/с${secondary}</small></div>`);
+  }
   if (c.type === 3 || c.type === 5) {
     const cooling = c.cooldownUntil > game.clock.gameMsNow;
     const reservePct = c.maxReserve > 0 ? Math.max(0, Math.min(100, c.reserve / c.maxReserve * 100)) : 0;
-    parts.push(`<div class="cell-panel-resource"><div><span>РЕЗЕРВ МЕСТОРОЖДЕНИЯ</span><b>${fmt(c.reserve, 1)} / ${fmt(c.maxReserve, 1)}</b></div><i><em style="width:${reservePct.toFixed(1)}%"></em></i>${c.mutant ? `<small>Мутация: ${c.mutant}</small>` : ''}${c.isDeep ? '<small>◆ Глубокая жила</small>' : ''}</div>`);
+    const lifetime = c.reserveLifetimeSeconds;
+    const lifetimeLabel = lifetime === null ? 'Добыча остановлена' : lifetime >= 3600 ? `До истощения: ${fmt(lifetime / 3600, 1)} ч` : `До истощения: ${Math.ceil(lifetime / 60)} мин`;
+    parts.push(`<div class="cell-panel-resource"><div><span>РЕЗЕРВ МЕСТОРОЖДЕНИЯ</span><b>${fmt(c.reserve, 1)} / ${fmt(c.maxReserve, 1)}</b></div><i><em style="width:${reservePct.toFixed(1)}%"></em></i><small>${c.depletionPerSec > 0 ? `Расход резерва: ${fmt(c.depletionPerSec, 4)}/с · ` : ''}${lifetimeLabel}</small>${c.mutant ? `<small>Мутация: ${c.mutant}</small>` : ''}${c.geology ? `<small>Слой: ${({regolith:'Реголит',crust:'Кора',mantle:'Мантия',core:'Ядро'} as const)[c.geology.stratum]} · ${fmt(c.geology.depthMeters, 0)} м</small><small>Качество руды: ${{common:'Обычное',enriched:'Обогащённая', 'high-grade':'Высокое',exceptional:'Исключительное'}[c.geology.oreQuality]} · ${c.geology.qualityPct}%</small>` : ''}${c.isDeep ? '<small>◆ Глубокая жила</small>' : ''}</div>`);
+    if (c.miningOperations) {
+      const ops = c.miningOperations;
+      const factors = ops.factors.filter((factor) => Math.abs(factor.multiplier - 1) > 0.001)
+        .map((factor) => `<small>${factor.label}: ${fmt(factor.multiplier, 2)}×</small>`).join('');
+      parts.push(`<div class="cell-mining-ops"><b>⛏ ОПЕРАЦИОННЫЙ ПРОФИЛЬ</b><div class="cell-mining-ops-total">Совокупный множитель: ${fmt(ops.totalMultiplier, 2)}×</div>${factors || '<small>Базовые параметры добычи</small>'}<p>${ops.recommendation}</p></div>`);
+    }
     if (cooling) parts.push(`<div class="cell-panel-cooldown">◷ Реактивация через ${Math.ceil((c.cooldownUntil - game.clock.gameMsNow) / 1000)} с</div>`);
-    else parts.push(`<button class="cell-action-secondary" data-act="reactivate" data-pid="${pid}" data-cell="${c.id}">↻ РЕАКТИВИРОВАТЬ ЖИЛУ</button>`);
+    else if (c.reserve <= 0) parts.push(`<button class="cell-action-secondary" data-act="reactivate" data-pid="${pid}" data-cell="${c.id}">↻ ВОССТАНОВИТЬ МЕСТОРОЖДЕНИЕ</button>`);
+    else parts.push(`<div class="cell-panel-extraction">⛏ Месторождение активно</div>`);
   }
   if (c.type === 1 || c.type === 2) {
     const cooling = c.chargeCooldownUntil > game.clock.gameMsNow;
@@ -156,16 +167,6 @@ export function renderSnapshot(game: Game, root: HTMLElement): void {
   const s: GameSnapshot = game.snapshot();
   const active = s.planets.find((p) => p.id === s.activePlanetId) ?? s.planets[0];
   const wh = s.warehouse;
-  const logistics = s.logistics;
-  const logisticsRows = (Object.keys(RESOURCE_META) as LedgerResourceKey[]).filter((key) => Number.isFinite(cargoWeight(key))).map((key) => {
-    const globalAmount = s.resources[key] ?? 0;
-    const cargoAmount = logistics.cargo[key] ?? 0;
-    const depotAmount = logistics.depot[key] ?? 0;
-    const specialized = logistics.specializedResources.includes(key);
-    if (globalAmount <= 0 && cargoAmount <= 0 && depotAmount <= 0 && !specialized) return '';
-    const meta = RESOURCE_META[key];
-    return `<div class="logistics-row"><b>${iconSvg(RESOURCE_ICON_KEYS[key], 'legacy-icon logistics-svg-icon')} ${meta.name}${specialized ? ' ★' : ''}</b><small>Запас ${fmt(globalAmount, 2)} · трюм ${fmt(cargoAmount, 2)} · депо ${fmt(depotAmount, 2)}</small><div><button data-act="load-cargo" data-resource="${key}" ${globalAmount <= 0 || logistics.cargoMass >= logistics.cargoCapacity ? 'disabled' : ''}>Погрузить</button><button data-act="unload-cargo" data-resource="${key}" ${cargoAmount <= 0 ? 'disabled' : ''}>Выгрузить</button><button data-act="withdraw-depot" data-resource="${key}" ${depotAmount <= 0 ? 'disabled' : ''}>Забрать</button></div></div>`;
-  }).join('');
   // Этап 9.3 (Этап 7/8 ТЗ): дерево технологий и реактор — рендер только из снапшота,
   // команды — только через dispatch (STAGE1 §4); никаких карточек снизу, всё в колонке HUD.
   const techNameById = new Map(s.tech.nodes.map((n) => [n.id, n.name] as const));
@@ -214,6 +215,8 @@ export function renderSnapshot(game: Game, root: HTMLElement): void {
       <h2>🔍 Скан</h2>
       <div>Цена: <b>${s.scan.charge}⚡</b> (база ${s.scan.currentCost})</div>
       <div>Исследовано: ${active ? `${active.exploredCount}/${active.totalCount}` : '—'}</div>
+      ${active && active.geologicalSurvey.depositsScanned > 0 ? `<div class="geology-survey-card"><b>ГЕОЛОГИЧЕСКАЯ КАРТА</b><span>Месторождений: ${active.geologicalSurvey.depositsScanned} · активных: ${active.geologicalSurvey.activeDeposits}</span><span>Резерв: ${fmt(active.geologicalSurvey.reserve, 1)} / ${fmt(active.geologicalSurvey.capacity, 1)}</span><span>Слои: ${active.geologicalSurvey.byStratum.regolith} рег. · ${active.geologicalSurvey.byStratum.crust} кор. · ${active.geologicalSurvey.byStratum.mantle} мант. · ${active.geologicalSurvey.byStratum.core} яд.</span><span>Качество: ${active.geologicalSurvey.byQuality.common} обыч. · ${active.geologicalSurvey.byQuality.enriched} обог. · ${active.geologicalSurvey.byQuality['high-grade']} высок. · ${active.geologicalSurvey.byQuality.exceptional} исключ.</span></div>` : ''}
+      ${active && active.miningLogistics.deposits > 0 ? `<div class="mining-logistics-card"><b>ЛОГИСТИКА ДОБЫЧИ · ПРИОРИТЕТЫ</b><span>Месторождений: ${active.miningLogistics.deposits} · активных: ${active.miningLogistics.active} · распределение мощностей: ${active.miningLogistics.fleetAllocationPct}%</span>${active.miningLogistics.entries.slice(0, 5).map((entry) => `<div class="mining-logistics-row"><span><b>#${entry.cellId} ${entry.resource}</b><small>Приоритет ${entry.priority} · ${entry.reason}</small></span><span>${entry.status === 'active' ? `${entry.allocationPct}%` : entry.status === 'cooldown' ? 'ОЖИДАНИЕ' : entry.status === 'depleted' ? 'ИСЧЕРПАНО' : 'ЗАКРЫТО'}</span></div>`).join('')}<small>План распределения носит рекомендательный характер и не меняет добычу V1.</small></div>` : ''}
       <h2>🔋 Заряды <small>(сонар ${s.sonarCharges})</small></h2>
       <div>${s.charge ? `бафф +${(s.charge.pct * 100).toFixed(1)}% ⚡ · ${Math.ceil(s.charge.leftSec)}с${s.charge.sciPct > 0 ? ` · 🔬 +${(s.charge.sciPct * 100).toFixed(0)}%` : ''}` : 'нет активного баффа'}</div>
       <h2>🌌 Синтез</h2>
@@ -221,7 +224,7 @@ export function renderSnapshot(game: Game, root: HTMLElement): void {
       <h2>📡 Сонарная станция</h2>
       <div class="sonar-preview"><b>${s.sonar.targetName}</b> · биом: ${s.sonar.targetBiome}<br><small>Обнаруженные сигнатуры: ${s.sonar.targetResources.join(' · ') || 'неизвестны'}</small></div>
       ${s.unlockedPlanets.includes('krios') ? `<div class="sonar-state">Криос-9 открыт. ${s.sonar.bonusLeftMs > 0 ? `Бонус добычи ×${s.sonar.bonusMult.toFixed(2)} · точность ${s.sonar.bonusAccuracy}% · осталось ${Math.ceil(s.sonar.bonusLeftMs / 3600000)} ч.` : 'Активного сонарного бонуса нет.'}</div>` : `<div class="sonar-state">${s.sonar.available ? `Готово к запуску · стоимость ${s.sonar.cost}⚡` : `Требуется полностью исследовать Феррум и накопить ${s.sonar.cost}⚡. Сонар работает с Феррума.`}</div><button data-act="sonar" ${s.sonar.available ? '' : 'disabled'}>📡 Запустить глубокое сканирование</button>`}
-      ${s.sonar.nextPreview ? `<div class="sonar-preview"><b>Следующий сигнал · ${SIGNAL_META[s.sonar.nextPreview.signalClass][0]} ${SIGNAL_META[s.sonar.nextPreview.signalClass][1]}</b><br>${s.sonar.nextPreview.name} · ${s.sonar.nextPreview.biome} · ${s.sonar.nextPreview.geometry}<br><small>Сектор: ${s.sonar.nextPreview.sectorLabel}</small><br><small>Ресурсы: ${s.sonar.nextPreview.resources.join(' · ') || 'не обнаружены'}</small></div>${s.unlockedPlanets.includes('krios') ? `<div class="sonar-state">Открытие: ${s.sonar.discoveryCost.toLocaleString('ru-RU')} ⚡ + ${s.sonar.discoveryCharges} заряд(а) · Пересборка: ${s.sonar.rerollCost.toLocaleString('ru-RU')} ⚡ + 1 заряд · Осталось пересборок: ${s.sonar.rerollsRemaining}</div><button data-act="reroll" ${s.sonarCharges < 1 || (s.resources.energy ?? 0) < s.sonar.rerollCost || s.sonar.rerollsRemaining <= 0 ? 'disabled' : ''}>🔄 Пересобрать сигнал</button><button data-act="discover" ${s.sonarCharges < s.sonar.discoveryCharges || (s.resources.energy ?? 0) < s.sonar.discoveryCost || (s.sonar.nextPreview.signalClass === 'anomaly' && !s.sonar.anomalyGate.unlocked) ? 'disabled' : ''}>🔭 Открыть мир</button>${s.sonar.nextPreview.signalClass === 'anomaly' && !s.sonar.anomalyGate.unlocked ? `<div class="sonar-state">Аномальный барьер: миры ${s.sonar.anomalyGate.discoveredWorlds}/${s.sonar.anomalyGate.requiredWorlds}, рукава ${s.sonar.anomalyGate.discoveredArms}/${s.sonar.anomalyGate.requiredArms}, исследования ${s.sonar.anomalyGate.research}/${s.sonar.anomalyGate.requiredResearch}.</div>` : ''}` : `<button data-act="discover">🔭 Открыть этот мир</button>`}` : '<div class="sonar-state">Следующие миры станут доступны после открытия Криос-9.</div>'}
+      ${s.sonar.nextPreview ? `<div class="sonar-preview"><b>Следующий сигнал · ${SIGNAL_META[s.sonar.nextPreview.signalClass][0]} ${SIGNAL_META[s.sonar.nextPreview.signalClass][1]}</b><br>${s.sonar.nextPreview.name} · ${s.sonar.nextPreview.biome} · ${s.sonar.nextPreview.geometry}<br><small>Орбитальная зона: ${s.sonar.nextPreview.sectorLabel}</small><br><small>Ресурсы: ${s.sonar.nextPreview.resources.join(' · ') || 'не обнаружены'}</small></div>${s.unlockedPlanets.includes('krios') ? `<div class="sonar-state">Открытие: ${fmt(s.sonar.discoveryCost, 0)} ⚡ + ${s.sonar.discoveryCharges} заряд(а) · Пересборка: ${fmt(s.sonar.rerollCost, 0)} ⚡ + 1 заряд · Осталось пересборок: ${s.sonar.rerollsRemaining}</div><button data-act="reroll" ${s.sonarCharges < 1 || (s.resources.energy ?? 0) < s.sonar.rerollCost || s.sonar.rerollsRemaining <= 0 ? 'disabled' : ''}>🔄 Пересобрать сигнал</button><button data-act="discover" ${s.sonarCharges < s.sonar.discoveryCharges || (s.resources.energy ?? 0) < s.sonar.discoveryCost || (s.sonar.nextPreview.signalClass === 'anomaly' && !s.sonar.anomalyGate.unlocked) ? 'disabled' : ''}>🔭 Открыть мир</button>${s.sonar.nextPreview.signalClass === 'anomaly' && !s.sonar.anomalyGate.unlocked ? `<div class="sonar-state">Аномальный барьер: миры ${s.sonar.anomalyGate.discoveredWorlds}/${s.sonar.anomalyGate.requiredWorlds}, орбитальные зоны ${s.sonar.anomalyGate.discoveredArms}/${s.sonar.anomalyGate.requiredArms}, исследования ${s.sonar.anomalyGate.research}/${s.sonar.anomalyGate.requiredResearch}.</div>` : ''}` : `<button data-act="discover">🔭 Открыть этот мир</button>`}` : '<div class="sonar-state">Следующие миры станут доступны после открытия Криос-9.</div>'}
       <h2>🌌 Карта галактики <small>· обнаружено ${s.galaxy.discoveredCount}</small></h2>
       <div class="galaxy-progress"><span>Галактический рубеж: ${s.galaxy.milestone.current || '—'} / ${s.galaxy.milestone.next}</span><div class="galaxy-progress-track"><i style="width:${(s.galaxy.milestone.progress * 100).toFixed(1)}%"></i></div></div>
       <div class="galaxy-map" role="img" aria-label="Карта обнаруженных планет галактики">
@@ -253,13 +256,12 @@ export function renderSnapshot(game: Game, root: HTMLElement): void {
       <div class="anomaly-expeditions">${s.galaxy.anomalies.length ? s.galaxy.anomalies.map((site) => `<div class="progression-stage${site.resolved ? ' complete' : ''}"><b>${site.resolved ? '✓' : site.available ? '✧' : '🔒'} ${site.title} · ${site.planetName}</b><small>Уровень угрозы ${site.tier} · ${site.resolved ? 'экспедиция завершена' : site.available ? 'сигнал подтверждён' : 'ожидает предыдущую экспедицию'}</small><small>Цена: ${fmt(site.energyCost, 0)}⚡ + ${fmt(site.researchCost, 0)}🔬</small><small>Награда: ${site.reward.darkMatter} тёмной материи · ${site.reward.relic} реликтов · ${site.reward.essence} эссенции</small>${site.available && site.planetId === s.activePlanetId ? `<button data-act="anomaly-expedition" data-pid="${site.planetId}" ${((s.resources.energy ?? 0) < site.energyCost || (s.resources.research ?? 0) < site.researchCost) ? 'disabled' : ''}>Начать экспедицию</button>` : ''}</div>`).join('') : '<div class="sonar-state">Аномальные системы ещё не обнаружены. Ищите сигнатуры ✧.</div>'}</div>
       <h2>📜 Журнал экспедиции</h2>
       <div class="galaxy-history">${s.galaxy.nodes.filter((n) => n.discovered).sort((a,b) => (a.id === 'ferrum' ? -1 : a.id === 'krios' ? 0 : Number(a.id.replace('planet_','')) - Number(b.id.replace('planet_','')))).map((n) => { const m = SIGNAL_META[n.signalClass]; return `<div><b>${m[0]} ${n.name}</b><small>${n.biome} · ${n.geometryName} · рукав ${n.armId}</small></div>`; }).join('')}</div>
-      <h2>🚚 Межпланетная логистика</h2>
-      <div class="sonar-state">Трюм: ${fmt(logistics.cargoMass, 2)}/${fmt(logistics.cargoCapacity, 2)} т · Депо ${active?.name ?? '—'}: ${fmt(logistics.depotMass, 2)}/${fmt(logistics.depotCapacity, 2)} т</div>
-      <label class="logistics-amount">Количество <input id="logistics-amount" type="number" min="0.001" step="0.1" value="1" /></label>
-      <div class="logistics-rows">${logisticsRows || '<div class="sonar-state">Нет ресурсов для перевозки. Сначала накопите транспортируемые материалы.</div>'}</div>
-      <small>★ Специализация планеты: соответствующий ресурс занимает на 25% меньше места в локальном депо. Груз увеличивает стоимость перелёта.</small>
-      <h2>🏭 Склад · ур. ${wh.level}/${wh.maxLevel}</h2>
-      <div>Тонн/клетка: ${wh.tonsPerCell} · бонус ×${wh.bonusMult.toFixed(2)}</div>
+      <h2>📦 Планетарный склад · ур. ${wh.level}/${wh.maxLevel}</h2>
+      <div>Заполнено: ${fmt(wh.storedMass, 2)} / ${fmt(wh.storageCapacity, 2)} т · свободно ${fmt(wh.remainingCapacity, 2)} т</div>
+      <div class="warehouse-capacity-track"><i style="width:${wh.storageCapacity > 0 ? Math.min(100, wh.storedMass / wh.storageCapacity * 100).toFixed(1) : 0}%"></i></div>
+      <div>Вместимость: ${fmt(wh.tonsPerCell, 0)} т на исследованную клетку · бонус добычи ×${wh.bonusMult.toFixed(2)}</div>
+      <small>Запасы железа, криогена и редких ресурсов принадлежат этой планете. При переключении планет активируется её собственный склад.</small>
+      ${wh.remainingCapacity <= 0 ? '<div class="sonar-state">Склад заполнен · поступление локальных ресурсов приостановлено до освобождения места или расширения склада.</div>' : ''}
       ${wh.nextCost ? `<button data-act="warehouse">⬆ Склад: ${wh.nextCost.alloy}⛓ + ${fmt(wh.nextCost.energy, 0)}⚡</button>` : '<div>Максимум</div>'}
       <h2>🔬 Технологии</h2>
       <div class="tech-list">${techRows || '<div class="sonar-state">Исследований пока нет.</div>'}</div>
@@ -306,7 +308,7 @@ export function renderSnapshot(game: Game, root: HTMLElement): void {
     for (const node of nodes) {
       if (node instanceof HTMLElement && node.tagName === 'H2') {
         const heading = node.textContent ?? '';
-        if (/Карта галактики|Сонарная станция|Аномальные экспедиции|Журнал экспедиции|Межпланетная логистика/i.test(heading)) current = 'galaxy';
+        if (/Карта галактики|Сонарная станция|Аномальные экспедиции|Журнал экспедиции/i.test(heading)) current = 'galaxy';
         else if (/Технологии|Реактор/i.test(heading)) current = 'science';
         else if (/Склад|💾/i.test(heading)) current = 'meta';
         else if (/Скан|Заряды|Синтез/i.test(heading)) current = 'planet';
@@ -324,13 +326,13 @@ export function renderSnapshot(game: Game, root: HTMLElement): void {
  * подсказку. Рендерится в отдельный контейнер внутри sceneHost, поэтому не
  * участвует в потоке HUD и не превращается в «карточки внизу».
  */
-export function renderCellDock(game: Game, root: HTMLElement, selectedCellId: number | null): void {
+export function renderCellDock(game: Game, root: HTMLElement, selectedCellId: number | null, feedback = ''): void {
   const s: GameSnapshot = game.snapshot();
   const active = s.planets.find((p) => p.id === s.activePlanetId) ?? s.planets[0];
   if (!active) { patchDom(root, ''); return; }
   const cell = active.cells.find((c) => c.id === selectedCellId) ?? null;
   const markup = cell
-    ? `<aside class="cell-dock" aria-live="polite"><div class="cell-dock-head"><span>ПОВЕРХНОСТЬ · ${active.name}</span><button type="button" data-act="dock-close" aria-label="Снять выделение с клетки">×</button></div>${cellCard(game, active.id, cell, s.scan.charge, s.resources.energy ?? 0)}</aside>`
+    ? `<aside class="cell-dock" aria-live="polite"><div class="cell-dock-head"><span>ПОВЕРХНОСТЬ · ${active.name}</span><button type="button" data-act="dock-close" aria-label="Снять выделение с клетки">×</button></div>${cellCard(game, active.id, cell, s.scan.charge, s.resources.energy ?? 0)}${feedback ? `<div class="cell-action-feedback ${feedback.startsWith('!') ? 'is-error' : 'is-success'}" role="status">${feedback.replace(/^!/, '')}</div>` : ''}</aside>`
     : '<div class="scene-hint">Выберите клетку на поверхности · сканирование и развитие доступны непосредственно здесь</div>';
   patchDom(root, markup);
 }
@@ -416,7 +418,7 @@ function openLegacyModal(game: Game, kind: 'save' | 'settings' | 'about', onComm
     if (action === 'save') {
       const result = game.dispatch('save', {});
       const note = overlay.querySelector<HTMLElement>('.modal-note');
-      if (note) note.textContent = result.ok ? `Сохранено · ${result.value.sizeBytes.toLocaleString('ru-RU')} байт` : 'Ошибка сохранения';
+      if (note) note.textContent = result.ok ? `Сохранено · ${fmt(result.value.sizeBytes, 0)} байт` : 'Ошибка сохранения';
       onCommand?.(); return;
     }
     if (action === 'load') {
@@ -433,7 +435,7 @@ function openLegacyModal(game: Game, kind: 'save' | 'settings' | 'about', onComm
   });
   overlay.querySelector<HTMLInputElement>('#voronia-modal-import')?.addEventListener('change', (event) => {
     const input = event.target as HTMLInputElement; const file = input.files?.[0]; if (!file) return;
-    void file.text().then((payload) => { const result=game.dispatch('importSave',{payload}); const note=overlay.querySelector<HTMLElement>('.modal-note'); if(note) note.textContent=result.ok ? `Импортировано · ${result.value.sizeBytes.toLocaleString('ru-RU')} байт` : 'Импорт отклонён: файл повреждён или имеет неподдерживаемую структуру'; input.value=''; onCommand?.(); });
+    void file.text().then((payload) => { const result=game.dispatch('importSave',{payload}); const note=overlay.querySelector<HTMLElement>('.modal-note'); if(note) note.textContent=result.ok ? `Импортировано · ${fmt(result.value.sizeBytes, 0)} байт` : 'Импорт отклонён: файл повреждён или имеет неподдерживаемую структуру'; input.value=''; onCommand?.(); });
   });
   if (kind === 'settings') {
     const scale = overlay.querySelector<HTMLSelectElement>('#voronia-ui-scale')!;
@@ -476,7 +478,7 @@ function activateLegacyTab(root: HTMLElement, tab: 'planet' | 'galaxy' | 'scienc
 }
 
 /** Делегирование кликов → команды Game (единственная точка входа UI). */
-export function bindCommands(game: Game, root: HTMLElement, onCommand?: () => void, onCloseDock?: () => void): () => void {
+export function bindCommands(game: Game, root: HTMLElement, onCommand?: () => void, onCloseDock?: () => void, onCellAction?: (feedback: { readonly ok: boolean; readonly text: string }) => void): () => void {
   const handler = (ev: Event): void => {
     const target = ev.target as HTMLElement | null;
     if (!target) return;
@@ -514,24 +516,37 @@ export function bindCommands(game: Game, root: HTMLElement, onCommand?: () => vo
     const pid = btn.dataset['pid'] ?? game.activePlanetId();
     const cellId = Number(btn.dataset['cell'] ?? -1);
     switch (act) {
-      case 'scan':
-        game.dispatch('scanCell', { pid, cellId });
+      case 'scan': {
+        const result = game.dispatch('scanCell', { pid, cellId });
+        onCellAction?.(cellActionFeedback(act, result));
         break;
-      case 'upgrade':
-        game.dispatch('upgradeCell', { pid, cellId });
+      }
+      case 'upgrade': {
+        const result = game.dispatch('upgradeCell', { pid, cellId });
+        onCellAction?.(cellActionFeedback(act, result));
         break;
-      case 'reactivate':
-        game.dispatch('reactivateCell', { pid, cellId });
+      }
+      case 'reactivate': {
+        const result = game.dispatch('reactivateCell', { pid, cellId });
+        onCellAction?.(cellActionFeedback(act, result));
         break;
-      case 'discharge':
-        game.dispatch('dischargeCell', { pid, cellId });
+      }
+      case 'discharge': {
+        const result = game.dispatch('dischargeCell', { pid, cellId });
+        onCellAction?.(cellActionFeedback(act, result));
         break;
-      case 'anomaly':
-        game.dispatch('upgradeAnomalyCell', { pid, cellId });
+      }
+      case 'anomaly': {
+        const result = game.dispatch('upgradeAnomalyCell', { pid, cellId });
+        onCellAction?.(cellActionFeedback(act, result));
         break;
+      }
       case 'branch': {
         const br = btn.dataset['branch'];
-        if (br === 'power' || br === 'resonance' || br === 'synth') game.dispatch('chooseAnomalyBranch', { pid, cellId, branch: br });
+        if (br === 'power' || br === 'resonance' || br === 'synth') {
+          const result = game.dispatch('chooseAnomalyBranch', { pid, cellId, branch: br });
+          onCellAction?.(cellActionFeedback(act, result));
+        }
         break;
       }
       case 'warehouse':
@@ -549,24 +564,6 @@ export function bindCommands(game: Game, root: HTMLElement, onCommand?: () => vo
       case 'anomaly-expedition':
         game.dispatch('resolveAnomaly', { planetId: btn.dataset['pid'] ?? '' });
         break;
-      case 'load-cargo': {
-        const amount = Number(root.querySelector<HTMLInputElement>('#logistics-amount')?.value ?? 0);
-        const result = game.dispatch('loadCargo', { resource: btn.dataset['resource'] ?? '', amount });
-        persistenceNotice = result.ok ? `Погружено ${result.value.amount} ${result.value.resource} · трюм ${result.value.cargoMass.toFixed(2)} т` : `Погрузка отклонена: ${result.detail ?? result.reason}`;
-        break;
-      }
-      case 'unload-cargo': {
-        const amount = Number(root.querySelector<HTMLInputElement>('#logistics-amount')?.value ?? 0);
-        const result = game.dispatch('unloadCargo', { resource: btn.dataset['resource'] ?? '', amount });
-        persistenceNotice = result.ok ? `Выгружено ${result.value.amount} ${result.value.resource} в депо ${result.value.planetId}` : `Выгрузка отклонена: ${result.detail ?? result.reason}`;
-        break;
-      }
-      case 'withdraw-depot': {
-        const amount = Number(root.querySelector<HTMLInputElement>('#logistics-amount')?.value ?? 0);
-        const result = game.dispatch('withdrawDepot', { resource: btn.dataset['resource'] ?? '', amount });
-        persistenceNotice = result.ok ? `Из депо возвращено ${result.value.amount} ${result.value.resource} в общий запас` : `Операция отклонена: ${result.detail ?? result.reason}`;
-        break;
-      }
       case 'travel':
         game.dispatch('travelToPlanet', { destinationId: pid });
         break;
@@ -589,7 +586,7 @@ export function bindCommands(game: Game, root: HTMLElement, onCommand?: () => vo
         return;
       case 'save': {
         const res = game.dispatch('save', {});
-        persistenceNotice = res.ok ? `Сохранено · ${res.value.sizeBytes.toLocaleString('ru-RU')} байт` : 'Ошибка сохранения';
+        persistenceNotice = res.ok ? `Сохранено · ${fmt(res.value.sizeBytes, 0)} байт` : 'Ошибка сохранения';
         break;
       }
       case 'load': {
@@ -623,7 +620,7 @@ export function bindCommands(game: Game, root: HTMLElement, onCommand?: () => vo
     if (!file) return;
     void file.text().then((payload) => {
       const result = game.dispatch('importSave', { payload });
-      persistenceNotice = result.ok ? `Импортировано · ${result.value.sizeBytes.toLocaleString('ru-RU')} байт` : 'Импорт отклонён: файл повреждён или имеет неподдерживаемую структуру';
+      persistenceNotice = result.ok ? `Импортировано · ${fmt(result.value.sizeBytes, 0)} байт` : 'Импорт отклонён: файл повреждён или имеет неподдерживаемую структуру';
       input.value = '';
       onCommand?.();
     }).catch(() => { persistenceNotice = 'Не удалось прочитать файл'; input.value = ''; onCommand?.(); });

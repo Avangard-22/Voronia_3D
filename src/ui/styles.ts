@@ -2,8 +2,11 @@
  * ui/styles.ts — инлайновые стили среза (без внешних ресурсов: single-file сборка ≤6 МБ, ADR/ТЗ).
  */
 const CSS = `
-:root { color-scheme: dark; }
-body { margin: 0; background: #0b0f14; color: #dfe7ee; font: 14px/1.45 system-ui, sans-serif; }
+:root { color-scheme: dark; --v2-ui-font-size: 13px; }
+/* Stage 10.0.6: one typography scale across HUD, dialogs, controls and mobile UI. */
+body, body *, #app, #app *, #game-hud, #game-hud *, [role="dialog"], [role="dialog"] * { font-size: var(--v2-ui-font-size) !important; }
+#app svg, #game-hud svg { font-size: inherit; }
+body { margin: 0; background: #0b0f14; color: #dfe7ee; font: var(--v2-ui-font-size)/1.45 system-ui, sans-serif; }
 #app { max-width: 1100px; margin: 0 auto; padding: 12px; }
 #game-scene { contain: layout paint; }
 #game-hud { min-width: 0; }
@@ -103,6 +106,7 @@ button:hover { background: #1d2b3a; }
 @media (max-width:600px) { .title-screen { padding:18px 16px 22px; } .title-topline,.title-bottomline { font-size:8px; letter-spacing:.12em; } .title-logo { letter-spacing:.12em; text-indent:.12em; } .title-subtitle { letter-spacing:.22em; } .title-actions { flex-direction:column; align-items:center; } .title-actions button { width:min(100%,320px); } .title-lore br { display:none; } }
 @media (prefers-reduced-motion:reduce) { .title-actions button,.title-screen-leaving { transition:none; } }
 @media (max-width: 600px) { #app { padding: 8px; } .scene3d { width: min(76vw, 54vh, 420px); height: min(76vw, 54vh, 420px); } .galaxy3d-scene { height:min(62vh,500px); min-height:280px; } .galaxy-node-panel { left:7px; bottom:7px; width:min(310px,calc(100% - 64px)); padding:10px; } .galaxy-panel-grid { gap:4px; } .galaxy-nav-actions { margin-right:26px; } .galaxy-nav-actions button { font-size:8px; } .hud { gap: 12px; } .hud .col { min-width: min(100%, 280px); flex: 1 1 100%; } .cell-dock { width: min(200px, 46%); } button { min-height: 34px; } }
+.geology-survey-card { display:flex; flex-direction:column; gap:4px; margin:7px 0; padding:8px 9px; border:1px solid rgba(93,166,191,.32); border-radius:8px; background:linear-gradient(120deg,rgba(24,65,79,.42),rgba(17,35,49,.35)); color:#a9c7d5; } .geology-survey-card b { color:#82d6e9; letter-spacing:.08em; } .geology-survey-card span { color:#a4bdc9; }
 .sonar-preview { padding: 7px 9px; margin: 5px 0; border: 1px solid #28546a; border-radius: 7px; background: rgba(16,43,58,.45); color: #bdeaff; font-size: 12px; } .sonar-preview small { color: #8caebe; } .sonar-state { font-size: 12px; color: #9ec3d6; margin: 5px 0; }
 .sonar-overlay { position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center; padding: 16px; background: rgba(1,6,12,.94); } .sonar-dialog { width: min(100%, 520px); padding: 20px; border: 1px solid #39718a; border-radius: 14px; background: linear-gradient(145deg,#0b1b29,#071018); box-shadow: 0 20px 80px #000; text-align: center; } .sonar-dialog h2 { color: #4ddcff; letter-spacing: 1.5px; } .sonar-dialog p,.sonar-help { color: #8caebe; font-size: 12px; } .sonar-round { margin: 18px 0 10px; color: #4ddcff; font: 700 12px monospace; } .sonar-track { position: relative; height: 34px; margin: 18px 0; border: 1px solid #2b6178; border-radius: 8px; background: linear-gradient(90deg,#401b27,#263a36 38%,#235a48 50%,#263a36 62%,#401b27); overflow: hidden; } .sonar-center { position: absolute; left: 50%; top: 0; height: 100%; width: 2px; background: #eafff6; box-shadow: 0 0 12px #5cf2b0; } .sonar-cursor { position: absolute; top: 3px; width: 5px; height: 26px; margin-left: -2px; border-radius: 3px; background: #4ddcff; box-shadow: 0 0 12px #4ddcff; } .sonar-readout { font: 900 32px monospace; color: #4ddcff; margin: 10px; } .sonar-stop { width: 100%; min-height: 48px; color: white; border-color: #4ddcff; background: #12354a; font-weight: 800; letter-spacing: 1px; }
 .fps { position: absolute; top: 6px; right: 8px; font-size: 11px; color: #7fe3a8; background: rgba(8, 14, 20, 0.55); padding: 2px 6px; border-radius: 4px; pointer-events: none; }
@@ -127,14 +131,7 @@ button:hover { background: #1d2b3a; }
 .gnode { font-size: 12px; color: #cfe3f2; }
 .gnode.undiscovered { color: #6f879b; }
 .gnode small { color: #9fb4c6; }
-.logistics-amount { display:flex; align-items:center; gap:8px; margin:6px 0; color:#9ec3d6; font-size:12px; }
-.logistics-amount input { width:90px; background:#0b1721; color:#dcecf5; border:1px solid #355268; border-radius:5px; padding:5px; }
-.logistics-rows { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:6px; margin:7px 0; }
-.logistics-row { border:1px solid #29495b; border-radius:7px; padding:7px; background:rgba(9,23,34,.72); }
-.logistics-row b,.logistics-row small { display:block; }
-.logistics-row small { color:#91adbb; font-size:10px; margin:3px 0 5px; }
-.logistics-row div { display:flex; gap:4px; flex-wrap:wrap; }
-.logistics-row button { font-size:11px; padding:3px 6px; }
+.warehouse-capacity-track{height:7px;overflow:hidden;border-radius:99px;background:rgba(105,150,170,.18);margin:6px 0 8px}.warehouse-capacity-track i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#42c5a5,#e5bf65);transition:width .2s ease}
 
 .galaxy-progression { display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:7px; margin:7px 0; }
 .progression-stage { border:1px solid #29495b; border-radius:8px; padding:8px; background:rgba(9,23,34,.72); }
@@ -207,6 +204,10 @@ button:hover { background: #1d2b3a; }
 .cell-panel-stats small,.cell-panel-stats b { display:block; }
 .cell-panel-stats small { font-size:7px; letter-spacing:.05em; }
 .cell-panel-stats b { margin-top:3px; color:#e1f4fc; font:700 12px ui-monospace,monospace; }
+.cell-geological-reward { display:flex; flex-direction:column; gap:5px; margin:2px 0 8px; padding:10px 12px; border:1px solid rgba(103,190,220,.28); border-radius:10px; background:linear-gradient(110deg,rgba(42,111,139,.16),rgba(37,65,91,.12)); }
+.cell-geological-reward>span { color:#7898aa; font:700 8px/1.5 ui-monospace,monospace; letter-spacing:.1em; }
+.cell-geological-reward>b { display:flex; align-items:center; gap:7px; color:#d7edf5; font-size:12px; }
+.cell-geological-reward>small { color:#9eb5c1; font-size:9px; }
 .cell-panel-resource { padding:8px; border:1px solid rgba(76,119,141,.27); background:rgba(13,30,42,.56); }
 .cell-panel-resource>div { display:flex; justify-content:space-between; gap:6px; align-items:center; }
 .cell-panel-resource b { color:#ccebf6; font:700 10px ui-monospace,monospace; }
@@ -219,6 +220,7 @@ button:hover { background: #1d2b3a; }
 .cell-action-secondary { border-color:rgba(99,148,171,.46); background:rgba(15,38,52,.78); color:#b9d9e8; }
 .cell-action-panel button:disabled { opacity:.42; cursor:not-allowed; }
 .cell-panel-warning { color:#e6a86e; font-size:9px; text-align:right; }
+.cell-panel-extraction { padding:7px 8px; border:1px solid rgba(67,166,139,.25); background:rgba(20,64,55,.2); color:#8edbc3; font-size:10px; text-align:center; }
 .cell-panel-cooldown { padding:8px; border:1px solid rgba(181,139,76,.3); background:rgba(64,44,19,.25); color:#e3c28a; font-size:10px; text-align:center; }
 .cell-panel-anomaly { padding:7px 8px; border-left:2px solid var(--anomaly-color,#b58ce8); background:rgba(50,31,67,.28); color:var(--anomaly-color,#cba8f0); font-size:10px; }
 .cell-panel-branch { display:grid; gap:5px; }
@@ -543,6 +545,90 @@ button:focus-visible, select:focus-visible, input:focus-visible { outline:2px so
 }
 
 
+/* Stage 9.12.1 — readable orbital palette + compact mobile composition. */
+:root {
+  color-scheme: dark;
+  --space-0:#071321; --space-1:#102638; --panel-glass:rgba(13,35,49,.88);
+  --line-soft:rgba(132,190,210,.34); --text-main:#e5f3f6; --text-muted:#9bb9c5;
+  --accent-cyan:#73d9e8; --accent-gold:#f0c36e;
+}
+body { background:radial-gradient(ellipse at 50% 42%,#142f43 0%,#091827 58%,#050d18 100%); color:var(--text-main); }
+button { border-color:rgba(119,178,199,.48); background:linear-gradient(180deg,rgba(31,61,77,.94),rgba(13,34,49,.96)); color:#e2f5f8; }
+.hud-resource-chip { background:linear-gradient(145deg,rgba(23,54,70,.94),rgba(9,27,41,.94)); border-color:var(--resource-accent,rgba(119,178,199,.45)); box-shadow:inset 0 1px rgba(220,248,255,.05); }
+.hud-resource-chip[data-resource-chip="energy"] { --resource-accent:#e7b957; }
+.hud-resource-chip[data-resource-chip="iron"],.hud-resource-chip[data-resource-chip="steel"] { --resource-accent:#aebdca; }
+.hud-resource-chip[data-resource-chip="kriogen"],.hud-resource-chip[data-resource-chip="crystals"],.hud-resource-chip[data-resource-chip="silicon"] { --resource-accent:#68d5e8; }
+.hud-resource-chip[data-resource-chip="research"],.hud-resource-chip[data-resource-chip="essence"] { --resource-accent:#b89ae9; }
+.hud-resource-chip[data-resource-chip="dust"],.hud-resource-chip[data-resource-chip="darkMatter"] { --resource-accent:#c18de0; }
+.hud-resource-chip[data-resource-chip="uranium"],.hud-resource-chip[data-resource-chip="helium3"] { --resource-accent:#9bd68c; }
+.hud-resource-value { color:#f0f8fa; }
+.hud-resource-rate { color:#9cdbb7; }
+.legacy-bottom-nav { background:linear-gradient(180deg,rgba(20,48,64,.97),rgba(8,24,37,.98)); border-color:rgba(119,190,211,.58); }
+.legacy-nav-panel,.cell-dock,.legacy-modal { background:linear-gradient(145deg,rgba(20,48,64,.96),rgba(8,23,36,.96)); border-color:rgba(115,185,207,.55); }
+.cell-action-panel { background:linear-gradient(145deg,rgba(21,54,68,.96),rgba(9,27,41,.96)); }
+
+@media (max-width:700px) {
+  /* Keep the world visible: a slim resource rail, not a full-width stacked header. */
+  #app.game-mode > h1 { display:none; }
+  #app.game-mode #game-hud > .legacy-resource-hud {
+    top:calc(5px + env(safe-area-inset-top)); left:7px; right:7px; width:auto;
+    display:grid; grid-template-columns:minmax(76px,.8fr) minmax(0,2.2fr); gap:4px 6px;
+    padding:6px; border:1px solid rgba(119,190,211,.48); border-radius:13px;
+    background:linear-gradient(145deg,rgba(14,39,55,.94),rgba(6,19,31,.92));
+    box-shadow:0 8px 28px rgba(0,0,0,.28); backdrop-filter:blur(12px);
+  }
+  #app.game-mode .hud-planet-context { grid-column:1; grid-row:1; min-width:0; max-width:none; border:0; padding:2px; }
+  #app.game-mode .hud-planet-context b { max-width:100%; font-size:12px; }
+  #app.game-mode .hud-quick-actions { grid-column:2; grid-row:1; justify-content:flex-end; margin:0; gap:4px; }
+  #app.game-mode .hud-window-actions { grid-column:1 / -1; grid-row:2; justify-content:flex-end; margin:0; }
+  #app.game-mode .hud-resource-track { grid-column:1 / -1; grid-row:3; display:flex; flex-wrap:nowrap; overflow-x:auto; width:100%; gap:5px; padding:2px 0; scrollbar-width:none; }
+  #app.game-mode .hud-resource-track::-webkit-scrollbar { display:none; }
+  #app.game-mode .hud-resource-chip { flex:1 0 100px; min-height:34px; justify-content:center; border-radius:9px; }
+  #app.game-mode #game-hud > .hud {
+    top:auto; bottom:calc(72px + env(safe-area-inset-bottom)); left:7px; right:7px; width:auto;
+    max-height:min(48dvh,390px); overflow:auto; border:1px solid rgba(119,190,211,.55);
+    border-radius:15px; padding:10px; background:rgba(10,29,43,.94); backdrop-filter:blur(14px);
+    box-shadow:0 12px 34px rgba(0,0,0,.4);
+  }
+  #app.game-mode .cell-dock {
+    top:auto; bottom:calc(72px + env(safe-area-inset-bottom)); left:7px; right:7px; width:auto;
+    max-height:min(42dvh,330px); overflow:auto; border-radius:15px; padding:10px;
+  }
+  #app.game-mode .scene-switch { bottom:calc(68px + env(safe-area-inset-bottom)); z-index:11; }
+  #app.game-mode .view-controls { right:10px; bottom:calc(126px + env(safe-area-inset-bottom)); }
+  #app.game-mode .fps { bottom:calc(166px + env(safe-area-inset-bottom)); }
+  #app.game-mode .scene-hint { bottom:calc(118px + env(safe-area-inset-bottom)); max-width:calc(100vw - 24px); white-space:normal; text-align:center; }
+  #app.game-mode .legacy-bottom-nav { bottom:max(5px,env(safe-area-inset-bottom)); }
+  #app.game-mode .legacy-bottom-nav button { min-height:48px; font-size:8px; }
+  #app.game-mode .legacy-bottom-nav button span { font-size:18px; }
+  #app.game-mode .scene3d:not(.title-backdrop) { width:min(92vw,58dvh); height:min(92vw,58dvh); max-width:100vw; max-height:58dvh; }
+  #app.game-mode .legacy-modal { width:calc(100vw - 24px); max-height:calc(100dvh - 30px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); border-radius:16px; }
+}
+@media (max-width:390px) {
+  #app.game-mode .hud-resource-chip { flex-basis:88px; gap:4px; padding-inline:4px; }
+  #app.game-mode .hud-resource-value { font-size:11px; }
+  #app.game-mode .hud-resource-rate { font-size:9px; }
+  #app.game-mode .hud-quick-actions button { width:32px; min-width:30px; height:32px; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  #app.game-mode #game-hud > .legacy-resource-hud,#app.game-mode #game-hud > .hud,#app.game-mode .cell-dock { backdrop-filter:none; background:#102638; }
+}
+
+
+/* Stage 10.0.2 — explicit feedback for direct surface actions. */
+.cell-action-feedback { margin-top:8px; padding:8px 9px; border-radius:6px; font-size:11px; line-height:1.4; border:1px solid rgba(92,205,164,.35); background:rgba(34,112,86,.16); color:#a5f0d0; }
+.cell-action-feedback.is-error { border-color:rgba(255,135,117,.42); background:rgba(140,48,43,.18); color:#ffc0b5; }
+@media (max-width:600px) { .cell-action-feedback { font-size:10px; padding:7px; } }
+
+
+/* Stage 10.0.8 — mining operation diagnostics */
+.cell-mining-ops { display:flex; flex-direction:column; gap:5px; margin:7px 0; padding:9px 10px; border:1px solid rgba(115,169,205,.25); border-radius:9px; background:rgba(32,65,88,.18); color:#b8d0dc; }
+.cell-mining-ops>b { color:#8fc4d9; letter-spacing:.06em; }
+.cell-mining-ops-total { color:#d9edf4; }
+.cell-mining-ops p { margin:2px 0 0; color:#a9c1cb; line-height:1.4; }
+
+
+.mining-logistics-card{display:flex;flex-direction:column;gap:5px;margin:7px 0;padding:8px 9px;border:1px solid rgba(126,190,132,.3);border-radius:8px;background:linear-gradient(120deg,rgba(34,70,52,.36),rgba(17,35,49,.35));color:#b8d3c1}.mining-logistics-card>b{color:#a5e0b4;letter-spacing:.06em}.mining-logistics-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(150,190,160,.12)}.mining-logistics-row span:first-child{display:flex;flex-direction:column;gap:2px}.mining-logistics-row small{color:#9bb7a5}.mining-logistics-row>span:last-child{font-weight:700;color:#c8e8d0;white-space:nowrap}
 `;
 
 export function bindStyles(doc: Document = document): void {
@@ -552,3 +638,4 @@ export function bindStyles(doc: Document = document): void {
   style.textContent = CSS;
   doc.head.appendChild(style);
 }
+

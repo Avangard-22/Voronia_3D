@@ -1,4 +1,4 @@
-/** Stage 7.0 / Этап 9.0 — Three.js-сцена галактики.
+/** Stage 7.0 / Этап 9.0 — Three.js-сцена планетарной системы (историческое имя модуля galaxyScene).
  * Игровые узлы и рёбра поступают только из PlanetaryGraph; звёздные системы — из карты
  * `galaxy/starMap.ts`. Рендерер ничего не генерирует сам (ADR-019, R2/слои).
  */
@@ -100,84 +100,6 @@ function makeStarField(count: number, radius: number): THREE.Points {
 }
 
 
-/** Объёмные газопылевые облака. Это только фоновые эффекты, не игровые объекты. */
-function makeNebulaClouds(radius: number, count: number): THREE.Points {
-  const positions = new Float32Array(count * 3);
-  const colors = new Float32Array(count * 3);
-  const random = seeded(0x6e8b1a);
-  const color = new THREE.Color();
-  for (let i = 0; i < count; i++) {
-    const arm = Math.floor(random() * 4);
-    const t = 0.12 + random() * 0.86;
-    const angle = arm * Math.PI * 0.5 + t * Math.PI * 2.7 + (random() - 0.5) * 0.52;
-    const radialSpread = (random() + random() + random() - 1.5) * radius * (0.018 + t * 0.035);
-    const r = radius * t + radialSpread;
-    const vertical = (random() + random() + random() - 1.5) * radius * (0.008 + t * 0.025);
-    positions[i * 3] = Math.cos(angle) * r;
-    positions[i * 3 + 1] = vertical;
-    positions[i * 3 + 2] = Math.sin(angle) * r;
-    const hue = random() < 0.58 ? 0.76 + random() * 0.08 : 0.49 + random() * 0.09;
-    color.setHSL(hue, 0.58, 0.32 + random() * 0.2);
-    colors[i * 3] = color.r; colors[i * 3 + 1] = color.g; colors[i * 3 + 2] = color.b;
-  }
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-  return new THREE.Points(geometry, new THREE.PointsMaterial({ size: 0.22, vertexColors: true, transparent: true, opacity: 0.18, blending: THREE.AdditiveBlending, sizeAttenuation: true, depthWrite: false }));
-}
-
-/** Небольшие скопления звёзд вдоль рукавов, не связанные с PlanetaryGraph. */
-function makeStarClusters(radius: number, count: number): THREE.Points {
-  const positions = new Float32Array(count * 3);
-  const colors = new Float32Array(count * 3);
-  const random = seeded(0xc1a57e);
-  const color = new THREE.Color();
-  for (let i = 0; i < count; i++) {
-    const arm = i % 4;
-    const t = 0.18 + random() * 0.78;
-    const angle = arm * Math.PI * 0.5 + t * Math.PI * 2.7;
-    const r = radius * t + (random() + random() - 1) * radius * 0.045;
-    positions[i * 3] = Math.cos(angle) * r + (random() - 0.5) * radius * 0.035;
-    positions[i * 3 + 1] = (random() - 0.5) * radius * 0.055;
-    positions[i * 3 + 2] = Math.sin(angle) * r + (random() - 0.5) * radius * 0.035;
-    color.setHSL(0.52 + random() * 0.13, 0.2 + random() * 0.25, 0.72 + random() * 0.26);
-    colors[i * 3] = color.r; colors[i * 3 + 1] = color.g; colors[i * 3 + 2] = color.b;
-  }
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-  return new THREE.Points(geometry, new THREE.PointsMaterial({ size: 0.035, vertexColors: true, transparent: true, opacity: 0.86, sizeAttenuation: true, depthWrite: false }));
-}
-
-/** Фоновые спиральные рукава — визуальная структура, игровые системы на них не создаются. */
-function makeSpiralArms(radius: number): THREE.Points {
-  const arms = 4;
-  const perArm = 720;
-  const positions = new Float32Array(arms * perArm * 3);
-  const colors = new Float32Array(positions.length);
-  const random = seeded(0x5a17a1);
-  const color = new THREE.Color();
-  let cursor = 0;
-  for (let arm = 0; arm < arms; arm++) {
-    for (let i = 0; i < perArm; i++) {
-      const t = 0.08 + (i / (perArm - 1)) * 0.94;
-      const r = radius * t;
-      const angle = arm * (Math.PI * 2 / arms) + t * Math.PI * 2.7 + (random() - 0.5) * 0.16;
-      const spread = (random() - 0.5) * (0.18 + t * 0.55);
-      positions[cursor] = Math.cos(angle) * (r + spread);
-      positions[cursor + 1] = (random() - 0.5) * (0.12 + t * 0.2);
-      positions[cursor + 2] = Math.sin(angle) * (r + spread);
-      color.setHSL(0.53 + random() * 0.08, 0.55, 0.28 + random() * 0.34);
-      colors[cursor] = color.r; colors[cursor + 1] = color.g; colors[cursor + 2] = color.b;
-      cursor += 3;
-    }
-  }
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-  return new THREE.Points(geometry, new THREE.PointsMaterial({ size: 0.035, vertexColors: true, transparent: true, opacity: 0.48, sizeAttenuation: true, depthWrite: false }));
-}
-
 function nodeColor(node: GalaxyRenderNode): THREE.Color {
   if (node.active) return new THREE.Color('#ffd36a');
   if (!node.discovered) return new THREE.Color('#263b50');
@@ -220,24 +142,16 @@ export function createGalaxyViewer(canvas: HTMLCanvasElement, initial: GalaxyRen
     camera.lookAt(target);
   };
   scene.add(new THREE.AmbientLight(0x9bbbd0, 0.55));
-  // Этап 9.2: центр галактики — одна звезда-аналог Солнца, поэтому свет ядра тёплый.
+  // Локальный свет центральной звезды активной планетарной системы.
   const coreLight = new THREE.PointLight(0xffcf9a, 2.6, 90);
   coreLight.position.set(0, 0, 0);
   scene.add(coreLight);
-  // Этап 9.0: декорации диска строятся от фактического радиуса карты звёздных систем,
-  // а не от константы 18 — иначе галактика выглядит пустой, а системы сбиваются в точку в центре.
-  // Этап 9.2: прежние «core» (бледная сфера 0.075) и «coreGlow» (синяя сфера 0.26 диска)
-  // давали на скриншоте серую кляксу, на которую налипали системы. Оставлено одно
-  // компактное тёплое гало: сама звезда ядра рисуется инстансом системы sys:core.
-  const coreHalo = new THREE.Mesh(new THREE.SphereGeometry(discRadius * 0.085, 24, 16), new THREE.MeshBasicMaterial({ color: '#ffbf70', transparent: true, opacity: 0.06, depthWrite: false, blending: THREE.AdditiveBlending }));
-  scene.add(coreHalo);
-  const galaxyRadius = discRadius * 1.12;
+  // Локальный фон системы: только глубокий космос, без спирального диска,
+  // рукавов, скоплений дальних систем и искусственного центрального ореола.
   const visualBudget = galaxyVisualBudget(window.innerWidth, window.devicePixelRatio || 1);
-  const spiralArms = makeSpiralArms(galaxyRadius);
-  const nebulaClouds = makeNebulaClouds(galaxyRadius, visualBudget.nebulaPoints);
-  const starClusters = makeStarClusters(galaxyRadius, visualBudget.clusterStars);
-  const starField = makeStarField(Math.max(900, Math.floor(visualBudget.nebulaPoints * 0.9)), Math.max(30, discRadius * 4.2));
-  scene.add(spiralArms, nebulaClouds, starClusters, starField);
+  const starField = makeStarField(Math.max(900, Math.floor(visualBudget.nebulaPoints * 0.9)), 46);
+  const deepSpaceDust = makeDeepSpaceDust(Math.max(180, Math.floor(visualBudget.nebulaPoints * 0.16)), 34);
+  scene.add(starField, deepSpaceDust);
 
   let nodeMesh: THREE.InstancedMesh | null = null;
   let systemCoreMesh: THREE.InstancedMesh | null = null;
@@ -365,13 +279,13 @@ export function createGalaxyViewer(canvas: HTMLCanvasElement, initial: GalaxyRen
     starGlowMesh.computeBoundingSphere();
     scene.add(starMesh, starGlowMesh);
 
-    // ——— орбитальные кольца: один LineSegments на всю галактику ———
+    // ——— орбитальные кольца: один LineSegments на активную систему ———
     const ringPositions: number[] = [];
     const ringColors: number[] = [];
     let planetTotal = 0;
     for (const system of systems) {
       for (const orbit of system.orbits) {
-        planetTotal += 1;
+        if (orbit.revealed) planetTotal += 1;
         const tint = orbit.status === 'bound' ? BOUND_ORBIT_COLOR : ORBIT_RING_COLOR;
         for (let segment = 0; segment < ORBIT_SEGMENTS; segment++) {
           const a0 = (segment / ORBIT_SEGMENTS) * Math.PI * 2;
@@ -392,23 +306,28 @@ export function createGalaxyViewer(canvas: HTMLCanvasElement, initial: GalaxyRen
     scene.add(orbitLines);
 
     // ——— планеты на орбитах ———
-    systemPlanetMesh = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 10, 8), new THREE.MeshBasicMaterial({ vertexColors: true }), Math.max(1, planetTotal));
-    systemPlanetMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-    let cursor = 0;
-    for (const system of systems) {
-      for (const orbit of system.orbits) {
-        systemPlanetMesh.setColorAt(cursor, tmpColor.set(orbit.color));
-        planetInstances.push({
-          systemX: system.x, systemY: system.y, systemZ: system.z,
-          radius: orbit.radius, eccentricity: orbit.eccentricity, inclination: orbit.inclination,
-          phase: orbit.phase, periodDays: orbit.periodDays, size: orbit.size,
-        });
-        cursor += 1;
+    // Нулевой InstancedMesh с искусственным одним экземпляром рисовал чёрную точку
+    // в центре системы. Планетарные тела создаются только для реально открытых орбит.
+    if (planetTotal > 0) {
+      systemPlanetMesh = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 16, 12), new THREE.MeshBasicMaterial({ vertexColors: true }), planetTotal);
+      systemPlanetMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      let cursor = 0;
+      for (const system of systems) {
+        for (const orbit of system.orbits) {
+          if (!orbit.revealed) continue;
+          systemPlanetMesh.setColorAt(cursor, tmpColor.set(orbit.color));
+          planetInstances.push({
+            systemX: system.x, systemY: system.y, systemZ: system.z,
+            radius: orbit.radius, eccentricity: orbit.eccentricity, inclination: orbit.inclination,
+            phase: orbit.phase, periodDays: orbit.periodDays, size: orbit.size,
+          });
+          cursor += 1;
+        }
       }
+      if (systemPlanetMesh.instanceColor) systemPlanetMesh.instanceColor.needsUpdate = true;
+      scene.add(systemPlanetMesh);
+      updatePlanetInstances(orbitClockStart || performance.now());
     }
-    if (systemPlanetMesh.instanceColor) systemPlanetMesh.instanceColor.needsUpdate = true;
-    scene.add(systemPlanetMesh);
-    updatePlanetInstances(orbitClockStart || performance.now());
   }
 
   /** Кольцо выделения вокруг выбранной системы. */
@@ -630,10 +549,8 @@ export function createGalaxyViewer(canvas: HTMLCanvasElement, initial: GalaxyRen
   function applyLod(): void {
     const lod = galaxyLodForDistance(distance);
     const hasSystems = currentData.systems.length > 0;
-    spiralArms.visible = lod !== 'system';
-    nebulaClouds.visible = lod !== 'system';
-    starClusters.visible = lod !== 'system';
     starField.visible = true;
+    deepSpaceDust.visible = true;
     // Этап 9.0: звёзды систем видны всегда; кольца и планеты — пока не открыт режим одной системы.
     if (starMesh) starMesh.visible = true;
     if (starGlowMesh) starGlowMesh.visible = lod !== 'system';
@@ -790,7 +707,12 @@ export function createGalaxyViewer(canvas: HTMLCanvasElement, initial: GalaxyRen
     focusNode,
     animateRoute,
     render(nowMs) {
-      coreHalo.rotation.y = nowMs * 0.00004;
+      // Медленный дрейф звёздного поля и пылевых частиц создаёт параллакс глубокого космоса.
+      starField.rotation.y = nowMs * 0.0000022;
+      starField.rotation.x = Math.sin(nowMs * 0.000035) * 0.012;
+      deepSpaceDust.rotation.y = -nowMs * 0.000004;
+      const dustMaterial = deepSpaceDust.material as THREE.PointsMaterial;
+      dustMaterial.opacity = 0.14 + (Math.sin(nowMs * 0.00022) + 1) * 0.035;
       updatePlanetInstances(nowMs);
       for (const body of orbitalBodies) { const mean = body.phase + nowMs * body.speed; let eccentric = mean; for (let i = 0; i < 4; i++) eccentric -= (eccentric - body.eccentricity * Math.sin(eccentric) - mean) / (1 - body.eccentricity * Math.cos(eccentric)); const x = body.semiMajor * (Math.cos(eccentric) - body.eccentricity); const z = body.semiMajor * Math.sqrt(1 - body.eccentricity * body.eccentricity) * Math.sin(eccentric); body.mesh.position.set(x, 0, z).applyAxisAngle(new THREE.Vector3(1, 0, 0), body.inclination).applyAxisAngle(new THREE.Vector3(0, 1, 0), body.ascendingNode); body.mesh.rotation.y += 0.002; }
       if (systemOrbitBody) {
