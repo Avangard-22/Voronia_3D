@@ -101,3 +101,36 @@ describe('склад: upgrade()', () => {
     expect(energySpent).toBe(800 + 1280 + 2049 + 3277 + 5243 + 8389 + 13422 + 21475 + 34360 + 54976);
   });
 });
+
+
+describe('V1 planetary warehouse capacity and storage transfer', () => {
+  it('Ey counts only planet-local resources; global balances do not consume planetary capacity', () => {
+    const { game } = makeGame(5);
+    grant(game, { iron: 2, carbon: 3, uranium: 1, energy: 9000, research: 500, alloy: 20 });
+    expect(game.warehouse.storedMass()).toBe(2 + 3 * 3 + 1 * 7);
+  });
+
+  it('Hf = explored cells × Vi; production is clipped at remaining weighted capacity', () => {
+    const { game } = makeGame(5);
+    const rt = game.runtime('ferrum')!;
+    game.warehouse.setLevel(0);
+    expect(game.warehouse.capacityFor(rt)).toBe(rt.explored.size * 10);
+    grant(game, { iron: 9.5, energy: 100 });
+    const limited = game.warehouse.limitIncomeDelta(rt, { iron: 1, carbon: 1, energy: 2, research: 3 });
+    expect(limited.iron).toBeCloseTo(0.5, 12);
+    expect(limited.carbon).toBe(0);
+    expect(limited.energy).toBe(2);
+    expect(limited.research).toBe(3);
+    expect(game.warehouse.remainingCapacity(rt)).toBeCloseTo(0.5, 12);
+  });
+
+  it('warehouse upgrade increases capacity by five tonnes per explored cell without deleting stored stock', () => {
+    const { game } = makeGame(5);
+    const rt = game.runtime('ferrum')!;
+    const before = game.warehouse.capacityFor(rt);
+    grant(game, { iron: 8, alloy: 10, energy: 5000 });
+    game.warehouse.setLevel(1);
+    expect(game.warehouse.capacityFor(rt)).toBe(before + rt.explored.size * 5);
+    expect(game.warehouse.storedMass()).toBe(8);
+  });
+});

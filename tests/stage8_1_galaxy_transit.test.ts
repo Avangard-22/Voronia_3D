@@ -4,7 +4,7 @@
  * Баг, закрытый этим этапом: `discoverPlanet`/`activateOrbitalBody` вешали новый мир на узел,
  * который игрок ещё не открыл (например, на скрытый Криос-9), а `findGalaxyRoute` требовал
  * непрерывной цепочки из unlocked-узлов. В итоге:
- *   - открытая планета была недостижима (`setActivePlanet`/`travelToPlanet` → «Маршрут отсутствует»);
+ *   - legacy paid travelToPlanet route remains separate from free V1 setActivePlanet switching;
  *   - `validateIntegrity()` помечал легально полученное состояние как `unreachable-unlocked-planet`;
  *   - это состояние сохранялось в save и восстанавливалось из него.
  *

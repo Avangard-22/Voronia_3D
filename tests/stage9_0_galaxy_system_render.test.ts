@@ -60,6 +60,26 @@ describe('Этап 9.0 — рендер-модель звёздных систе
     }
   });
 
+  it('локальная карта может содержать только одну центрированную систему без галактических координат', () => {
+    const activeSystem = starMap.byHostNode['ferrum']!;
+    const local = buildGalaxyRenderData({
+      nodes: [{ ...NODES[0]!, x: 0, y: 0, z: 0 }],
+      edges: [],
+      unlockedIds: ['ferrum'],
+      activeId: 'ferrum',
+      systems: [{ ...activeSystem, position: { x: 0, y: 0, z: 0 } }],
+      systemSpacing: STAR_MAP_POLICY.minSystemSeparation,
+      discRadius: 1.25,
+    });
+    expect(local.nodes).toHaveLength(1);
+    expect(local.edges).toHaveLength(0);
+    expect(local.systems).toHaveLength(1);
+    expect(local.systems[0]?.x).toBe(0);
+    expect(local.systems[0]?.y).toBe(0);
+    expect(local.systems[0]?.z).toBe(0);
+    expect(local.discRadius).toBeLessThan(2);
+  });
+
   it('диск галактики строится от радиуса карты систем, а не от константы 18', () => {
     const nodesOnly = buildGalaxyRenderData({ nodes: NODES, edges: [], unlockedIds: ['ferrum'], activeId: 'ferrum' });
     const withSystems = build();

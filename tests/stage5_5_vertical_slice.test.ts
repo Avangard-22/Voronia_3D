@@ -6,10 +6,10 @@ import { MemoryStorage } from '../src/persistence/storage';
 import { makeGame, grant } from './helpers';
 
 describe('Stage 5.5: planet lifecycle', () => {
-  it('переключает активную планету только на открытую и сохраняет выбор', () => {
+  it('бесплатно переключает активную планету только на открытую и сохраняет выбор', () => {
     const storage = new MemoryStorage();
     const first = new Game({ storage, clockDriver: new ManualDriver(), rngSeed: 77123 });
-    grant(first, { research: 1_000_000, energy: 1_000_000 });
+    grant(first, { research: 1_000_000 });
     const opened = first.dispatch('discoverPlanet', { seed: 556677, name: 'Test Meridian' });
     expect(opened.ok).toBe(true);
     if (!opened.ok) return;

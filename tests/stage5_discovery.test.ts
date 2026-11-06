@@ -4,7 +4,7 @@
  * discover: seed 777001 → planet_03 «Гелика-Прайм» (frost, f3 octahedron, 22 клетки, награда 1100🔬,
  *   узел x53.0765/y0.232/z21.881, ребро → krios, БЕЗ автосмены активной); 888002 → planet_04 «Ван» (life, 2420);
  *   override geometry/frequency/biome → planet_05 (cube f2 ferrum, iron, 5324);
- * setActive: guard «существует И открыта» (krios locked → false), своп storage 1.x On/yy — Этап 9 (TV-25).
+ * setActive: guard «существует И открыта» (krios locked → false), free V1 switch + On/yy per-planet storage.
  */
 import { describe, it, expect } from 'vitest';
 import { makeGame, fixture, grant } from './helpers';
@@ -175,52 +175,39 @@ describe('discoverPlanet (аудит §discover)', () => {
   });
 });
 
-describe('setActivePlanet (аудит §setActive)', () => {
-  // Отклонение 2.0 (ADR-018): setActivePlanet — алиас travelToPlanet, поэтому переключение стоит энергии
-  // первого перехода и возвращает сводку маршрута. Guard 1.x «существует И открыта» сохранён,
-  // но к нему добавлена доступность маршрута и оплата (Этап 6.6).
-  it('guard: открытая → ok; krios (не открыт) → false; неизвестная → false; обратно → ok', () => {
+describe('setActivePlanet (V1 parity: audit §setActive)', () => {
+  it('free switch: открытая планета → ok; krios locked/unknown → reject; обратно → ok', () => {
     const { game } = makeGame(31337);
     game.dispatch('discoverPlanet', { seed: 777001, name: 'Гелика-Прайм' });
-    grant(game, { energy: 1_000_000 });
+    grant(game, { energy: 1_000_000, iron: 1234, kriogen: 77 });
     const energyBefore = game.ledger.balance('energy');
     const r1 = game.dispatch('setActivePlanet', { pid: 'planet_03' });
     expect(r1.ok).toBe(true);
-    if (r1.ok) {
-      expect(r1.value).toMatchObject({ pid: 'planet_03', prev: 'ferrum' });
-      // planet_03 висит на ещё не открытом Криосе: маршрут существует за счёт транзита без посадки.
-      expect(r1.value.path).toEqual(['ferrum', 'planet_03']);
-      expect(r1.value.transitNodeIds).toEqual(['krios']);
-      expect(r1.value.energyCost).toBeGreaterThan(0);
-    }
-    expect(game.ledger.balance('energy')).toBe(energyBefore - (r1.ok ? r1.value.energyCost : 0));
-    expect(fx.setActive.switchToDiscovered).toBe(true);
+    expect(game.ledger.balance('energy')).toBe(energyBefore);
+    expect(game.ledger.balance('iron')).toBe(0);
+    expect(game.ledger.balance('kriogen')).toBe(0);
     expect(game.activePlanetId()).toBe('planet_03');
-    expect(game.snapshot().activePlanetId).toBe('planet_03');
     const r2 = game.dispatch('setActivePlanet', { pid: 'krios' });
-    expect(r2.ok).toBe(false); // 1.x: unlockedPlanets.has → false (сонар-открытие — Этап 6, TV-33)
+    expect(r2.ok).toBe(false);
     if (!r2.ok) expect(r2.reason).toBe('state');
-    expect(fx.setActive.switchToLockedKrios).toBe(false);
-    expect(game.activePlanetId()).toBe('planet_03');
-    const r3 = game.dispatch('setActivePlanet', { pid: 'nope' });
-    expect(r3.ok).toBe(false);
-    const r4 = game.dispatch('setActivePlanet', { pid: 'ferrum' });
-    expect(r4.ok).toBe(true); // обратный перелёт тем же транзитным маршрутом
-    expect(game.activePlanetId()).toBe('ferrum');
-    const ev = game.bus.getHistory().filter((e) => e.type === 'planet:activated');
-    expect(ev.length).toBe(2);
+    expect(game.dispatch('setActivePlanet', { pid: 'nope' }).ok).toBe(false);
+    expect(game.dispatch('setActivePlanet', { pid: 'ferrum' }).ok).toBe(true);
+    expect(game.ledger.balance('iron')).toBe(1234);
+    expect(game.ledger.balance('kriogen')).toBe(77);
+    expect(game.bus.getHistory().filter((e) => e.type === 'planet:activated').length).toBe(2);
   });
 
-  it('активная планета в снапшоте: cells/scan — от planet_03 после переключения', () => {
+  it('активная планета в снапшоте остаётся выбранной, а склад принадлежит ей', () => {
     const { game } = makeGame(31337);
     game.dispatch('discoverPlanet', { seed: 777001, name: 'Гелика-Прайм' });
-    grant(game, { energy: 1_000_000 }); // перелёт платный (Этап 6.6, ADR-018)
+    grant(game, { iron: 1234 });
     expect(game.dispatch('setActivePlanet', { pid: 'planet_03' }).ok).toBe(true);
     const snap = game.snapshot();
     const view = snap.planets.find((p) => p.id === snap.activePlanetId);
     expect(view?.id).toBe('planet_03');
     expect(view?.cells.length).toBe(fx.discover.first.cellCount);
-    expect(view?.exploredCount).toBe(1); // initStart: explored [0]
-    expect(snap.charge).toBeNull(); // зарядная история ferrum не переносится
+    expect(view?.exploredCount).toBe(1);
+    expect(view?.storage.iron).toBe(0);
+    expect(snap.charge).toBeNull();
   });
 });

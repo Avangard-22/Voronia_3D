@@ -107,6 +107,21 @@ describe('persistence: legacy v39 (golden save)', () => {
     expect(v2.gameStartSeed).toBe(2301357296);
   });
 
+  it('mid-game V1 golden save migrates without losing economy or planet progress', () => {
+    const midgame = fixture<Record<string, unknown>>('golden_save_midgame_v0.0.41.json');
+    const v2 = migrateLegacyV39(midgame);
+    expect(v2.version).toBe(2);
+    expect(v2.ledger.balances['energy']).toBe(12345);
+    expect(v2.ledger.balances['iron']).toBe(999664);
+    expect(v2.ledger.balances['research']).toBe(678);
+    expect(v2.pricing.currentCost).toBe(33);
+    expect(v2.warehouseLevel).toBe(3);
+    expect(v2.activePlanetId).toBe('ferrum');
+    expect(v2.planets['ferrum']!.explored).toHaveLength(12);
+    expect(v2.planets['ferrum']!.revealed).toHaveLength(12);
+    expect(v2.planets['krios']!.explored).toHaveLength(0);
+  });
+
   it('загрузка legacy из storage под ключом cosmicClickerV19 → migrated', () => {
     const storage = new MemoryStorage();
     storage.setItem(LEGACY_SAVE_KEY, JSON.stringify(golden));
