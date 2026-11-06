@@ -20,6 +20,10 @@ export type CompoundResourceKey = (typeof COMPOUND_RESOURCES)[number];
 export const LEDGER_RESOURCES = [...CORE_RESOURCES, ...EXTRA_RESOURCES, ...COMPOUND_RESOURCES, 'shards'] as const;
 export type LedgerResourceKey = (typeof LEDGER_RESOURCES)[number];
 
+/** Ресурсы планетарного склада V1 (On/yy): при смене планеты переключаются только эти запасы. */
+export const PLANET_STORAGE_RESOURCES = ['iron', 'kriogen', ...EXTRA_RESOURCES] as const;
+export type PlanetStorageResourceKey = (typeof PLANET_STORAGE_RESOURCES)[number];
+
 export type AnyResourceKey = CoreResourceKey | ExtraResourceKey | CompoundResourceKey;
 
 export type ResourceAmounts = Partial<Record<LedgerResourceKey, number>>;

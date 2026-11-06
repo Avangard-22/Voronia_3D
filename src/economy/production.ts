@@ -13,6 +13,19 @@ import type { EventPort, LedgerPort, TechPort } from '../contracts/ports';
 import type { PlanetRuntime } from '../contracts/planets';
 import type { CellState } from '../contracts/cells';
 
+export interface MiningOperationFactor {
+  readonly id: 'deep' | 'cell-level' | 'arm' | 'planet' | 'perks' | 'sleep' | 'technology' | 'mutation';
+  readonly label: string;
+  readonly multiplier: number;
+}
+
+export interface MiningOperationProfile {
+  readonly active: boolean;
+  readonly totalMultiplier: number;
+  readonly factors: readonly MiningOperationFactor[];
+  readonly recommendation: string;
+}
+
 export interface ProductionDeps {
   readonly balance: BalanceConfig;
   readonly ledger: LedgerPort;
@@ -76,6 +89,51 @@ export class ProductionService {
     return true;
   }
 
+  /** Прозрачная расшифровка действующих множителей добычи; не меняет экономику. */
+  operationProfile(rt: PlanetRuntime, cellId: number, gameMs = this.deps.gameMs()): MiningOperationProfile | null {
+    const node = rt.data.cells[cellId];
+    const st = rt.cellStates.get(cellId);
+    if (!node || !st || (node.type !== 3 && node.type !== 5) || !rt.explored.has(cellId)) return null;
+    const arm = this.deps.armFor(rt);
+    const factors: MiningOperationFactor[] = [
+      { id: 'deep', label: 'Глубинная жила', multiplier: st.isDeep ? (this.deps.hooks?.deepMult ?? 2) : 1 },
+      { id: 'cell-level', label: 'Уровень месторождения', multiplier: veinLevelDepleteMult(st) },
+      { id: 'arm', label: 'Буровая установка', multiplier: arm?.deplete ?? 1 },
+      { id: 'planet', label: 'Геологическая сложность планеты', multiplier: planetIndexDepleteMult(this.deps.balance, rt.data.planetIndex) },
+      { id: 'perks', label: 'Планетарные улучшения', multiplier: rt.data.perks.depletionMult },
+      { id: 'sleep', label: 'Энергетический режим', multiplier: this.deps.sleepFor?.(rt) ?? this.deps.hooks?.sleep ?? 1 },
+      { id: 'technology', label: 'Технологии', multiplier: this.deps.hooks?.techMods ?? 1 },
+      { id: 'mutation', label: 'Мутация', multiplier: st.mutant && arm ? this.mutantDepleteMult(st.mutant) : 1 },
+    ];
+    const totalMultiplier = factors.reduce((product, factor) => product * factor.multiplier, 1);
+    const active = !st.destroyed && st.reserve > 0 && st.cooldownUntil <= gameMs && this.veinUnlocked(rt, cellId);
+    const limiting = factors.filter((factor) => factor.multiplier < 1).sort((a, b) => a.multiplier - b.multiplier)[0];
+    const recommendation = !active
+      ? (st.reserve <= 0 ? 'Резерв исчерпан: дождитесь окончания восстановления или реактивируйте месторождение.' : st.cooldownUntil > gameMs ? 'Месторождение на перезарядке: добыча возобновится автоматически.' : 'Добыча недоступна: проверьте доступность ресурса и состояние клетки.')
+      : limiting
+        ? `Потенциал оптимизации: проверьте параметр «${limiting.label}» (${limiting.multiplier.toFixed(2)}×).`
+        : 'Критичных ограничителей не обнаружено. Текущий режим добычи оптимален для доступных модификаторов.';
+    return { active, totalMultiplier, factors, recommendation };
+  }
+
+  /** Фактическая скорость расходования резерва с учётом guards активности. */
+  activeDepletePerSec(rt: PlanetRuntime, cellId: number, gameMs = this.deps.gameMs()): number {
+    const node = rt.data.cells[cellId];
+    const st = rt.cellStates.get(cellId);
+    if (!node || !st || st.destroyed || !rt.explored.has(cellId)) return 0;
+    if (node.type !== 3 && node.type !== 5) return 0;
+    if (st.reserve <= 0 || st.cooldownUntil > gameMs || !this.veinUnlocked(rt, cellId)) return 0;
+    return this.depletePerSec(rt, cellId);
+  }
+
+  /** Оценка времени до истощения текущего резерва; null означает неактивную добычу. */
+  reserveLifetimeSeconds(rt: PlanetRuntime, cellId: number, gameMs = this.deps.gameMs()): number | null {
+    const st = rt.cellStates.get(cellId);
+    const rate = this.activeDepletePerSec(rt, cellId, gameMs);
+    if (!st || rate <= 0) return null;
+    return st.reserve / rate;
+  }
+
   /** Тик истощения всех активных жил (доменное состояние, не ledger). */
   tick(planets: readonly PlanetRuntime[], dtSec: number): void {
     const gameMs = this.deps.gameMs();
@@ -96,6 +154,53 @@ export class ProductionService {
           st.reactCount = Math.max(0, st.reactCount) + 1;
           this.deps.bus.emit('cell:depleted', { pid: rt.data.id, cellId, cooldownUntil: st.cooldownUntil });
         }
+      }
+    }
+  }
+
+  /** Earliest offline boundary where vein income changes: depletion or cooldown expiry. */
+  nextOfflineBoundaryMs(planets: readonly PlanetRuntime[], startMs: number, endMs: number): number {
+    let boundary = endMs;
+    for (const rt of planets) {
+      for (const cellId of rt.explored) {
+        const node = rt.data.cells[cellId];
+        const st = rt.cellStates.get(cellId);
+        if (!node || !st || st.destroyed || (node.type !== 3 && node.type !== 5)) continue;
+        if (st.reserve <= 0 || !this.veinUnlocked(rt, cellId)) continue;
+        if (st.cooldownUntil > startMs) {
+          if (st.cooldownUntil < boundary) boundary = st.cooldownUntil;
+          continue;
+        }
+        const rate = this.depletePerSec(rt, cellId);
+        if (rate > 0) {
+          const depletionAt = startMs + (st.reserve / rate) * 1000;
+          if (depletionAt > startMs && depletionAt < boundary) boundary = depletionAt;
+        }
+      }
+    }
+    return Math.max(startMs, boundary);
+  }
+
+  /** Offline interval variant: cooldown time is excluded and depletion cooldown starts at the exact depletion instant. */
+  tickOfflineInterval(planets: readonly PlanetRuntime[], startMs: number, endMs: number): void {
+    const dtSec = Math.max(0, endMs - startMs) / 1000;
+    if (!(dtSec > 0)) return;
+    for (const rt of planets) {
+      for (const cellId of rt.explored) {
+        const node = rt.data.cells[cellId];
+        const st = rt.cellStates.get(cellId);
+        if (!node || !st || st.destroyed || (node.type !== 3 && node.type !== 5)) continue;
+        if (st.reserve <= 0 || st.cooldownUntil > startMs || !this.veinUnlocked(rt, cellId)) continue;
+        const rate = this.depletePerSec(rt, cellId);
+        if (!(rate > 0)) continue;
+        const consumed = rate * dtSec;
+        if (consumed >= st.reserve) {
+          const depletionAt = startMs + (st.reserve / rate) * 1000;
+          st.reserve = 0;
+          st.cooldownUntil = depletionAt + this.cooldownMs(st);
+          st.reactCount = Math.max(0, st.reactCount) + 1;
+          this.deps.bus.emit('cell:depleted', { pid: rt.data.id, cellId, cooldownUntil: st.cooldownUntil });
+        } else st.reserve -= consumed;
       }
     }
   }

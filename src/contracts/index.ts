@@ -19,7 +19,7 @@ export const SAVE_FORMAT = 'voronia2.save';
 export const SAVE_VERSION = 2;
 
 /** Версия игры (2.0 линия; baseline parity — wo=0.0.41.0, schema 39). */
-export const GAME_VERSION = '2.0.0-stage2';
+export const GAME_VERSION = '2.0.0-phase10.1.0';
 export const BASELINE_VERSION = '0.0.41.0';
 export const BASELINE_SAVE_SCHEMA = 39;
 

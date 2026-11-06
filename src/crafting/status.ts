@@ -1,12 +1,12 @@
 /**
- * crafting/status.ts — домен вне текущего среза: NOT_IMPLEMENTED (ТЗ §19 — статус обязателен, «молчаливых» доменов нет).
- * Этап 6: крафт соединений (recipes), авто-крафт, верфь.
+ * crafting/status.ts — PARTIAL: ручная очередь реактора подключена к Game и UI.
+ * Авто-крафт, полная V1-лаборатория и дополнительные производственные контуры остаются следующими задачами.
  */
 import type { DomainStatus } from '../contracts/ports';
 
 export const CRAFTING_STATUS: DomainStatus = Object.freeze({
   domain: 'crafting',
-  status: 'NOT_IMPLEMENTED',
-  stage: 6,
-  note: 'крафт соединений (recipes), авто-крафт, верфь',
+  status: 'PARTIAL',
+  stage: 10.0,
+  note: 'ручная очередь реактора и рецепты подключены; авто-крафт и полный V1 производственный контур ещё не завершены',
 });

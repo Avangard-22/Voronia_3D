@@ -151,6 +151,26 @@ export class ChargeService {
   }
 
   /**
+   * Reconcile persisted V1 timers after an offline interval. Missed surges are
+   * skipped (never replayed or rewarded); the next opportunity is scheduled
+   * from the recovered game clock. Manual charge cooldowns remain deadline-based.
+   */
+  recoverAfterOffline(rt: PlanetRuntime, rng: RngPort): void {
+    const now = this.deps.gameMs();
+    const s = this.deps.balance.baseline.surge;
+    for (const cellId of rt.explored) {
+      const node = rt.data.cells[cellId];
+      const st = rt.cellStates.get(cellId);
+      if (!node || !st || (node.type !== 1 && node.type !== 2) || st.destroyed) continue;
+      if (st.surgeUntil !== undefined && st.surgeUntil <= now) st.surgeUntil = 0;
+      if (st.surgeNextAt === undefined || st.surgeNextAt > now) continue;
+      const min = node.type === 1 ? s.nextAtMinType1 : s.nextAtMinType2;
+      const max = node.type === 1 ? s.nextAtMaxType1 : s.nextAtMaxType2;
+      st.surgeNextAt = now + min + rng.next() * (max - min);
+    }
+  }
+
+  /**
    * 1.x v0.0.39.0 surge-планировщик (один шаг; 1.x — setInterval 2000 по реальной активности,
    * 2.0 — каждый тик игры: семантика порогов nextAt идентична). Только АКТИВНАЯ планета (1.x: n.activePlanetId).
    */

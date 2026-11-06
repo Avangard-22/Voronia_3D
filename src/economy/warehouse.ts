@@ -8,7 +8,7 @@
 import type { ActionResult, WarehouseUpgradeResult } from '../contracts/commands';
 import { fail, ok } from '../contracts/commands';
 import type { WarehouseCost, WarehouseInfo } from '../contracts/economy';
-import { cargoWeight, type LedgerResourceKey } from '../contracts/resources';
+import { cargoWeight, PLANET_STORAGE_RESOURCES, type LedgerResourceKey, type ResourceAmounts } from '../contracts/resources';
 import type { BalanceConfig } from '../config/types';
 import type { EventPort, LedgerPort } from '../contracts/ports';
 import type { PlanetRuntime } from '../contracts/planets';
@@ -63,15 +63,31 @@ export class WarehouseService {
     return rt.explored.size * this.tonsPerCell();
   }
 
-  /** Ey: масса хранимого (Σ баланс × грузовой вес dn). */
+  /** Ey: масса ресурсов планетарного склада (Σ local stock × dn); глобальные ресурсы не занимают склад. */
   storedMass(): number {
-    let m = 0;
     const snap = this.deps.ledger.snapshot();
-    for (const [k, v] of Object.entries(snap)) {
-      const w = cargoWeight(k as LedgerResourceKey);
-      if (Number.isFinite(w)) m += (v ?? 0) * w;
+    return PLANET_STORAGE_RESOURCES.reduce((mass, key) => mass + Math.max(0, snap[key] ?? 0) * cargoWeight(key), 0);
+  }
+
+  /** Остаток вместимости склада активной планеты. Избыточный старый запас не удаляется. */
+  remainingCapacity(rt: PlanetRuntime): number {
+    return Math.max(0, this.capacityFor(rt) - this.storedMass());
+  }
+
+  /** V1 Hf/Ey: ограничивает только поступление локальных ресурсов из производственного тика. */
+  limitIncomeDelta(rt: PlanetRuntime | null, delta: ResourceAmounts): ResourceAmounts {
+    if (!rt) return delta;
+    let remaining = this.remainingCapacity(rt);
+    const limited: ResourceAmounts = { ...delta };
+    for (const key of PLANET_STORAGE_RESOURCES) {
+      const requested = Math.max(0, delta[key] ?? 0);
+      if (requested <= 0) continue;
+      const weight = cargoWeight(key);
+      const accepted = Math.min(requested, remaining / weight);
+      limited[key] = accepted;
+      remaining = Math.max(0, remaining - accepted * weight);
     }
-    return m;
+    return limited;
   }
 
   info(rts: readonly PlanetRuntime[]): WarehouseInfo {

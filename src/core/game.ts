@@ -4,6 +4,8 @@
  * Срез Этапа 2: ferrum + скан/апгрейд/реактивация/склад/тик/сейв (GS-01..GS-05, TV-1..TV-8).
  */
 import type { BalanceConfig } from '../config/types';
+import { buildGeologicalSurvey } from '../planets/geologicalSurvey';
+import { buildMiningLogistics } from '../planets/miningLogistics';
 import { loadBalance } from '../config/loader';
 import type { ActionResult } from '../contracts/commands';
 import { fail, ok } from '../contracts/commands';
@@ -11,8 +13,8 @@ import type { CommandMap, CommandName, CommandResultMap, DiscoverPlanetResult, R
 import type { ClockDriver, StoragePort } from '../contracts/ports';
 import type { GameSnapshot, PlanetView, CellView, SessionStats } from '../contracts/snapshot';
 import { freshSession } from '../contracts/snapshot';
-import type { LedgerResourceKey } from '../contracts/resources';
-import { LEDGER_RESOURCES } from '../contracts/resources';
+import type { LedgerResourceKey, PlanetStorageResourceKey } from '../contracts/resources';
+import { LEDGER_RESOURCES, PLANET_STORAGE_RESOURCES } from '../contracts/resources';
 import { EventBus } from './eventBus';
 import { GameClock, ManualDriver } from './gameClock';
 import { Logger } from './logger';
@@ -34,7 +36,7 @@ import { applyStartState, createPlanetRuntime } from '../planets/runtime';
 import { ExplorationService } from '../planets/exploration';
 import { AnomalyService, fmFor } from '../planets/anomalies';
 import { countDiscoverablePlanets, createStarterWorld, discoverPlanet as runDiscovery, type DiscoveryWorld } from './discovery';
-import { anomalyGateStatus, classifySignal, galaxyMilestone, galaxyProgressionStatus, galaxySector, layoutGalaxy } from '../galaxy/exploration';
+import { classifySignal, galaxyMilestone, galaxySector, layoutGalaxy } from '../galaxy/exploration';
 import { buildAnomalySites } from '../galaxy/anomalies';
 import { buildStarSystemCatalog } from '../galaxy/starSystems';
 import { buildRouteOptions, findGalaxyRoute, ROUTE_POLICY } from '../galaxy/routes';
@@ -93,6 +95,8 @@ export class Game implements SaveSource {
   readonly saves: SaveManager;
 
   private runtimes = new Map<string, PlanetRuntime>();
+  /** V1 On/yy: iron, kriogen and rare-resource balances are owned by each planet. */
+  private planetResources = new Map<string, Partial<Record<PlanetStorageResourceKey, number>>>();
   private activePlanetIdValue = 'ferrum';
   private unlocked: string[] = ['ferrum'];
   private gameStartSeedValue = 0;
@@ -196,13 +200,14 @@ export class Game implements SaveSource {
       production: this.production,
       planets: () => this.activeRuntimes(),
       incomeContext: () => this.incomeContext(),
+      limitIncomeDelta: (delta) => this.warehouse.limitIncomeDelta(this.activeRuntime() ?? null, delta),
       steps: [
         // 1.x v0.0.39.0: surge-планировщик — только активная планета (setInterval 2000 → гранулярность тика)
         (_dtSec, gameMs) => {
           const rt = this.activeRuntime();
           if (rt) this.charge.surgeTick(rt, this.rng.fork(`surge:${gameMs}`));
         },
-        // 1.x Ty(dt): синтез по открытым планетам
+        // 1.x Ty(dt): синтез активной планеты; её локальные запасы уже загружены в ledger через On()/yy().
         (dtSec) => {
           this.synthService.tick(this.activeRuntimes(), dtSec);
         },
@@ -272,8 +277,38 @@ export class Game implements SaveSource {
     return this.runtimes.get(this.activePlanetIdValue);
   }
 
+  /** V1 income, extraction and synth operate on the active planet only. */
   activeRuntimes(): readonly PlanetRuntime[] {
+    const active = this.runtimes.get(this.activePlanetIdValue);
+    return active ? [active] : [];
+  }
+
+  /** All unlocked runtimes are exposed for system/planet selection UI, never for active production. */
+  unlockedRuntimes(): readonly PlanetRuntime[] {
     return this.unlocked.map((id) => this.runtimes.get(id)).filter((r): r is PlanetRuntime => r !== undefined);
+  }
+
+  private storageForPlanet(pid: string): Partial<Record<PlanetStorageResourceKey, number>> {
+    if (pid === this.activePlanetIdValue) {
+      const current = this.ledger.snapshot();
+      return Object.fromEntries(PLANET_STORAGE_RESOURCES.map((key) => [key, current[key] ?? 0])) as Partial<Record<PlanetStorageResourceKey, number>>;
+    }
+    return { ...(this.planetResources.get(pid) ?? {}) };
+  }
+
+  private switchActivePlanet(pid: string): ActionResult<CommandResultMap['setActivePlanet']> {
+    const prev = this.activePlanetIdValue;
+    if (pid === prev) return fail('state', 'Эта планета уже активна');
+    if (!this.unlocked.includes(pid) || !this.runtimes.has(pid)) return fail('state', `Планета ${pid} неизвестна или не открыта`);
+    const current = this.ledger.snapshot();
+    const outgoing: Partial<Record<PlanetStorageResourceKey, number>> = {};
+    for (const key of PLANET_STORAGE_RESOURCES) outgoing[key] = current[key] ?? 0;
+    this.planetResources.set(prev, outgoing);
+    const incoming = this.planetResources.get(pid) ?? {};
+    this.ledger.replaceBalances(incoming, PLANET_STORAGE_RESOURCES);
+    this.activePlanetIdValue = pid;
+    this.bus.emit('planet:activated', { pid, prev });
+    return ok({ pid, prev, destinationId: pid, path: [prev, pid], hopsRemaining: 0, distance: 0, energyCost: 0, transitNodeIds: [] });
   }
 
   session(): Readonly<SessionStats> {
@@ -386,7 +421,7 @@ export class Game implements SaveSource {
       }
       case 'setActivePlanet': {
         const p = payload as CommandMap['setActivePlanet'];
-        return ret(this.travelToPlanet(p.pid));
+        return ret(this.setActivePlanet(p.pid));
       }
       case 'grant': {
         const p = payload as CommandMap['grant'];
@@ -462,6 +497,7 @@ export class Game implements SaveSource {
     this.sonarBonusValue = null;
     this.charge.reset();
     this.runtimes.clear();
+    this.planetResources.clear();
     this.world = createStarterWorld(defaultGeneratorCtx(this.balance));
     this.discoverySpecs = [];
     this.orbitalExploration.clear();
@@ -474,6 +510,7 @@ export class Game implements SaveSource {
       const rt = createPlanetRuntime(data);
       applyStartState(rt);
       this.runtimes.set(pid, rt);
+      this.planetResources.set(pid, {});
     }
     return { seed: this.gameStartSeedValue };
   }
@@ -491,7 +528,7 @@ export class Game implements SaveSource {
     if (economy && this.ledger.balance('energy') < economy.energy) return fail('energy', `Для открытия мира требуется ${economy.energy} энергии`);
     const preview = usesSonarEconomy ? this.nextDiscoveryPreview() : null;
     if (preview?.signalClass === 'anomaly' && !this.anomalyGate().unlocked) {
-      return fail('state', 'Аномальная сигнатура заблокирована: требуется исследовать 3 мира в 2 галактических рукавах и накопить 1500 исследований');
+      return fail('state', 'Аномальная сигнатура заблокирована: требуется открыть 3 планеты в текущей системе и накопить 1500 исследований');
     }
     // После включения экономики сонара источник seed всегда серверный preview: UI/клиент не может подменить мир.
     const discoveryInput = preview ? { ...input, seed: preview.seed } : input;
@@ -517,6 +554,7 @@ export class Game implements SaveSource {
     const rtNew = createPlanetRuntime(toPlanetData(planet));
     applyStartState(rtNew); // 1.x m.initStart(): explored=[starting], revealed=соседи, yield стартовой клетки
     this.runtimes.set(planet.id, rtNew);
+    this.planetResources.set(planet.id, {});
     const commit = this.ledger.tryCommit({ reason: `discover:${planet.id}`, scope: 'global', delta: { research: r.researchReward }, gameMs: this.clock.gameMsNow });
     if (!commit.ok) this.logger.warn('game', `награда открытия не зачислена: ${commit.insufficient.join(',')}`);
     this.bumpSession('planetsUnlocked');
@@ -603,6 +641,7 @@ export class Game implements SaveSource {
     const runtime = createPlanetRuntime(toPlanetData(planet));
     applyStartState(runtime);
     this.runtimes.set(planet.id, runtime);
+    this.planetResources.set(planet.id, {});
     state.activatedBodies.set(bodyId, planet.id);
     this.orbitalExploration.set(hostPlanetId, state);
     this.ledger.tryCommit({ reason: `orbital:activation-reward:${planet.id}`, scope: 'global', delta: { research: generated.researchReward }, gameMs: this.clock.gameMsNow });
@@ -627,18 +666,16 @@ export class Game implements SaveSource {
       planetId === destinationId && catalog?.bodies.some((body) => body.id === bodyId && body.orbitIndex > 0) === true,
     );
     if (!belongsToSystem && destinationId !== hostPlanetId) return fail('state', 'Планета не принадлежит этой звёздной системе');
-    const prev = this.activePlanetIdValue;
-    if (prev === destinationId) return fail('state', 'Эта планета уже активна');
-    this.activePlanetIdValue = destinationId;
-    this.bus.emit('planet:activated', { pid: destinationId, prev });
-    return ok({ pid: destinationId, prev, hostPlanetId });
+    const switched = this.switchActivePlanet(destinationId);
+    if (!switched.ok) return switched;
+    return ok({ pid: destinationId, prev: switched.value.prev, hostPlanetId });
   }
 
   travelToPlanet(destinationId: string): ActionResult<CommandResultMap['travelToPlanet']> {
     const prev = this.activePlanetIdValue;
     if (destinationId === prev) return fail('state', 'Вы уже находитесь в этой системе');
     if (!this.runtimes.has(destinationId) || !this.unlocked.includes(destinationId)) return fail('state', `планета ${destinationId} неизвестна или не открыта`);
-    const route = findGalaxyRoute(this.world.graph, this.unlocked, prev, destinationId, this.logistics.cargoMass());
+    const route = findGalaxyRoute(this.world.graph, this.unlocked, prev, destinationId, 0);
     if (!route) return fail('state', 'Маршрут отсутствует: между открытыми системами нет непрерывной цепочки переходов');
     const leg = route.firstLeg;
     if (this.ledger.balance('energy') < leg.energyCost) return fail('energy', `Для перехода к ${this.world.graph.nodes[leg.to]?.name ?? leg.to} требуется ${leg.energyCost} энергии`);
@@ -649,9 +686,9 @@ export class Game implements SaveSource {
       gameMs: this.clock.gameMsNow,
     });
     if (!tx.ok) return fail('energy', `Для перехода требуется ${leg.energyCost} энергии`);
-    this.activePlanetIdValue = leg.to;
+    const switched = this.switchActivePlanet(leg.to);
+    if (!switched.ok) return switched;
     this.sessionValue.travels += 1;
-    this.bus.emit('planet:activated', { pid: leg.to, prev });
     return ok({
       pid: leg.to,
       prev,
@@ -664,9 +701,9 @@ export class Game implements SaveSource {
     });
   }
 
-  /** Совместимость API: старое переключение теперь тоже проходит через маршрутную экономику. */
+  /** V1 ge.setActivePlanet parity: free switch between already unlocked planet runtimes; storage swaps atomically. */
   setActivePlanet(pid: string): ActionResult<CommandResultMap['setActivePlanet']> {
-    return this.travelToPlanet(pid);
+    return this.switchActivePlanet(pid);
   }
 
   // ——— модификаторные источники (единственная точка сборки контекста) ———
@@ -734,6 +771,7 @@ export class Game implements SaveSource {
     const runtime = createPlanetRuntime(toPlanetData(planet));
     applyStartState(runtime);
     this.runtimes.set('krios', runtime);
+    this.planetResources.set('krios', {});
     const node = this.world.graph.nodes['krios'];
     if (node) this.world.graph.nodes['krios'] = { ...node, discovered: true };
     const until = mult > 1 ? Date.now() + cfg.rewardHours * 60 * 60 * 1000 : 0;
@@ -749,7 +787,8 @@ export class Game implements SaveSource {
     const index = countDiscoverablePlanets(this.world.planets, hiddenIndex) + 1;
     const tier = Math.max(1, index - 2);
     const baseEnergy = Math.ceil(this.balance.registry.sonar.hintEnergy * Math.pow(tier, 1.35));
-    const energy = Math.max(1, Math.ceil(baseEnergy * (1 - this.galaxyProgression().discountPct / 100)));
+    // В пределах текущей планетарной системы нет галактических лицензий и секторных скидок.
+    const energy = Math.max(1, baseEnergy);
     const charges = Math.min(this.balance.registry.sonar.chargeMax, 1 + Math.floor((tier - 1) / 4));
     return { index, energy, charges, rerollEnergy: Math.ceil(energy * this.balance.registry.sonar.rerollBurnPct) };
   }
@@ -792,23 +831,19 @@ export class Game implements SaveSource {
     return value;
   }
 
-  private galaxyProgression(): ReturnType<typeof galaxyProgressionStatus> {
-    const discovered = Object.values(this.world.graph.nodes).filter((node) => node.discovered);
-    return galaxyProgressionStatus({
-      discoveredWorlds: discovered.length,
-      discoveredArms: new Set(discovered.map((node) => node.armId).filter(Boolean)).size,
-      discoveredSectors: new Set(discovered.map((node) => galaxySector(node).id)).size,
-      research: this.ledger.balance('research'),
-    });
-  }
-
-  private anomalyGate(): ReturnType<typeof anomalyGateStatus> {
-    const discovered = Object.values(this.world.graph.nodes).filter((node) => node.discovered);
-    return anomalyGateStatus({
-      discoveredWorlds: discovered.length,
-      discoveredArms: new Set(discovered.map((node) => node.armId).filter(Boolean)).size,
-      research: this.ledger.balance('research'),
-    });
+  /** Прогресс аномального сигнала считается только внутри открытой планетарной системы. */
+  private anomalyGate(): GameSnapshot['sonar']['anomalyGate'] {
+    const discoveredWorlds = this.unlocked.length;
+    const discoveredArms = discoveredWorlds > 0 ? 1 : 0; // legacy contract slot: one local system, not galaxy arms
+    const research = this.ledger.balance('research');
+    const requiredWorlds = 3;
+    const requiredArms = 1;
+    const requiredResearch = 1500;
+    const missing: ('worlds' | 'arms' | 'research')[] = [];
+    if (discoveredWorlds < requiredWorlds) missing.push('worlds');
+    if (discoveredArms < requiredArms) missing.push('arms');
+    if (research < requiredResearch) missing.push('research');
+    return { unlocked: missing.length === 0, discoveredWorlds, requiredWorlds, discoveredArms, requiredArms, research, requiredResearch, missing };
   }
 
   sonarStatus(): GameSnapshot['sonar'] {
@@ -850,19 +885,45 @@ export class Game implements SaveSource {
   snapshot(): GameSnapshot {
     const { snapshot: inc } = this.income.computeIncome(this.activeRuntimes(), this.incomeContext());
     const planets: PlanetView[] = [];
-    for (const rt of this.activeRuntimes()) {
+    for (const rt of this.unlockedRuntimes()) {
       const cells: CellView[] = rt.data.cells.map((node) => {
         const st = rt.cellStates.get(node.id);
         const status = rt.explored.has(node.id) ? 'explored' : rt.revealed.has(node.id) ? 'revealed' : 'hidden';
         return {
           id: node.id,
-          type: node.type,
+          // До завершения сканирования UI получает только неизвестный маркер, не реальный тип.
+          type: status === 'explored' ? node.type : -1,
           status,
+          geologicalReward: status !== 'explored' ? null : (() => {
+            if (node.type === 3) return { resourceKey: node.resourceKey ?? 'iron', baseRate: st?.ironYield ?? 0 };
+            if (node.type === 5) return { resourceKey: 'kriogen', baseRate: st?.kriogenYield ?? 0 };
+            if (node.type === 0) return { resourceKey: 'energy', baseRate: 1 + (st?.level ?? 0) };
+            if (node.type === 1) return { resourceKey: 'energy', baseRate: 3 };
+            if (node.type === 2) return { resourceKey: 'energy', baseRate: 10 };
+            if (node.type === 6) return { resourceKey: 'research', baseRate: this.balance.baseline.researchCell.yieldPerLevel * Math.min(this.balance.registry.cells.researchMaxLevel, st?.level ?? 0) };
+            if (node.type === 7) return { resourceKey: 'energy', baseRate: this.balance.registry.core.baseYield * 2, secondaryResourceKey: 'crystals', secondaryBaseRate: this.balance.registry.core.crystalRate };
+            return null;
+          })(),
+          geology: status !== 'explored' || (node.type !== 3 && node.type !== 5) ? null : (() => {
+            const deep = st?.isDeep ?? false;
+            const rawYield = node.type === 5 ? (st?.kriogenYield ?? 0) : (st?.ironYield ?? 0);
+            const rawReserve = st?.maxReserve ?? 0;
+            // Stable descriptive grade derived from existing V1 deposit values; no RNG or balance mutation.
+            const gradeScore = Math.max(0, Math.min(100, Math.round(35 + Math.log10(Math.max(1, rawYield * 100 + rawReserve)) * 12)));
+            const oreQuality = gradeScore >= 85 ? 'exceptional' : gradeScore >= 70 ? 'high-grade' : gradeScore >= 52 ? 'enriched' : 'common';
+            const depthMeters = deep ? 1800 + (node.id % 7) * 420 : 120 + (node.id % 9) * 85;
+            const layerIndex = deep ? 2 + (node.id % 2) : (node.id % 2);
+            const stratum = layerIndex >= 3 ? 'core' : layerIndex === 2 ? 'mantle' : layerIndex === 1 ? 'crust' : 'regolith';
+            return { depth: depthMeters >= 2500 ? 'abyssal' : deep ? 'deep' : depthMeters >= 400 ? 'shallow' : 'surface', depthMeters, oreQuality, qualityPct: gradeScore, stratum, layerIndex } as const;
+          })(),
           neighbors: node.neighbors,
           level: st?.level ?? 0,
           yield: st?.yield ?? 0,
           reserve: st?.reserve ?? 0,
           maxReserve: st?.maxReserve ?? 0,
+          depletionPerSec: this.production.activeDepletePerSec(rt, node.id, this.clock.gameMsNow),
+          reserveLifetimeSeconds: this.production.reserveLifetimeSeconds(rt, node.id, this.clock.gameMsNow),
+          miningOperations: status !== 'explored' ? null : this.production.operationProfile(rt, node.id, this.clock.gameMsNow),
           cooldownUntil: st?.cooldownUntil ?? 0,
           reactCount: st?.reactCount ?? 0,
           anomalyType: st?.anomalyType ?? null,
@@ -878,9 +939,12 @@ export class Game implements SaveSource {
         biome: rt.data.biome,
         planetIndex: rt.data.planetIndex,
         armId: rt.data.armId,
+        storage: this.storageForPlanet(rt.data.id),
         cells,
         exploredCount: rt.explored.size,
         totalCount: rt.data.cells.length,
+        geologicalSurvey: buildGeologicalSurvey(cells),
+        miningLogistics: buildMiningLogistics(cells, this.clock.gameMsNow),
       });
     }
     const active = this.activeRuntime();
@@ -904,6 +968,9 @@ export class Game implements SaveSource {
         maxLevel: this.warehouse.maxLevel(),
         tonsPerCell: this.warehouse.tonsPerCell(),
         bonusMult: this.warehouse.bonusMult(),
+        storageCapacity: active ? this.warehouse.capacityFor(active) : 0,
+        storedMass: active ? this.warehouse.storedMass() : 0,
+        remainingCapacity: active ? this.warehouse.remainingCapacity(active) : 0,
         nextCost: this.warehouse.nextCost(),
       },
       session: { ...this.sessionValue },
@@ -927,7 +994,7 @@ export class Game implements SaveSource {
         sectors: (['core', 'inner', 'mid', 'outer'] as const).map((id) => { const labels = { core: 'Ядро', inner: 'Внутренний сектор', mid: 'Средний сектор', outer: 'Внешний рубеж' }; return { id, label: labels[id], discovered: graphNodes.filter((node) => node.discovered && galaxySector(node).id === id).length }; }),
         discoveredArms: [...new Set(graphNodes.filter((node) => node.discovered).map((node) => node.armId).filter(Boolean))],
         progression: this.galaxyProgression(),
-        routes: buildRouteOptions(this.world.graph, this.unlocked, this.activePlanetIdValue, this.logistics.cargoMass()),
+        routes: buildRouteOptions(this.world.graph, this.unlocked, this.activePlanetIdValue, 0),
         routePolicy: ROUTE_POLICY,
         anomalies: buildAnomalySites(graphNodes, this.resolvedAnomalyIds),
       },
@@ -969,6 +1036,8 @@ export class Game implements SaveSource {
     const balances: Record<string, number> = {};
     for (const k of LEDGER_RESOURCES) balances[k] = this.ledger.balance(k);
     const ser = this.ledger.serialize();
+    const planetResources: Record<string, Partial<Record<PlanetStorageResourceKey, number>>> = Object.fromEntries([...this.planetResources].map(([pid, stock]) => [pid, { ...stock }]));
+    planetResources[this.activePlanetIdValue] = Object.fromEntries(PLANET_STORAGE_RESOURCES.map((key) => [key, balances[key] ?? 0])) as Partial<Record<PlanetStorageResourceKey, number>>;
     return {
       version: 2,
       savedAt: Date.now(),
@@ -979,6 +1048,7 @@ export class Game implements SaveSource {
       activePlanetId: this.activePlanetIdValue,
       unlockedPlanets: [...this.unlocked],
       planets,
+      planetResources,
       pricing: { currentCost: this.pricing.getCurrentCost() },
       tech: (() => { const t = this.tech.serialize(); return { levels: t.tech, research: t.research }; })(),
       reactor: this.reactor.serialize(),
@@ -994,13 +1064,14 @@ export class Game implements SaveSource {
     };
   }
 
-  applyState(save: SaveGameV2): void {
+  applyState(save: SaveGameV2, offlineElapsedMs = 0): void {
     this.gameStartSeedValue = save.gameStartSeed >>> 0;
     this.rng = new Rng(save.gameStartSeed >>> 0);
     this.rng.hydrate(save.rngState || (save.gameStartSeed >>> 0));
     this.exploration.setRng(this.rng);
     this.ledger.hydrate({ balances: save.ledger.balances, nextId: save.ledger.nextId });
     this.tech.hydrate({ tech: save.tech?.levels, research: save.tech?.research });
+    this.clock.hydrate({ gameMs: save.gameMs ?? 0, paused: false, speed: 1, stalledRealMs: 0 });
     this.reactor.hydrate(save.reactor);
     this.pricing.setCurrentCost(save.pricing?.currentCost ?? this.balance.baseline.scan.baseCost);
     this.warehouse.setLevel(save.warehouseLevel ?? 0);
@@ -1011,10 +1082,17 @@ export class Game implements SaveSource {
     const savedBonus = save.sonarBonus;
     this.sonarBonusValue = savedBonus && savedBonus.until > Date.now() ? { ...savedBonus } : null;
     this.charge.reset(); // баффы зарядов не персистятся (короткоживущие; 1.x — runtime-состояние)
-    this.clock.hydrate({ gameMs: save.gameMs ?? 0, paused: false, speed: 1, stalledRealMs: 0 });
     this.sessionValue = { ...freshSession(Date.now()), ...(save.session ?? {}) };
     this.activePlanetIdValue = save.activePlanetId;
     this.unlocked = [...save.unlockedPlanets];
+    this.planetResources = new Map(Object.entries(save.planetResources ?? {}).map(([pid, stock]) => [pid, { ...stock }]));
+    // Backward-compatible v2 migration: if the map is absent, current ledger stock belongs to the saved active planet.
+    if (!save.planetResources || !this.planetResources.has(this.activePlanetIdValue)) {
+      const activeStock: Partial<Record<PlanetStorageResourceKey, number>> = {};
+      for (const key of PLANET_STORAGE_RESOURCES) activeStock[key] = save.ledger.balances[key] ?? 0;
+      this.planetResources.set(this.activePlanetIdValue, activeStock);
+    }
+    this.ledger.replaceBalances(this.planetResources.get(this.activePlanetIdValue) ?? {}, PLANET_STORAGE_RESOURCES);
     // Этап 5: открытые миры — детерминированный реплей спеков (тот же порядок → те же id/позиции/рукава/рёбра; ADR-017)
     this.discoverySpecs = (save.discoveredSpecs ?? []).map((s) => ({ ...s }));
     this.orbitalExploration = new Map(Object.entries(save.orbitalExploration ?? {}).map(([id, state]) => [id, { scannedBodyIds: new Set(state.scannedBodyIds), activatedBodies: new Map(Object.entries(state.activatedBodies)) }]));
@@ -1045,7 +1123,57 @@ export class Game implements SaveSource {
         applyStartState(rt);
       }
       this.runtimes.set(pid, rt);
+      if (!this.planetResources.has(pid)) this.planetResources.set(pid, {});
     }
+    this.applyOfflineProgress(offlineElapsedMs);
+    // A missed V1 auto-surge is not replayed on resume; only its next timer is re-armed.
+    if (offlineElapsedMs >= this.balance.registry.offline.minSeconds * 1000) {
+      const rt = this.activeRuntime();
+      if (rt) this.charge.recoverAfterOffline(rt, this.rng.fork(`surge-recovery:${this.clock.gameMsNow}`));
+    }
+  }
+
+  /** V1 offline recovery: capped elapsed time, registry efficiency, active planet only. */
+  private applyOfflineProgress(elapsedMs: number): void {
+    const cfg = this.balance.registry.offline;
+    if (!Number.isFinite(elapsedMs) || elapsedMs < cfg.minSeconds * 1000) return;
+    const cappedMs = Math.min(elapsedMs, cfg.maxSeconds * 1000);
+    const effectiveMs = cappedMs * Math.max(0, Math.min(1, cfg.efficiency));
+    if (!(effectiveMs > 0)) return;
+
+    const previousGameMs = this.clock.gameMsNow;
+    const nextGameMs = previousGameMs + effectiveMs;
+    const craft = (this.balance.registry.raw['craft'] ?? {}) as Readonly<Record<string, unknown>>;
+    const reactorOfflineCapSec = Math.max(0, Number(craft['offlineCapSec'] ?? cfg.maxSeconds));
+    const reactorAdvanceMs = Math.min(effectiveMs, reactorOfflineCapSec * 1000);
+
+    const planets = this.activeRuntimes();
+    const reactorCapEndMs = previousGameMs + reactorAdvanceMs;
+    let segmentStartMs = previousGameMs;
+    while (segmentStartMs < nextGameMs) {
+      const segmentEndMs = this.production.nextOfflineBoundaryMs(planets, segmentStartMs, nextGameMs);
+      if (!(segmentEndMs > segmentStartMs)) break;
+      const dtSec = (segmentEndMs - segmentStartMs) / 1000;
+
+      // Snapshot income at segment start, before a vein can be depleted.
+      this.clock.hydrate({ gameMs: segmentStartMs, paused: false, speed: 1, stalledRealMs: 0 });
+      const { snapshot } = this.income.computeIncome(planets, this.incomeContext());
+
+      // Preserve live ticker order: extraction → synth → reactor → passive income.
+      this.production.tickOfflineInterval(planets, segmentStartMs, segmentEndMs);
+      this.clock.hydrate({ gameMs: segmentEndMs, paused: false, speed: 1, stalledRealMs: 0 });
+      // V1 Ay(): offline synth has its own cap multiplier; do not route it through live Ty().
+      this.synthService.tickOffline(planets, dtSec * (cappedMs / effectiveMs));
+      const reactorDtMs = Math.max(0, Math.min(segmentEndMs, reactorCapEndMs) - segmentStartMs);
+      this.reactor.tickOfflineSegment(reactorDtMs, segmentEndMs);
+      const rawDelta = this.income.tickDelta(snapshot, dtSec);
+      const delta = this.warehouse.limitIncomeDelta(this.activeRuntime() ?? null, rawDelta);
+      if (Object.keys(delta).some((key) => Math.abs(delta[key as keyof typeof delta] ?? 0) > 0)) {
+        this.ledger.tryCommit({ reason: 'tick:offline-income', scope: 'global', delta, gameMs: segmentEndMs });
+      }
+      segmentStartMs = segmentEndMs;
+    }
+    this.clock.hydrate({ gameMs: nextGameMs, paused: false, speed: 1, stalledRealMs: 0 });
   }
 
   private logisticsContext(planetId: string): LogisticsPlanetContext {

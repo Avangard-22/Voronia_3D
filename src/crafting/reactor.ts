@@ -170,6 +170,43 @@ export class Reactor {
     return { completed, outputs: outputs };
   }
 
+  /** Offline segment: charge inputs at segment start, advance only the supplied elapsed time. */
+  tickOfflineSegment(dtMs: number, gameMs: number): { completed: number; outputs: ResourceAmounts } {
+    const dt = Number.isFinite(dtMs) ? Math.max(0, dtMs) : 0;
+    this.lastMs = gameMs;
+    let completed = 0;
+    const outputs: Record<string, number> = {};
+    const slots = this.slots();
+    for (let index = 0; index < Math.min(slots, this.jobs.length); index++) {
+      const job = this.jobs[index]!;
+      const recipe = this.recipesRaw[job.recipeId];
+      if (!recipe) continue;
+      if (!job.paidForCurrent) {
+        const pay = this.ledger.tryCommit({ reason: `reactor:${job.recipeId}`, scope: 'global', delta: negate(recipe.inputs), gameMs });
+        if (!pay.ok) { job.deficit = true; continue; }
+        job.paidForCurrent = true;
+        job.deficit = false;
+      }
+      job.progressMs += dt;
+      const timeMs = Math.max(Number(this.craft['minTimeSec'] ?? 5), recipe.time) * 1000;
+      while (job.progressMs >= timeMs && job.done < job.runs) {
+        job.progressMs -= timeMs;
+        job.done += 1;
+        completed += 1;
+        for (const [key, value] of Object.entries(this.outputOf(job.recipeId))) outputs[key] = (outputs[key] ?? 0) + (value ?? 0);
+        job.paidForCurrent = false;
+        if (job.done >= job.runs) break;
+        const pay = this.ledger.tryCommit({ reason: `reactor:${job.recipeId}`, scope: 'global', delta: negate(recipe.inputs), gameMs });
+        if (!pay.ok) { job.deficit = true; break; }
+        job.paidForCurrent = true;
+        job.deficit = false;
+      }
+    }
+    if (Object.keys(outputs).length > 0) this.ledger.tryCommit({ reason: 'reactor:output', scope: 'global', delta: outputs, gameMs });
+    this.jobs = this.jobs.filter((job) => job.done < job.runs);
+    return { completed, outputs };
+  }
+
   view(): ReactorView {
     const slots = this.slots();
     return {

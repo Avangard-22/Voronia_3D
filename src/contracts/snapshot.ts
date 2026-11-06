@@ -4,7 +4,7 @@
  */
 import type { AnomalyType } from './cells';
 import type { ChargeStatus, SynthStatus } from './anomalies';
-import type { ResourceAmounts } from './resources';
+import type { ResourceAmounts, PlanetStorageResourceKey } from './resources';
 import type { TransactionRecord } from './events';
 import type { GraphNode } from './galaxy';
 import type { GalaxyRoute } from './galaxy';
@@ -42,11 +42,21 @@ export interface CellView {
   readonly id: number;
   readonly type: number;
   readonly status: CellViewStatus;
+  /** Геологическая награда раскрывается только после успешного сканирования. */
+  readonly geologicalReward: { readonly resourceKey: string; readonly baseRate: number; readonly secondaryResourceKey?: string; readonly secondaryBaseRate?: number } | null;
+  /** Геологический паспорт открытой жилы; описательные параметры без изменения формул экономики. */
+  readonly geology: { readonly depth: 'surface' | 'shallow' | 'deep' | 'abyssal'; readonly depthMeters: number; readonly oreQuality: 'common' | 'enriched' | 'high-grade' | 'exceptional'; readonly qualityPct: number; readonly stratum: 'regolith' | 'crust' | 'mantle' | 'core'; readonly layerIndex: number } | null;
   readonly neighbors: readonly number[];
   readonly level: number;
   readonly yield: number;
   readonly reserve: number;
   readonly maxReserve: number;
+  /** Текущая скорость истощения резерва; 0 если добыча остановлена/заблокирована. */
+  readonly depletionPerSec: number;
+  /** Оценка секунд до истощения; null если жила не добывается. */
+  readonly reserveLifetimeSeconds: number | null;
+  /** Расшифровка множителей и рекомендация по оптимизации добычи; null до сканирования/для не-жил. */
+  readonly miningOperations: { readonly active: boolean; readonly totalMultiplier: number; readonly factors: readonly { readonly id: string; readonly label: string; readonly multiplier: number }[]; readonly recommendation: string } | null;
   readonly cooldownUntil: number;
   readonly reactCount: number;
   readonly anomalyType: AnomalyType | null;
@@ -63,9 +73,26 @@ export interface PlanetView {
   readonly biome: string;
   readonly planetIndex: number;
   readonly armId: string | null;
+  /** V1 On/yy: local ore and rare-resource stock assigned to this planet. */
+  readonly storage: Readonly<Partial<Record<PlanetStorageResourceKey, number>>>;
   readonly cells: readonly CellView[];
   readonly exploredCount: number;
   readonly totalCount: number;
+  /** Stage 10.0.9: aggregate survey of scanned ore deposits only. */
+  readonly miningLogistics: {
+    readonly deposits: number;
+    readonly active: number;
+    readonly fleetAllocationPct: number;
+    readonly entries: readonly { readonly cellId: number; readonly resource: 'Железо' | 'Криоген'; readonly priority: number; readonly allocationPct: number; readonly reserve: number; readonly reservePct: number; readonly depletionPerSec: number; readonly lifetimeSeconds: number | null; readonly status: 'active' | 'cooldown' | 'depleted' | 'locked'; readonly reason: string }[];
+  };
+  readonly geologicalSurvey: {
+    readonly depositsScanned: number;
+    readonly activeDeposits: number;
+    readonly reserve: number;
+    readonly capacity: number;
+    readonly byStratum: Readonly<Record<'regolith' | 'crust' | 'mantle' | 'core', number>>;
+    readonly byQuality: Readonly<Record<'common' | 'enriched' | 'high-grade' | 'exceptional', number>>;
+  };
 }
 
 export interface GameSnapshot {
@@ -89,6 +116,9 @@ export interface GameSnapshot {
     readonly maxLevel: number;
     readonly tonsPerCell: number;
     readonly bonusMult: number;
+    readonly storageCapacity: number;
+    readonly storedMass: number;
+    readonly remainingCapacity: number;
     readonly nextCost: { readonly alloy: number; readonly energy: number } | null;
   };
   readonly session: SessionStats;

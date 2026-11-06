@@ -128,8 +128,23 @@ export class SynthService {
     return rt.origin[res]?.[kind] ?? 0;
   }
 
-  /** 1.x Ty(dt): тик синтеза по всем открытым планетам; true — что-то произведено. */
+  /** 1.x Ty(dt): live tick; Game передаёт только активную планету, чьи локальные запасы находятся в ledger. */
   tick(planets: readonly PlanetRuntime[], dtSec: number): boolean {
+    return this.tickScaled(planets, dtSec, 1, 'synth');
+  }
+
+  /** 1.x Ay(): отдельный offline path. offlineCapMult масштабирует только синтезаторный интервал.
+   * Вызов идемпотентен на уровне загрузки: Game сохраняет новое savedAt после recovery.
+   */
+  tickOffline(planets: readonly PlanetRuntime[], elapsedSec: number): boolean {
+    if (!Number.isFinite(elapsedSec) || elapsedSec <= 0) return false;
+    const capMult = Math.max(0, this.deps.balance.registry.transport.config.offlineCapMult);
+    return this.tickScaled(planets, elapsedSec, capMult, 'synth:offline');
+  }
+
+  private tickScaled(planets: readonly PlanetRuntime[], dtSec: number, scale: number, reasonPrefix: string): boolean {
+    if (!Number.isFinite(dtSec) || dtSec <= 0 || !Number.isFinite(scale) || scale <= 0) return false;
+    const scaledDtSec = dtSec * scale;
     const cfg = this.deps.balance.registry.transport.config;
     let ran = false;
     for (const rt of planets) {
@@ -139,11 +154,11 @@ export class SynthService {
       const product = s.product as LedgerResourceKey;
       const stock = this.deps.ledger.balance(input);
       if (stock <= 0) continue;
-      const c = Math.min(s.in * dtSec, stock);
+      const c = Math.min(s.in * scaledDtSec, stock);
       const produced = c / cfg.inputPerOutput;
       if (produced <= 0) continue;
       const commit = this.deps.ledger.tryCommit({
-        reason: `synth:${rt.data.id}`,
+        reason: `${reasonPrefix}:${rt.data.id}`, 
         scope: `planet:${rt.data.id}`,
         delta: { [input]: -c, [product]: produced },
         gameMs: this.deps.gameMs(),

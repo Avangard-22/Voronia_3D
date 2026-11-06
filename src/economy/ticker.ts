@@ -6,6 +6,7 @@
 import type { EventPort, LedgerPort, TickListener, Unsubscribe } from '../contracts/ports';
 import type { IncomeContext, IncomeService } from './income';
 import type { IncomeSnapshot } from '../contracts/economy';
+import type { ResourceAmounts } from '../contracts/resources';
 import type { ProductionService } from './production';
 import type { PlanetRuntime } from '../contracts/planets';
 
@@ -17,6 +18,8 @@ export interface TickerDeps {
   readonly production: ProductionService;
   readonly planets: () => readonly PlanetRuntime[];
   readonly incomeContext: () => IncomeContext;
+  /** Applies V1 planetary warehouse capacity to local-resource production only. */
+  readonly limitIncomeDelta?: (delta: ResourceAmounts) => ResourceAmounts;
   /** Этап 4: дополнительные шаги тика (surge-планировщик, синтезатор) — между истощением и доходом. */
   readonly steps?: readonly ((dtSec: number, gameMs: number) => void)[];
 }
@@ -46,8 +49,9 @@ export class EconomyTicker {
     const ctx = this.deps.incomeContext();
     const { snapshot } = this.deps.income.computeIncome(planets, ctx);
     this.lastIncome = snapshot;
-    const delta = this.deps.income.tickDelta(snapshot, dtSec);
-    if (Object.keys(delta).length > 0) {
+    const rawDelta = this.deps.income.tickDelta(snapshot, dtSec);
+    const delta = this.deps.limitIncomeDelta?.(rawDelta) ?? rawDelta;
+    if (Object.keys(delta).some((key) => Math.abs(delta[key as keyof ResourceAmounts] ?? 0) > 0)) {
       this.deps.ledger.tryCommit({ reason: 'tick:income', scope: 'global', delta, gameMs });
     }
     this.deps.bus.emit('game:tick', { dtMs, gameMs });

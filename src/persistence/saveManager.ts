@@ -10,7 +10,7 @@ import { LEGACY_SAVE_KEY, SAVE_KEY } from './storage';
 /** Контракт между SaveManager и Game-фасадом (Game — единственный сборщик, ADR-012). */
 export interface SaveSource {
   collectState(): SaveGameV2;
-  applyState(save: SaveGameV2): void;
+  applyState(save: SaveGameV2, offlineElapsedMs?: number): void;
 }
 
 export interface SaveManagerDeps {
@@ -38,6 +38,8 @@ export class SaveManager {
   save(): { sizeBytes: number } {
     const payload = this.serialize();
     this.deps.storage.setItem(SAVE_KEY, payload);
+    // LocalStorage may silently reject writes (quota/private mode); verify durable read-back.
+    if (this.deps.storage.getItem(SAVE_KEY) !== payload) throw new Error('Сохранение не подтверждено хранилищем');
     this.deps.bus.emit('game:saved', { saveVersion: SAVE_VERSION, at: this.now() });
     return { sizeBytes: payload.length };
   }
@@ -78,7 +80,11 @@ export class SaveManager {
     if (!raw) return { ok: false, reason: 'empty' };
     const parsed = this.parse(raw);
     if (!parsed) return { ok: false, reason: this.isJson(raw) ? 'invalid' : 'corrupt' };
-    this.source.applyState(parsed);
+    const savedAt = Number.isFinite(parsed.savedAt) ? parsed.savedAt : this.now();
+    const offlineElapsedMs = Math.max(0, this.now() - savedAt);
+    this.source.applyState(parsed, offlineElapsedMs);
+    // Re-anchor the save immediately: a repeated load must not grant the same offline interval twice.
+    this.save();
     this.deps.bus.emit('game:loaded', { saveVersion: parsed.version });
     return { ok: true, migrated: legacyRaw !== null, sizeBytes: raw.length };
   }
@@ -99,7 +105,9 @@ export class SaveManager {
   importString(payload: string): { sizeBytes: number } | null {
     const parsed = this.parse(payload);
     if (!parsed) return null;
-    this.source.applyState(parsed);
+    // Explicit import restores a snapshot now; elapsed time before export is not credited.
+    this.source.applyState(parsed, 0);
+    this.save();
     this.deps.bus.emit('game:loaded', { saveVersion: parsed.version });
     return { sizeBytes: payload.length };
   }

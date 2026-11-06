@@ -75,6 +75,14 @@ export class ResourceLedger implements LedgerPort {
     return { balances, nextId: this.nextId };
   }
 
+  /** Replace selected balances without creating a transaction or clearing the journal (planet On/yy storage swap). */
+  replaceBalances(values: Readonly<Partial<Record<LedgerResourceKey, number>>>, keys: readonly LedgerResourceKey[]): void {
+    for (const key of keys) {
+      const value = values[key] ?? 0;
+      this.balances.set(key, typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : 0);
+    }
+  }
+
   hydrate(s: { balances?: Record<string, number>; nextId?: number }): void {
     if (s.balances) {
       for (const k of LEDGER_RESOURCES) {
