@@ -36,7 +36,7 @@ import { applyStartState, createPlanetRuntime } from '../planets/runtime';
 import { ExplorationService } from '../planets/exploration';
 import { AnomalyService, fmFor } from '../planets/anomalies';
 import { countDiscoverablePlanets, createStarterWorld, discoverPlanet as runDiscovery, type DiscoveryWorld } from './discovery';
-import { classifySignal, galaxyMilestone, galaxySector, layoutGalaxy } from '../galaxy/exploration';
+import { classifySignal, galaxyMilestone, galaxyProgressionStatus, galaxySector, layoutGalaxy } from '../galaxy/exploration';
 import { buildAnomalySites } from '../galaxy/anomalies';
 import { buildStarSystemCatalog } from '../galaxy/starSystems';
 import { buildRouteOptions, findGalaxyRoute, ROUTE_POLICY } from '../galaxy/routes';
@@ -1018,7 +1018,15 @@ export class Game implements SaveSource {
     const issues = [...report.issues, ...saveValidation.problems.map((message) => ({ code: 'invalid-save-state', severity: 'error' as const, message }))];
     return { ...report, ok: !issues.some((issue) => issue.severity === 'error'), issues };
   }
-
+  private galaxyProgression(): ReturnType<typeof galaxyProgressionStatus> {
+    const discovered = Object.values(this.world.graph.nodes).filter((node) => node.discovered);
+    return galaxyProgressionStatus({
+      discoveredWorlds: discovered.length,
+      discoveredArms: new Set(discovered.map((node) => node.armId).filter(Boolean)).size,
+      discoveredSectors: new Set(discovered.map((node) => galaxySector(node).id)).size,
+      research: this.ledger.balance('research'),
+    });
+  }
   // ——— SaveSource ———
 
   collectState(): SaveGameV2 {
