@@ -17,7 +17,7 @@
 | type7 энергия | 100×Ws(2)=200⚡/с ВСЕГДА (deep-инвариант), ×энерго-цепь (c event) ×oh | ✅ income.ts (coreEffect-хук); 1→200, ×1.03 c зарядным баффом |
 | type7 кристаллы | 0.03💎/с ×кристальная цепь ×oh | ✅ отдельная линия |
 | discoverPlanet | planet_03 «Гелика-Прайм» (seed 777001): f3 octahedron, frost, 22 клетки, carbon, узел x53.0765/y0.232/z21.881, ребро→krios, 1100🔬, planetsUnlocked+1, БЕЗ автосwitch; planet_04 «Ван» 2420🔬; override cube/f2/ferrum → planet_05 (iron, inter) 5324🔬 | ✅ Game.discoverWorld (награда через ledger — ADR-017 п.3) |
-| setActivePlanet | guard PLANETS+unlocked (krios locked → false); selectedCellId=null, planetPage=0, rotX=−0.08, rotY=0; своп storage On/yy (1234/77 ↔ 0/0) | ✅ команда + reject `state`; своп — Этап 9 (TV-25, ADR-017 п.5); rotX/rotY — в scene.ts |
+| setActivePlanet | guard PLANETS+unlocked (krios locked → false); selectedCellId=null, planetPage=0, rotX=−0.08, rotY=0; своп storage On/yy (1234/77 ↔ 0/0) | ✅ команда + reject `state`; своп восстановлен в Phase 10.1.4 (TV-25, ADR-017 п.5); rotX/rotY — в scene.ts |
 | Скрытый мир | planet_hidden, seed=gameStartSeed^1212761156, f6 ico, idx 100, void, узел (0,12,0) | 📋 задокументирован (§J), вызов sm — Этап 10+ (TV-35) |
 | Save-реплей | — (2.0-решение) | ✅ discoveredSpecs → детерминированный мир/граф (тест roundtrip) |
 | 3D-прототип | — | ✅ planetMesh (поли-сетка/граф/палитра hsl+hex), scene.ts (Three r170: vertexColors+flat, InstancedMesh в LOD ×2, LineSegments, drag), FpsMeter (fps/avg/p95, окно 240) |
@@ -33,7 +33,7 @@
 
 ## 5. Отклонения (ADR-017)
 
-Награда через ledger (не напрямую); реплей спеков вместо дампа планет; своп storage On/yy отложен (Этап 9); krios открывается сонаром (Этап 6, TV-33 — в тестах Этапа 4 временный save-цикл); renderer — прототип (эффекты/оверлеи baseline — Этапы 6/12); `planet:activated` — 2.0-событие (в 1.x — внешний колбэк sf).
+Награда через ledger (не напрямую); реплей спеков вместо дампа планет; своп storage On/yy восстановлен в Phase 10.1.4; krios открывается сонаром (Этап 6, TV-33 — в тестах Этапа 4 временный save-цикл); renderer — прототип (эффекты/оверлеи baseline — Этапы 6/12); `planet:activated` — 2.0-событие (в 1.x — внешний колбэк sf).
 
 ## 6. Следующий шаг — Этап 6 (Сонар + сохранение-расширения)
 

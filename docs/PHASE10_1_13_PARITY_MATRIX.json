@@ -1,0 +1,248 @@
+{
+  "phase": "10.1.13",
+  "title": "P0 Gap Closure: Offline Synth, Hidden Profile & Golden Save Replay",
+  "baseline": {
+    "v1": "v0.0.41.0",
+    "save_schema": 39,
+    "authority": "checked-in V1 runtime fixtures and source-level behavior"
+  },
+  "status_definitions": {
+    "PASS": "evidence-backed parity test or deterministic fixture exists",
+    "PARTIAL": "core path exists but edge cases/content or runtime replay remains unverified",
+    "GAP": "known missing or placeholder behavior",
+    "BLOCKED": "requires external device/environment or unavailable runtime proof"
+  },
+  "summary": {
+    "PASS": 3,
+    "PARTIAL": 9,
+    "GAP": 9,
+    "BLOCKED": 1,
+    "total": 22
+  },
+  "mechanics": [
+    {
+      "id": "core_loop",
+      "mechanic": "Сканирование, раскрытие и цены",
+      "status": "PASS",
+      "evidence": [
+        "tests/phase10_1_2_core_loop_parity.test.ts",
+        "fixtures/gs03_scan_trail.json"
+      ],
+      "finding": "Повторно подтверждено контрактными тестами; полный Vitest в этой среде не запускался."
+    },
+    {
+      "id": "cell_upgrades",
+      "mechanic": "Улучшения ячеек и базовые кривые",
+      "status": "PARTIAL",
+      "evidence": [
+        "tests/phase10_1_2_core_loop_parity.test.ts",
+        "fixtures/gs04_upgrade_curve.json"
+      ],
+      "finding": "Поздние уровни и hardcore-ветви остаются частично подтверждёнными (TV-14/15)."
+    },
+    {
+      "id": "planet_unlock",
+      "mechanic": "Открытие планет и Sonar",
+      "status": "PARTIAL",
+      "evidence": [
+        "tests/phase10_1_3_progression.test.ts",
+        "docs/TO_VERIFY.md#TV-33"
+      ],
+      "finding": "Базовая последовательность покрыта; расход зарядов, reroll и повторное сканирование остаются GAP."
+    },
+    {
+      "id": "planet_storage",
+      "mechanic": "Переключение планет и локальные запасы",
+      "status": "PASS",
+      "evidence": [
+        "tests/phase10_1_4_planet_storage.test.ts"
+      ],
+      "finding": "Покрыты локальные ресурсы, переключение и сохранение состояния."
+    },
+    {
+      "id": "warehouse",
+      "mechanic": "Склад и вместимость",
+      "status": "PASS",
+      "evidence": [
+        "tests/phase10_1_5_warehouse_parity.test.ts",
+        "fixtures/warehouse_curve_v0.0.41.json"
+      ],
+      "finding": "Контрактные проверки складской кривой."
+    },
+    {
+      "id": "special_cells",
+      "mechanic": "Аномалии, ветви и заряды",
+      "status": "PARTIAL",
+      "evidence": [
+        "tests/phase10_1_6_special_cells.test.ts",
+        "fixtures/stage4_audit_v0.0.41.json"
+      ],
+      "finding": "Основные ветви/заряды покрыты; hidden tech profile и полная сонарная семантика открыты."
+    },
+    {
+      "id": "synth_mutants",
+      "mechanic": "Синтезатор и мутанты",
+      "status": "PARTIAL",
+      "evidence": [
+        "tests/phase10_1_7_synth_mutant_parity.test.ts",
+        "src/economy/synth.ts"
+      ],
+      "finding": "Базовый synth/mutant parity есть; role modifiers и spc_hidden остаются заглушками."
+    },
+    {
+      "id": "offline",
+      "mechanic": "Офлайн-производство и восстановление",
+      "status": "PARTIAL",
+      "evidence": [
+        "tests/phase10_1_8_offline_progression.test.ts",
+        "src/core/game.ts"
+      ],
+      "finding": "Реализованы cap/efficiency и сегментный прогресс; V1 exact elapsed/depletion accounting и синтезаторный Ay() требуют сверки."
+    },
+    {
+      "id": "timed_effects",
+      "mechanic": "Временные эффекты, surge и кулдауны",
+      "status": "PARTIAL",
+      "evidence": [
+        "tests/phase10_1_9_timed_effects.test.ts",
+        "docs/GOLDEN_SCENARIOS.md#GS-15"
+      ],
+      "finding": "Таймеры и пропуск missed surge покрыты; живой UI/тост-троттлинг и save semantics остаются проверкой."
+    },
+    {
+      "id": "save_integrity",
+      "mechanic": "Целостность сохранений и миграция",
+      "status": "PARTIAL",
+      "evidence": [
+        "tests/phase10_1_10_save_integrity.test.ts",
+        "fixtures/golden_save_fresh_v0.0.41.json",
+        "fixtures/golden_save_midgame_v0.0.41.json"
+      ],
+      "finding": "Есть roundtrip и corrupt-save tests; golden mid-game V39 replay и полная миграционная матрица не исполнены."
+    },
+    {
+      "id": "guardian",
+      "mechanic": "Стражи, бои и коллапсы",
+      "status": "GAP",
+      "evidence": [
+        "docs/TO_VERIFY.md#TV-20"
+      ],
+      "finding": "В текущем parity-пакете нет подтверждённого полного игрового цикла боя."
+    },
+    {
+      "id": "crafting",
+      "mechanic": "Полные рецепты и compound production",
+      "status": "PARTIAL",
+      "evidence": [
+        "docs/TO_VERIFY.md#TV-21",
+        "src/crafting/reactor.ts"
+      ],
+      "finding": "Compound multiplier есть; полная матрица рецептов и progression parity не доказана."
+    },
+    {
+      "id": "reactivation",
+      "mechanic": "Точное восстановление жил",
+      "status": "GAP",
+      "evidence": [
+        "docs/TO_VERIFY.md#TV-22"
+      ],
+      "finding": "Требуется прямой V1 runtime replay на refill reserve и cooldown."
+    },
+    {
+      "id": "mixed_saves",
+      "mechanic": "Mixed-world persistence",
+      "status": "GAP",
+      "evidence": [
+        "docs/TO_VERIFY.md#TV-26"
+      ],
+      "finding": "Нет golden mixed-world save fixture/replay."
+    },
+    {
+      "id": "planet_roles",
+      "mechanic": "Роли планет и role modifiers",
+      "status": "GAP",
+      "evidence": [
+        "docs/TO_VERIFY.md#TV-28",
+        "src/economy/synth.ts"
+      ],
+      "finding": "Типы/данные не подтверждают поведение V1; role hooks остаются нейтральными."
+    },
+    {
+      "id": "hidden_profile",
+      "mechanic": "spc_hidden technology profile",
+      "status": "GAP",
+      "evidence": [
+        "docs/TO_VERIFY.md#TV-29",
+        "src/core/game.ts"
+      ],
+      "finding": "V1 checked-in audit fixture only proves spc_hidden=false; no authoritative true-case save or trigger mapping exists. Do not invent a trigger; capture required."
+    },
+    {
+      "id": "synth_modifiers",
+      "mechanic": "Synth role/meta modifiers",
+      "status": "GAP",
+      "evidence": [
+        "docs/TO_VERIFY.md#TV-30",
+        "src/economy/synth.ts"
+      ],
+      "finding": "Exact V1 Co/mt role and meta multiplier mapping is absent from checked-in runtime fixtures; hooks remain neutral pending authoritative evidence."
+    },
+    {
+      "id": "offline_synth",
+      "mechanic": "Offline synth Ay() parity",
+      "status": "PARTIAL",
+      "evidence": [
+        "src/economy/synth.ts#tickOffline",
+        "tests/phase10_1_13_gap_closure.test.ts",
+        "fixtures/stage4_audit_v0.0.41.json"
+      ],
+      "finding": "Dedicated Ay() path now applies offlineCapMult in synth domain; runtime execution remains pending. No V1 true-case fixture is available for hidden profile."
+    },
+    {
+      "id": "charge_persistence",
+      "mechanic": "Charge buffs persistence parity",
+      "status": "GAP",
+      "evidence": [
+        "docs/TO_VERIFY.md#TV-32",
+        "src/core/game.ts"
+      ],
+      "finding": "Charge state сбрасывается при load по ADR-016; требуется V1 golden replay/решение по точной семантике."
+    },
+    {
+      "id": "sonar_full",
+      "mechanic": "Полный Sonar reroll/charge cycle",
+      "status": "PARTIAL",
+      "evidence": [
+        "docs/TO_VERIFY.md#TV-33",
+        "tests/phase10_1_3_progression.test.ts"
+      ],
+      "finding": "Основной unlock работает, но полный цикл расходов и повторного сканирования не закрыт."
+    },
+    {
+      "id": "core_build",
+      "mechanic": "Core construction/merge and hidden world",
+      "status": "GAP",
+      "evidence": [
+        "docs/TO_VERIFY.md#TV-35"
+      ],
+      "finding": "Постройка/слияние ядра и hidden-world loop не подтверждены."
+    },
+    {
+      "id": "device_perf",
+      "mechanic": "Целевой Android performance/soak",
+      "status": "BLOCKED",
+      "evidence": [
+        "docs/TO_VERIFY.md#TV-36"
+      ],
+      "finding": "Нужны реальные замеры на целевом устройстве: FPS, p95, heap и 60-минутный soak."
+    }
+  ],
+  "phase10_1_12_summary_at_start": {
+    "PASS": 3,
+    "PARTIAL": 9,
+    "GAP": 9,
+    "BLOCKED": 1,
+    "total": 22
+  },
+  "phase10_1_13_verdict": "PARTIAL — offline Ay path and golden replay tests added; runtime test execution and hidden-profile true-case evidence remain outstanding."
+}
