@@ -1,0 +1,107 @@
+{
+  "stage": "10.0.1",
+  "build": "2.0.0-stage10.0.1",
+  "targetBaseline": "V1 v0.0.41.0",
+  "referenceLimitation": "Exact V1 v0.0.41.0 HTML source was inspected; formula-level runtime parity and golden-save replay remain pending.",
+  "verdict": "V2 has a substantial core gameplay foundation but is not yet V1 gameplay-complete.",
+  "systems": [
+    {
+      "id": "surface_interaction",
+      "status": "PARTIAL"
+    },
+    {
+      "id": "cell_scanning",
+      "status": "IMPLEMENTED_PARITY_CHECK_PENDING"
+    },
+    {
+      "id": "cell_upgrades_production",
+      "status": "IMPLEMENTED_PARITY_CHECK_PENDING"
+    },
+    {
+      "id": "deep_upgrade_ladder",
+      "status": "PARTIAL"
+    },
+    {
+      "id": "vein_depletion_reactivation",
+      "status": "IMPLEMENTED"
+    },
+    {
+      "id": "charge_discharge_surge",
+      "status": "IMPLEMENTED_PARITY_CHECK_PENDING"
+    },
+    {
+      "id": "anomalies",
+      "status": "IMPLEMENTED"
+    },
+    {
+      "id": "resource_ledger",
+      "status": "IMPLEMENTED"
+    },
+    {
+      "id": "offline_settlement",
+      "status": "MISSING"
+    },
+    {
+      "id": "technology_research",
+      "status": "IMPLEMENTED_PARITY_CHECK_PENDING"
+    },
+    {
+      "id": "reactor_crafting",
+      "status": "PARTIAL"
+    },
+    {
+      "id": "sonar_first_unlock",
+      "status": "IMPLEMENTED_PARITY_CHECK_PENDING"
+    },
+    {
+      "id": "sonar_rerolls_progression",
+      "status": "IMPLEMENTED_PARITY_CHECK_PENDING"
+    },
+    {
+      "id": "galaxy_routes_orbits",
+      "status": "IMPLEMENTED"
+    },
+    {
+      "id": "logistics_transport",
+      "status": "PARTIAL"
+    },
+    {
+      "id": "planet_roles",
+      "status": "MISSING"
+    },
+    {
+      "id": "guardian_combat",
+      "status": "MISSING"
+    },
+    {
+      "id": "prestige_dust_tree",
+      "status": "MISSING"
+    },
+    {
+      "id": "meta_ascension_shards",
+      "status": "MISSING"
+    },
+    {
+      "id": "achievements_tasks_events",
+      "status": "MISSING"
+    },
+    {
+      "id": "premium_automation",
+      "status": "MISSING"
+    },
+    {
+      "id": "tutorial_onboarding",
+      "status": "PARTIAL"
+    },
+    {
+      "id": "save_load_migration",
+      "status": "IMPLEMENTED_PARITY_CHECK_PENDING"
+    },
+    {
+      "id": "audio",
+      "status": "MISSING"
+    }
+  ],
+  "nextStage": "10.1.1 — V1 Gameplay Gap Prioritization & Golden Runtime Baseline",
+  "developmentDirection": "V2 must follow V1 gameplay progression. Keep the game inside the active planetary system until V1 core loops are reconciled; defer galaxy-scale navigation and new unrelated mechanics."
+}
