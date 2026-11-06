@@ -19,10 +19,16 @@ describe('Stage 8.0.2 — polygon cell visual states', () => {
     // Феррум — строгий додекаэдр: все 12 клеток пятиугольные, поэтому разнообразие сторон проверяется
     // на сгенерированном мире. Инвариант Stage 8.0.2: меш повторяет исходные poly, а не сводит их к hex-сетке.
     const generated = discoverPlanet({ seed: 777001, name: 'Гелика-Прайм' }, createStarterWorld(ctx), ctx).planet;
-    expect(new Set(generated.cells.map((cell) => cell.poly.length)).size).toBeGreaterThan(1);
-    const generatedData = buildPlanetMeshData(generated);
-    expect(Array.from(generatedData.cellSideCounts)).toEqual(generated.cells.map((cell) => cell.poly.length));
-    expect(generatedData.boundarySegmentCount).toBe(generated.cells.reduce((sum, cell) => sum + cell.poly.length, 0));
+expect(new Set(generated.cells.map((cell) => cell.poly.length)).size).toBeGreaterThan(1);
+const generatedData = buildPlanetMeshData(generated);
+// Phase 10.1.13: объединённая ячейка содержит несколько V1-полигонов,
+// cellSideCounts — сумма длин всех частей (≥ cell.poly.length).
+generated.cells.forEach((cell, i) => {
+  expect(generatedData.cellSideCounts[i]!).toBeGreaterThanOrEqual(cell.poly.length);
+});
+expect(
+  generated.cells.some((cell, i) => generatedData.cellSideCounts[i]! > cell.poly.length),
+).toBe(true);
   });
 
   it('distinguishes hidden, revealed and explored states without exposing hidden cell types', () => {
