@@ -1,7 +1,7 @@
 {
   "name": "voronia2",
   "private": true,
-  "version": "2.0.0-stage9.11.0",
+  "version": "2.0.0-phase10.1.13",
   "type": "module",
   "description": "Voronia 2.0 — модульный rewrite монолита v0.0.41 (ТЗ ред. 1.0). Баланс меняется только через ledger (ТЗ §15).",
   "engines": {
@@ -22,7 +22,19 @@
     "test:watch": "vitest",
     "extract": "node tools/extract_stage0.cjs",
     "ci": "npm run lint && npm run typecheck && npm run typecheck:node && npm run check:arch && npm run test && npm run build && npm run build:single && npm run check:size",
-    "check:stage9.8": "node tools/check_stage9_8.mjs"
+    "check:stage9.8": "node tools/check_stage9_8.mjs",
+    "check:baseline": "node tools/check_phase10_1_1_baseline.mjs",
+    "check:phase10.1.2": "node tools/check_phase10_1_2_parity.mjs",
+    "check:phase10.1.3": "node tools/check_phase10_1_3_progression.mjs",
+    "check:phase10.1.5": "node tools/check_phase10_1_5_warehouse_parity.mjs",
+    "check:phase10.1.6": "node tools/check_phase10_1_6_special_cells.mjs",
+    "check:phase10.1.7": "node tools/check_phase10_1_7_synth_mutant_parity.mjs",
+    "check:phase10.1.8": "node tools/check_phase10_1_8_offline_progression.mjs",
+    "check:phase10.1.9": "node tools/check_phase10_1_9_timed_effects.mjs",
+    "check:phase10.1.10": "node tools/check_phase10_1_10_save_integrity.mjs",
+    "check:phase10.1.11": "node tools/check_phase10_1_11_regression.mjs",
+    "check:phase10.1.12": "node tools/check_phase10_1_12_parity_audit.mjs",
+    "check:phase10.1.13": "node tools/check_phase10_1_13_gap_closure.mjs"
   },
   "dependencies": {
     "three": "^0.170.0"

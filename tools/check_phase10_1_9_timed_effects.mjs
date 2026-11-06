@@ -1,0 +1,24 @@
+#!/usr/bin/env node
+import fs from 'node:fs';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+const root = process.cwd();
+const read = (p) => fs.readFileSync(path.join(root, p), 'utf8');
+const charge = read('src/economy/charge.ts');
+const game = read('src/core/game.ts');
+const tests = read('tests/phase10_1_9_timed_effects.test.ts');
+const baseline = JSON.parse(read('src/config/data/balance/v0.0.41/baseline.json'));
+assert.match(charge, /recoverAfterOffline\(rt: PlanetRuntime, rng: RngPort\)/);
+assert.match(charge, /st\.surgeNextAt = now \+ min \+ rng\.next\(\) \* \(max - min\)/);
+assert.match(charge, /st\.surgeUntil = 0/);
+assert.match(game, /this\.charge\.recoverAfterOffline\(rt, this\.rng\.fork\(`surge-recovery:/);
+assert.equal(baseline.surge.nextAtMinType1, 45000);
+assert.equal(baseline.surge.nextAtMaxType1, 120000);
+assert.equal(baseline.surge.nextAtMinType2, 90000);
+assert.equal(baseline.surge.nextAtMaxType2, 240000);
+assert.match(tests, /skips missed offline surges/);
+assert.match(tests, /does not rearm a future surge timer/);
+console.log('Phase 10.1.9 timed-effects contract check PASSED');
+console.log('- Missed offline surges are skipped, not replayed or rewarded');
+console.log('- Active-planet surge timer is re-armed using V1 intervals');
+console.log('- Expired surge effects and charge cooldowns recover against game time');

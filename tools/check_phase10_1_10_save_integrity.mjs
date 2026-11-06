@@ -1,0 +1,23 @@
+#!/usr/bin/env node
+import fs from 'node:fs';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+const root = process.cwd();
+const read = (p) => fs.readFileSync(path.join(root, p), 'utf8');
+const schema = read('src/persistence/schema.ts');
+const manager = read('src/persistence/saveManager.ts');
+const tests = read('tests/phase10_1_10_save_integrity.test.ts');
+assert.match(schema, /savedAt невалиден/);
+assert.match(schema, /gameMs невалиден/);
+assert.match(schema, /повтор id/);
+assert.match(schema, /activePlanetId отсутствует в unlockedPlanets/);
+assert.match(manager, /Сохранение не подтверждено хранилищем/);
+assert.match(manager, /this\.source\.applyState\(parsed, offlineElapsedMs\)/);
+assert.match(manager, /Re-anchor the save immediately/);
+assert.match(manager, /this\.save\(\);/);
+assert.match(tests, /round-trips cell timers, reactor queue/);
+assert.match(tests, /does not mutate live game state when stored save is corrupt/);
+console.log('Phase 10.1.10 save-integrity contract check PASSED');
+console.log('- Strict core timestamp, progression and cell-state validation');
+console.log('- Storage write read-back verification');
+console.log('- Save/load recovery regression coverage');

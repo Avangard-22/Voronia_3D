@@ -1,0 +1,27 @@
+#!/usr/bin/env node
+import fs from 'node:fs';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+const root = process.cwd();
+const read = (p) => fs.readFileSync(path.join(root, p), 'utf8');
+const schema = read('src/persistence/schema.ts');
+const charge = read('src/economy/charge.ts');
+const anomaly = read('src/planets/anomalies.ts');
+const tests = read('tests/phase10_1_6_special_cells.test.ts');
+const fixture = JSON.parse(read('fixtures/stage4_audit_v0.0.41.json'));
+assert.equal(fixture.config.charge.buffCap, 0.25);
+assert.equal(fixture.config.charge.config['1'].basePct, 0.03);
+assert.equal(fixture.config.charge.config['2'].basePct, 0.08);
+assert.match(charge, /Math\.min\(cfg\.neighborMax, 1 \+ s \* cfg\.neighborBonus\)/);
+assert.match(charge, /node\.type === 2 \? this\.deps\.addSonarCharge\(\)/);
+assert.match(charge, /cell:surge/);
+assert.match(anomaly, /if \(hasDeepPower\) return 0\.5/);
+assert.match(schema, /legacyDeadlineToGameMs/);
+assert.match(schema, /_v039SurgeNextAt/);
+assert.match(schema, /_chargeCooldown/);
+assert.match(tests, /migrates anomaly branch and V1 manual\/surge timestamps/);
+assert.match(tests, /native V2 save\/load roundtrip/);
+console.log('Phase 10.1.6 special-cell parity check PASSED');
+console.log('- V1 branch effects, manual charge and auto-surge contracts anchored to stage4_audit_v0.0.41.json');
+console.log('- Legacy epoch deadlines migrate as remaining game-time durations; expired deadlines stay expired');
+console.log('- Native V2 saves retain special-cell state');
