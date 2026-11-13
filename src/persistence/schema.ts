@@ -64,6 +64,7 @@ export interface SaveGameV2 {
   readonly reactor?: {
     readonly jobs?: readonly { id?: number; recipeId?: string; runs?: number; done?: number; progressMs?: number; paidForCurrent?: boolean; deficit?: boolean }[];
     readonly nextJobId?: number;
+    readonly slotsPurchased?: number;
   };
   readonly session: SessionStats;
   /** Этап 4 (опц.): сонар-заряды (1.x n.sonarCharges, cap sonar.chargeMax). */

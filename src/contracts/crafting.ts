@@ -30,6 +30,9 @@ export interface ReactorJobView {
 /** Полный срез реактора для снапшота (ТЗ §6: «Реактор в покое…» — idle). */
 export interface ReactorView {
   readonly slots: number;
+  readonly purchasedSlots: number;
+  readonly maxPurchases: number;
+  readonly nextSlotCost: ResourceAmounts | null;
   readonly idle: boolean;
   readonly queue: readonly ReactorJobView[];
   readonly recipes: readonly ReactorRecipeView[];
@@ -48,6 +51,7 @@ export interface ReactorJobSave {
 
 /** Персистентная форма реактора. */
 export interface ReactorSave {
+  readonly slotsPurchased?: number;
   readonly jobs?: readonly ReactorJobSave[];
   readonly nextJobId?: number;
 }

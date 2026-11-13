@@ -9,6 +9,7 @@ import { CELL_TYPE_NAMES, ANOMALY_META, type CellType } from '../contracts/cells
 import { COMBAT_DOMAIN_STATUS } from '../contracts/combat';
 import { cellActionFeedback } from './cellActionFeedback';
 import { formatCompact } from './numberFormat';
+import { openGameModal, type GameModalKind } from './modalWindows';
 
 
 let persistenceNotice = '';
@@ -206,6 +207,8 @@ export function renderSnapshot(game: Game, root: HTMLElement): void {
       <button type="button" data-quick-action="sonar" title="Сонарная станция" aria-label="Сонарная станция">⌁<small>СОНАР</small></button>
       <button type="button" data-quick-action="map" title="Карта галактики" aria-label="Карта галактики">✧<small>КАРТА</small></button>
       <button type="button" data-quick-action="fullscreen" title="Полный экран" aria-label="Полный экран">⛶<small>ЭКРАН</small></button>
+      <button type="button" data-quick-action="reactor" title="Реактор v39" aria-label="Реактор v39">⚗<small>РЕАКТОР</small></button>
+      <button type="button" data-quick-action="storage" title="Склад" aria-label="Склад">▤<small>СКЛАД</small></button>
       <button type="button" data-quick-action="combat" title="Боевые события" aria-label="Боевые события" class="is-unavailable">⚔<small>БОЙ</small></button>
     </div>
     <div class="hud-window-actions" aria-label="Окна игры"><button type="button" data-modal-open="save" title="Сохранения" aria-label="Сохранения">▣</button><button type="button" data-modal-open="settings" title="Настройки" aria-label="Настройки">⚙</button><button type="button" data-modal-open="about" title="Об игре" aria-label="Об игре">i</button></div>
@@ -316,6 +319,35 @@ export function renderSnapshot(game: Game, root: HTMLElement): void {
       groups[current].append(node);
     }
     column.replaceChildren(groups.planet, groups.galaxy, groups.science, groups.meta);
+    const launcherSets: Record<typeof activeNavigationTab, readonly { kind: GameModalKind; icon: string; title: string; note: string }[]> = {
+      planet: [
+        { kind: 'sonar', icon: '⌁', title: 'Сонарная станция', note: 'Сигнатуры и открытие миров' },
+        { kind: 'storage', icon: '▤', title: 'Склад и добыча', note: 'Запасы и производство' },
+        { kind: 'stats', icon: '▥', title: 'Статистика', note: 'Показатели экспедиции' },
+        { kind: 'help', icon: '?', title: 'Справка', note: 'Управление и действия' },
+      ],
+      galaxy: [
+        { kind: 'galaxy', icon: '✧', title: 'Карта галактики', note: 'Открытые миры и маршруты' },
+        { kind: 'sonar', icon: '⌁', title: 'Сонар', note: 'Поиск следующей системы' },
+      ],
+      science: [
+        { kind: 'tech', icon: '⌬', title: 'Технологическое древо', note: 'Узлы и требования' },
+        { kind: 'reactor', icon: '⚗', title: 'Реактор v39', note: 'Рецепт, синтез и очередь' },
+        { kind: 'research', icon: '🔬', title: 'Исследования', note: 'Научные данные и узлы' },
+      ],
+      meta: [
+        { kind: 'storage', icon: '▤', title: 'Склад', note: 'Запасы и логистика' },
+        { kind: 'stats', icon: '▥', title: 'Статистика', note: 'Сводка сессии' },
+        { kind: 'offline', icon: '◷', title: 'Офлайн-отчёт', note: 'Доступность отчёта' },
+        { kind: 'help', icon: '?', title: 'Справка', note: 'Управление экспедицией' },
+      ],
+    };
+    for (const [tab, panel] of Object.entries(groups) as [typeof activeNavigationTab, HTMLElement][]) {
+      const grid = document.createElement('div');
+      grid.className = 'modal-launcher-grid';
+      grid.innerHTML = launcherSets[tab].map(item => `<button type="button" class="modal-launcher" data-modal-open="${item.kind}"><b>${item.icon} ${item.title}</b><small>${item.note}</small></button>`).join('');
+      panel.prepend(grid);
+    }
   }
   patchDom(root, templateRoot.innerHTML);
 }
@@ -486,14 +518,13 @@ export function bindCommands(game: Game, root: HTMLElement, onCommand?: () => vo
     if (quickButton) {
       const action = quickButton.dataset['quickAction'];
       if (action === 'sonar') {
-        const snapshot = game.snapshot();
-        if (snapshot.sonar.available) runSonarMinigame(game, () => onCommand?.());
-        else {
-          activateLegacyTab(root, 'galaxy');
-          root.querySelector<HTMLElement>('[data-nav-panel="galaxy"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
+        openGameModal(game, 'sonar', onCommand, () => runSonarMinigame(game, () => onCommand?.()));
       } else if (action === 'map') {
-        activateLegacyTab(root, 'galaxy');
+        openGameModal(game, 'galaxy', onCommand);
+      } else if (action === 'reactor') {
+        openGameModal(game, 'reactor', onCommand);
+      } else if (action === 'storage') {
+        openGameModal(game, 'storage', onCommand);
       } else if (action === 'fullscreen') {
         if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
         else void (document.documentElement.requestFullscreen?.().catch(() => undefined));
@@ -501,7 +532,12 @@ export function bindCommands(game: Game, root: HTMLElement, onCommand?: () => vo
       return;
     }
     const modalButton = target.closest<HTMLButtonElement>('button[data-modal-open]');
-    if (modalButton) { const kind = modalButton.dataset['modalOpen']; if (kind === 'save' || kind === 'settings' || kind === 'about') openLegacyModal(game, kind, onCommand); return; }
+    if (modalButton) {
+      const kind = modalButton.dataset['modalOpen'] as GameModalKind | undefined;
+      const allowed: readonly GameModalKind[] = ['save','settings','about','reactor','storage','sonar','galaxy','tech','research','stats','help','offline'];
+      if (kind && allowed.includes(kind)) openGameModal(game, kind, onCommand, () => runSonarMinigame(game, () => onCommand?.()));
+      return;
+    }
     const navButton = target.closest<HTMLButtonElement>('button[data-nav-tab]');
     if (navButton) {
       const tab = navButton.dataset['navTab'];

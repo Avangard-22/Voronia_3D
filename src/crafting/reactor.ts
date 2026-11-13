@@ -51,6 +51,7 @@ export type ReactorResult<T> = { ok: true; value: T } | { ok: false; reason: str
 export class Reactor {
   private jobs: ReactorJob[] = [];
   private nextJobId = 1;
+  private purchasedSlots = 0;
   private lastMs: number;
 
   constructor(
@@ -64,7 +65,29 @@ export class Reactor {
   }
 
   slots(): number {
-    return Math.max(1, Number(this.craft['baseSlots'] ?? 1));
+    return Math.max(1, Number(this.craft['baseSlots'] ?? 1)) + this.purchasedSlots;
+  }
+
+  private slotPurchaseConfig(): { max: number; costs: readonly ResourceAmounts[] } {
+    const raw = this.craft['slotPurchase'];
+    if (!raw || typeof raw !== 'object') return { max: 0, costs: [] };
+    const cfg = raw as Record<string, unknown>;
+    const costs = Array.isArray(cfg['costs']) ? cfg['costs'] as ResourceAmounts[] : [];
+    const max = Math.max(0, Math.floor(Number(cfg['max'] ?? costs.length)));
+    return { max: Math.min(max, costs.length), costs };
+  }
+
+  buySlot(gameMs: number): ReactorResult<{ slots: number; purchasedSlots: number }> {
+    const cfg = this.slotPurchaseConfig();
+    if (this.purchasedSlots >= cfg.max) return { ok: false, reason: 'max' };
+    const cost = cfg.costs[this.purchasedSlots];
+    if (!cost) return { ok: false, reason: 'max' };
+    const delta: ResourceAmounts = {};
+    for (const [key, value] of Object.entries(cost)) delta[key as keyof ResourceAmounts] = -(value ?? 0);
+    const payment = this.ledger.tryCommit({ reason: 'reactor:slot', scope: 'global', delta, gameMs });
+    if (!payment.ok) return { ok: false, reason: `cost:${payment.insufficient.join(',')}` };
+    this.purchasedSlots += 1;
+    return { ok: true, value: { slots: this.slots(), purchasedSlots: this.purchasedSlots } };
   }
 
   private queueCap(): number {
@@ -209,8 +232,12 @@ export class Reactor {
 
   view(): ReactorView {
     const slots = this.slots();
+    const slotCfg = this.slotPurchaseConfig();
     return {
       slots,
+      purchasedSlots: this.purchasedSlots,
+      maxPurchases: slotCfg.max,
+      nextSlotCost: slotCfg.costs[this.purchasedSlots] ?? null,
       idle: this.jobs.length === 0,
       recipes: this.recipesView(),
       queue: this.jobs.map((job, index) => {
@@ -231,11 +258,11 @@ export class Reactor {
     };
   }
 
-  serialize(): { jobs: readonly { id: number; recipeId: string; runs: number; done: number; progressMs: number; paidForCurrent: boolean; deficit: boolean }[]; nextJobId: number } {
-    return { jobs: this.jobs.map((job) => ({ ...job })), nextJobId: this.nextJobId };
+  serialize(): { jobs: readonly { id: number; recipeId: string; runs: number; done: number; progressMs: number; paidForCurrent: boolean; deficit: boolean }[]; nextJobId: number; slotsPurchased: number } {
+    return { jobs: this.jobs.map((job) => ({ ...job })), nextJobId: this.nextJobId, slotsPurchased: this.purchasedSlots };
   }
 
-  hydrate(state: { jobs?: readonly Partial<ReactorJob>[]; nextJobId?: number } | undefined): void {
+  hydrate(state: { jobs?: readonly Partial<ReactorJob>[]; nextJobId?: number; slotsPurchased?: number } | undefined): void {
     this.jobs = (state?.jobs ?? []).map((job) => ({
       id: Number(job.id ?? this.nextJobId++),
       recipeId: String(job.recipeId ?? ''),
@@ -246,6 +273,8 @@ export class Reactor {
       deficit: job.deficit === true,
     })).filter((job) => this.recipesRaw[job.recipeId] && job.done < job.runs);
     this.nextJobId = Math.max(this.nextJobId, Number(state?.nextJobId ?? 1));
+    const slotCfg = this.slotPurchaseConfig();
+    this.purchasedSlots = Math.max(0, Math.min(slotCfg.max, Math.floor(Number(state?.slotsPurchased ?? 0))));
     this.lastMs = this.now();
   }
 }

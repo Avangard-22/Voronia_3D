@@ -138,6 +138,7 @@ export interface CommandMap {
   craftEnqueue: { readonly recipeId: string; readonly runs?: number };
   /** Этап 9.3 (Этап 8 ТЗ): отмена задачи (возврат только не стартовавших run). */
   craftCancel: { readonly jobId: number };
+  craftBuySlot: Record<string, never>;
   save: Record<string, never>;
   load: Record<string, never>;
   exportSave: Record<string, never>;
@@ -162,6 +163,7 @@ export interface CommandResultMap {
   craftEnqueue: { readonly jobId: number; readonly queueLength: number };
   /** Этап 9.3: результат отмены — сколько не стартовавших run снято. */
   craftCancel: { readonly removedRuns: number };
+  craftBuySlot: { readonly slots: number; readonly purchasedSlots: number };
   travelWithinSystem: { readonly pid: string; readonly prev: string; readonly hostPlanetId: string };
   scanOrbitalBody: { readonly hostPlanetId: string; readonly bodyId: string; readonly energySpent: number; readonly researchSpent: number };
   activateOrbitalBody: DiscoverPlanetResult & { readonly hostPlanetId: string; readonly bodyId: string };

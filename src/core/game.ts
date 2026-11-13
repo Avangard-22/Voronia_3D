@@ -457,6 +457,11 @@ export class Game implements SaveSource {
         if (!res.ok) return ret(fail(craftReject(res.reason), res.reason));
         return ret(ok(res.value));
       }
+      case 'craftBuySlot': {
+        const res = this.reactor.buySlot(this.clock.gameMsNow);
+        if (!res.ok) return ret(fail(res.reason === 'max' ? 'max' : 'cost', res.reason));
+        return ret(ok(res.value));
+      }
       case 'save':
         return ret(ok(this.saves.save()));
       case 'load': {
